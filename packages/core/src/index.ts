@@ -121,6 +121,9 @@ export type {
   ResourceSource,
   SourceOutput,
 } from './sim/production/index.js';
+export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
+export { isPopulationGroup, isResidence } from './sim/population/index.js';
+export type { PopulationGroup, PopulationOutput, Residence } from './sim/population/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { createEmptyRegistry } from './registry/types.js';
