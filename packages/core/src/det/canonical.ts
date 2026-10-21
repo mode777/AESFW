@@ -10,6 +10,14 @@
 import { InvariantViolation } from '../errors/invariant-violation.js';
 import { compareStrings } from './sort.js';
 
+/**
+ * A value in the canonical JSON domain (TDS-19.3): a safe integer, string,
+ * boolean, `null`, or an array/object of such values.
+ */
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue =
+  JsonPrimitive | readonly JsonValue[] | { readonly [key: string]: JsonValue };
+
 const fail = (path: string, reason: string): never => {
   throw new InvariantViolation('non_canonical_value', { path, reason });
 };

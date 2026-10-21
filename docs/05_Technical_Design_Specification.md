@@ -999,7 +999,7 @@ interface Diagnostic {
 }
 ```
 
-Diagnostic text is resolved by the CLI or client, not by the content package (04 §7). Strictness modes (03 §11.2) and the promotion of design-intent warnings to errors (03 §11.7) are `LoadOptions`.
+Diagnostic text is resolved by the CLI or client, not by the content package (04 §7). Strictness modes (03 §11.2) and the promotion of design-intent warnings to errors (03 §11.7) are `LoadOptions`. The interface itself is defined in `@aesfw/core` (`errors/diagnostic.ts`) and re-exported by `@aesfw/content`, so the core API signatures of Section 10.1 do not invert the package dependency of Section 4.3 (A-04).
 
 ### 20.4 Published schemas
 
