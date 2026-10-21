@@ -1,0 +1,15 @@
+scenario:
+  id: test.scenario.basic_loop
+  requirements: [GDD-23.1, CONT-14, SCN-01]
+  content:
+    packages: [fixtures/content/demo-basic-loop]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 600
+    hash_interval: 1
+    invariants: true
+  golden:
+    hashes: fixtures/scenarios/basic_loop.hashes.json

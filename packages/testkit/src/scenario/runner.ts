@@ -9,6 +9,7 @@ import type { DomainEvent, TickInput } from '@aesfw/core';
 import { defaultWorldPlan } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { checkInvariants } from '../harness/invariants.js';
+import { instantiateContentEntities } from './instantiate.js';
 import type { Scenario, ScenarioCheckpoint, ScenarioFinding, ScenarioReport } from './types.js';
 
 const input = (hash: boolean): TickInput => ({
@@ -44,6 +45,7 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
     findings.push({ tick: 0, id: 'content_diagnostic', message: diagnostic.code });
   }
   instantiateWorld(world, plan.plan);
+  instantiateContentEntities(world, registry as ContentRegistry);
 
   const hashing = scenario.run.hashInterval > 0;
   for (let tick = 1; tick <= scenario.run.ticks; tick += 1) {

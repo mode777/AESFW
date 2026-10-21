@@ -19,6 +19,7 @@
     "test:property": "vitest run \"**/*.prop.test.ts\"",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "trace": "node tools/trace/index.mjs",
+    "golden:update": "node tools/golden/index.mjs",
     "verify": "pnpm format:check && pnpm lint && pnpm depcruise && pnpm type-check && pnpm test"
   },
   "devDependencies": {

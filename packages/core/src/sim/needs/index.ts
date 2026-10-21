@@ -11,6 +11,7 @@ export type {
   CategoryMember,
   CategoryMode,
   CategoryResult,
+  CategorySpec,
   NeedRuntime,
   NeedSpec,
   NeedStates,
