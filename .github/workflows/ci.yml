@@ -66,4 +66,6 @@ jobs:
       # Owner: add-client-shell (2.8) and add-client-smoke-e2e (2.10).
 
       # VER-15.3 stage: trace report (warning until M10, then error per 06 3.3)
-      # Owner: add-traceability-tool (0.8).
+      # Activated by add-traceability-tool (roadmap 0.8).
+      - name: Trace report
+        run: pnpm trace

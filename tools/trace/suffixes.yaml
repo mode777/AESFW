@@ -1,0 +1,3 @@
+# Suffixed requirement IDs (VER-3.1), for example GDD-10.2a.
+# Add an entry here when a section gains independently testable statements
+# distinguished by a letter suffix.

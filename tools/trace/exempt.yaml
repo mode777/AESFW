@@ -1,0 +1,47 @@
+# Requirement IDs exempt from the traceability report (VER-3.3).
+# Every entry needs a non-empty reason; an entry without one fails the tool.
+# These are non-normative sections: purpose statements, examples, acceptance
+# criteria summaries, amendments, and the decision log. Behavioural
+# requirements are never exempt.
+- id: GDD-1
+  reason: Purpose and scope; non-normative framing.
+- id: GDD-25
+  reason: Design acceptance criteria summary; verified transitively by the mapped criteria.
+- id: GDD-26
+  reason: Canonical framework summary; restates other sections.
+- id: ARCH-1
+  reason: Architectural objectives; non-normative framing.
+- id: ARCH-2
+  reason: Layered architecture overview; realised by the package boundaries in TDS-4.
+- id: ARCH-21
+  reason: Architectural acceptance criteria summary; verified transitively.
+- id: CONT-1
+  reason: Purpose; non-normative framing.
+- id: CONT-14
+  reason: Complete minimal framework example; illustrative, not normative.
+- id: CONT-15
+  reason: Authoring acceptance criteria summary; verified transitively.
+- id: PIC-1
+  reason: Purpose; non-normative framing.
+- id: PIC-20
+  reason: Integration acceptance criteria summary; verified transitively.
+- id: TDS-1
+  reason: Purpose and scope; non-normative framing.
+- id: TDS-2
+  reason: Technology baseline; a choice table, not testable behaviour.
+- id: TDS-3
+  reason: Architectural principles; realised by the behaviours of the sections below.
+- id: TDS-26
+  reason: Amendments to documents 02-04; a change record, not a requirement.
+- id: TDS-27
+  reason: Decision log; records alternatives, not behaviour.
+- id: TDS-28
+  reason: Acceptance criteria summary; verified transitively.
+- id: REF-1
+  reason: Purpose and scope; non-normative framing.
+- id: REF-8
+  reason: Balancing targets; explicitly non-normative.
+- id: REF-17
+  reason: Non-goals for v1; a scope statement.
+- id: REF-18
+  reason: Acceptance criteria summary; verified transitively.

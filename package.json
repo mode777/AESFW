@@ -17,6 +17,7 @@
     "depcruise": "depcruise packages reference",
     "test": "vitest run",
     "test:property": "vitest run \"**/*.prop.test.ts\"",
+    "trace": "node tools/trace/index.mjs",
     "verify": "pnpm format:check && pnpm lint && pnpm depcruise && pnpm type-check && pnpm test"
   },
   "devDependencies": {
