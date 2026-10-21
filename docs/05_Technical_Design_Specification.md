@@ -732,7 +732,7 @@ Curves (03 §8) are compiled to sorted integer point arrays. Piecewise-linear in
 
 - Algorithm: **xoshiro128\*\*** (32-bit operations using `Math.imul` and `>>> 0`). Version tag `rng-xoshiro128ss-v1`.
 - Session seed: two `uint32` words.
-- Named streams (for example `world_generation`, `disruptions`) derive their initial state from `splitmix32(seed ⊕ fnv1a32(streamName))`, iterated four times.
+- Named streams (for example `world_generation`, `disruptions`) derive their initial state from `splitmix32(seed ⊕ fnv1a32(streamName))`, iterated four times — with the two seed words folded as `seed[0] ⊕ seed[1]` and the four state words taken as four consecutive `splitmix32` outputs starting from that value (the `rng-xoshiro128ss-v1` derivation, A-03).
 - Stream states live in `world.rng` and are saved and hashed (02 §15.1).
 - Only optional modules and seeded world generation (03 §6.18) may draw random numbers. Core economic systems are fully deterministic without randomness (01 §1).
 - `rng.nextInt(stream, boundExclusive)` uses rejection sampling to avoid modulo bias.
