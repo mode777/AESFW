@@ -1,0 +1,12 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "expression"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "expression": {}
+  }
+}

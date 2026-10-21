@@ -165,13 +165,13 @@ Source: CONT-11.2, TDS-20.2
 - **THEN** validation reports `schema_invalid` and does not throw
 
 ### Requirement: Definition collection catalogue
-`@aesfw/content` SHALL publish the collection catalogue mapping each top-level document key to a core `DefinitionType` — `resources` → `resource`, `location_templates` → `location`, `recipes` → `recipe`, `entity_definitions` → `entity`, `population_tiers` → `tier`, `needs` → `need`, `need_categories` → `needCategory`, `growth_policies` → `growthPolicy` — in canonical order, for the registry compilation of roadmap 1.4 to consume.
+`@aesfw/content` SHALL publish the collection catalogue mapping each top-level document key to a core `DefinitionType` — `resources` → `resource`, `location_templates` → `location`, `recipes` → `recipe`, `entity_definitions` → `entity`, `population_tiers` → `tier`, `needs` → `need`, `need_categories` → `needCategory`, `growth_policies` → `growthPolicy`, `conditions` → `condition`, `curves` → `curve` — in canonical order, for the registry compilation of roadmap 1.4 to consume.
 
-Source: CONT-6, TDS-7
+Source: CONT-6, CONT-7, CONT-8, TDS-7
 
 #### Scenario: The catalogue covers the M1 collections in canonical order
 - **WHEN** the catalogue is read
-- **THEN** its keys are exactly the eight M1 collections, each mapping to its core definition type
+- **THEN** its keys are exactly the ten M1 collections, each mapping to its core definition type
 
 ### Requirement: Published JSON Schema
 `@aesfw/content` SHALL export each definition schema as a JSON Schema file under `packages/content/schemas/<collection>.json` (TDS-20.4), generated from the TypeBox schemas. The committed files SHALL equal the schemas the code produces.

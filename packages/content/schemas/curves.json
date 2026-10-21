@@ -1,0 +1,64 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "type", "points"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "type": {
+      "anyOf": [
+        {
+          "const": "constant",
+          "type": "string"
+        },
+        {
+          "const": "piecewise_linear",
+          "type": "string"
+        },
+        {
+          "const": "step",
+          "type": "string"
+        },
+        {
+          "const": "lookup",
+          "type": "string"
+        }
+      ]
+    },
+    "points": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "integer"
+          }
+        ],
+        "additionalItems": false,
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "extrapolation": {
+      "anyOf": [
+        {
+          "const": "clamp",
+          "type": "string"
+        },
+        {
+          "const": "linear",
+          "type": "string"
+        },
+        {
+          "const": "error",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

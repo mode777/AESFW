@@ -91,6 +91,8 @@ describe('[TDS-7] definition collection catalogue', () => {
       'needs',
       'need_categories',
       'growth_policies',
+      'conditions',
+      'curves',
     ]);
     expect(DEFINITION_COLLECTIONS.resources).toBe('resource');
     expect(DEFINITION_COLLECTIONS.location_templates).toBe('location');

@@ -8,6 +8,7 @@
 import type { Diagnostic } from '@aesfw/core';
 
 import { composeDefinitions } from '../composition/compose.js';
+import { compileExpressions } from '../conditions/compile.js';
 import { parseFiles } from '../package/parse.js';
 import { resolveManifests } from '../package/resolve.js';
 import type { PackageSource } from '../package/source.js';
@@ -31,6 +32,7 @@ export function loadContent(
   const validated = validateSchemas(parsed.files, options);
   const composed = composeDefinitions(validated.definitions, options);
   const built = buildRegistry(composed.definitions, options);
+  const expressionDiagnostics = compileExpressions(composed.definitions, built.registry);
 
   const diagnostics: Diagnostic[] = [
     ...manifests.diagnostics,
@@ -38,6 +40,7 @@ export function loadContent(
     ...validated.diagnostics,
     ...composed.diagnostics,
     ...built.diagnostics,
+    ...expressionDiagnostics,
   ];
 
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {

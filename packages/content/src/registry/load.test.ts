@@ -70,4 +70,18 @@ describe('[CONT-12][TDS-20.1] content load orchestration', () => {
     expect(result.content).toBeNull();
     expect(result.diagnostics.some((diagnostic) => diagnostic.severity === 'error')).toBe(true);
   });
+
+  it('[TDS-20.2] an invalid condition fails the load', () => {
+    const yaml = [
+      'conditions:',
+      '  - id: test.condition.a',
+      '    expression: { telepathy: 1 }',
+      '',
+    ].join('\n');
+    const result = loadContent([source(yaml)]);
+    expect(result.content).toBeNull();
+    expect(result.diagnostics.some((diagnostic) => diagnostic.code === 'unknown_operator')).toBe(
+      true,
+    );
+  });
 });

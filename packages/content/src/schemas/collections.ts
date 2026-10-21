@@ -10,6 +10,8 @@
 import type { TSchema } from '@sinclair/typebox';
 import type { DefinitionType } from '@aesfw/core';
 
+import { ConditionSchema } from './condition.js';
+import { CurveSchema } from './curve.js';
 import { EntityDefinitionSchema } from './entity.js';
 import { LocationTemplateSchema } from './location.js';
 import { NeedCategorySchema, NeedSchema } from './need.js';
@@ -27,6 +29,8 @@ export const DEFINITION_COLLECTIONS = {
   needs: 'need',
   need_categories: 'needCategory',
   growth_policies: 'growthPolicy',
+  conditions: 'condition',
+  curves: 'curve',
 } as const satisfies Readonly<Record<string, DefinitionType>>;
 
 /** A top-level document key of the M1 content set. */
@@ -47,6 +51,8 @@ export const DEFINITION_SCHEMAS = {
   needs: NeedSchema,
   need_categories: NeedCategorySchema,
   growth_policies: GrowthPolicySchema,
+  conditions: ConditionSchema,
+  curves: CurveSchema,
 } as const satisfies Readonly<Record<DefinitionCollection, TSchema>>;
 
 /** True when `key` names a known definition collection. */

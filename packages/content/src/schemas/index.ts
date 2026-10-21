@@ -18,6 +18,8 @@ export { RecipeSchema } from './recipe.js';
 export { EntityDefinitionSchema } from './entity.js';
 export { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 export { NeedCategorySchema, NeedSchema } from './need.js';
+export { ConditionSchema } from './condition.js';
+export { CurveSchema } from './curve.js';
 export { isValidDefinitionId } from './ids.js';
 export {
   COLLECTION_ORDER,
