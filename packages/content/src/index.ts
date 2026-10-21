@@ -34,6 +34,7 @@ export { createMemorySource } from './package/source.js';
 export type { PackageSource } from './package/source.js';
 
 export * from './schemas/index.js';
+export * from './composition/index.js';
 
 export { compareVersions, isValidRange, parseVersion, satisfies } from './semver/semver.js';
 export type { Version } from './semver/semver.js';

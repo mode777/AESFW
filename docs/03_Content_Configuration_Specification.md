@@ -175,6 +175,8 @@ Merge rules:
 - Include cycles are invalid
 - Resolved definitions are immutable
 
+An explicit list operation is written as a mapping with exactly one of the keys `append`, `prepend`, or `remove`, whose value is a list; it applies to the inherited list, and `remove` drops deeply equal entries (clarification A-05, roadmap 1.3).
+
 ---
 
 ## 6. Core Definition Schemas
