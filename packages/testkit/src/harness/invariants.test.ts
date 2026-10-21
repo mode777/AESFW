@@ -1,11 +1,39 @@
 import { cloneWorld, createEmptyRegistry, ids, step, world as core } from '@aesfw/core';
-import type { Registry, TickInput, TickOutput } from '@aesfw/core';
+import { createTransactionWriter } from '@aesfw/core';
+import type { Inventory, Registry, TickInput, TickOutput, Transaction } from '@aesfw/core';
 import { describe, expect, it } from 'vitest';
+import { content, expectContentOk } from './content-builder.js';
 import { checkInvariants, expectInvariants } from './invariants.js';
 import { world } from './world-builder.js';
 
 const registry: Registry = createEmptyRegistry();
 const input: TickInput = { commands: [], options: { journal: false, hash: false } };
+
+const resourceRegistry = (): Registry =>
+  expectContentOk(
+    content()
+      .define('resources', {
+        id: 'test.r.a',
+        quantity: { precision: 'fixed', scale: 1000 },
+        storage: { policy: 'normal', scope: 'inventory' },
+        transportable: true,
+      })
+      .build(),
+  ).registry;
+
+const resource = ids.definitionHandle(0);
+
+const inventory = (
+  entries: Inventory['entries'],
+  capacity: Inventory['capacity'] = { total: null, perResource: null },
+): Inventory => ({
+  owner: ids.ownerHandle(0),
+  policy: 'framework.inventory.shared_location',
+  revision: 0,
+  entries,
+  capacity,
+  acceptance: { accepts: [] },
+});
 
 const stepSnapshot = (): { before: core.World; output: TickOutput } => {
   const working = world().store('producer', ids.entityId(1), { state: 'idle' }).build();
@@ -65,5 +93,154 @@ describe('[VER-6] invariant checker', () => {
     const { before, output } = stepSnapshot();
     const findings = checkInvariants(before, output, registry);
     expect(findings.some((finding) => finding.id === 'INV-18')).toBe(false);
+  });
+});
+
+describe('[VER-6] transaction invariants', () => {
+  const buildWorld = (
+    entries: Inventory['entries'],
+    capacity: Inventory['capacity'] = { total: null, perResource: null },
+  ) =>
+    world(resourceRegistry())
+      .store('inventory', ids.entityId(1), inventory(entries, capacity))
+      .build();
+
+  it('[INV-01] a negative stored quantity is reported', () => {
+    const working = buildWorld([{ resource, quantity: -5 }]);
+    const before = cloneWorld(working);
+    const output = step(working, resourceRegistry(), input);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-01');
+  });
+
+  it('[INV-02] reservations exceeding stored quantity are reported', () => {
+    const working = buildWorld([{ resource, quantity: 100 }]);
+    working.ledger = {
+      reservations: [
+        {
+          id: ids.reservationId(1),
+          inventory: ids.entityId(1),
+          resource,
+          quantity: 200,
+          purpose: 'production_input',
+          holder: ids.entityId(1),
+          expiryTick: null,
+          capacity: false,
+        },
+      ],
+    };
+    const before = cloneWorld(working);
+    const output = step(working, resourceRegistry(), input);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-02');
+  });
+
+  it('[INV-03] a capacity overrun is reported', () => {
+    const working = buildWorld([{ resource, quantity: 80 }], { total: 100, perResource: null });
+    working.ledger = {
+      reservations: [
+        {
+          id: ids.reservationId(1),
+          inventory: ids.entityId(1),
+          resource,
+          quantity: 50,
+          purpose: 'production_input',
+          holder: ids.entityId(1),
+          expiryTick: null,
+          capacity: true,
+        },
+      ],
+    };
+    const before = cloneWorld(working);
+    const output = step(working, resourceRegistry(), input);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-03');
+  });
+
+  it('[INV-04] a consistent journal passes conservation', () => {
+    const working = buildWorld([{ resource, quantity: 1000 }]);
+    working.ledger = {
+      reservations: [
+        {
+          id: ids.reservationId(1),
+          inventory: ids.entityId(1),
+          resource,
+          quantity: 50,
+          purpose: 'production_input',
+          holder: ids.entityId(1),
+          expiryTick: null,
+          capacity: false,
+        },
+      ],
+    };
+    const before = cloneWorld(working);
+    const journal: Transaction[] = [];
+    const writer = createTransactionWriter(working, journal);
+    const result = writer.atomic((builder) => {
+      builder.commit(ids.reservationId(1), 50);
+      builder.deposit({
+        inventory: ids.entityId(1),
+        resource,
+        quantity: 200,
+        source: ids.entityId(1),
+      });
+    });
+    expect(result.ok).toBe(true);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal,
+      hash: null,
+      metrics: {},
+    };
+    const findings = checkInvariants(before, output, resourceRegistry());
+    expect(findings.some((finding) => finding.id === 'INV-04')).toBe(false);
+  });
+
+  it('[INV-04] a journal conservation violation is reported', () => {
+    const working = buildWorld([{ resource, quantity: 1000 }]);
+    working.ledger = {
+      reservations: [
+        {
+          id: ids.reservationId(1),
+          inventory: ids.entityId(1),
+          resource,
+          quantity: 50,
+          purpose: 'production_input',
+          holder: ids.entityId(1),
+          expiryTick: null,
+          capacity: false,
+        },
+      ],
+    };
+    const before = cloneWorld(working);
+    const journal: Transaction[] = [];
+    const writer = createTransactionWriter(working, journal);
+    writer.atomic((builder) => {
+      builder.commit(ids.reservationId(1), 50);
+      builder.deposit({
+        inventory: ids.entityId(1),
+        resource,
+        quantity: 200,
+        source: ids.entityId(1),
+      });
+    });
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: journal.filter((transaction) => transaction.kind !== 'commit'),
+      hash: null,
+      metrics: {},
+    };
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-04');
   });
 });

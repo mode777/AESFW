@@ -52,20 +52,19 @@ describe('[TDS-11.2][TDS-12.2] write-set enforcement and seams', () => {
     expect(world.stores.get('producer').get(entityId(1))).toEqual({ state: 'idle' });
   });
 
-  it('[TDS-12.2] transactions are not implemented yet', () => {
+  it('[TDS-13] the policy set is empty before the policy rows', () => {
     const world = makeWorld();
-    let code: string | null = null;
+    let empty = false;
     const descriptor: SystemDescriptor = {
       phase: 1,
-      name: 'demo.tx',
+      name: 'demo.policies',
       reads: [],
       writes: [],
       run: (ctx) => {
-        const result = ctx.tx.atomic(() => undefined);
-        code = result.ok ? 'ok' : result.error.code;
+        empty = Object.keys(ctx.policies).length === 0;
       },
     };
     runSystem(descriptor, world, registry, noInput);
-    expect(code).toBe('not_implemented');
+    expect(empty).toBe(true);
   });
 });

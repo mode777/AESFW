@@ -77,6 +77,7 @@ describe('[TDS-8.5][TDS-19.4] world codec', () => {
           purpose: 'production_input',
           holder: entityId(2),
           expiryTick: null,
+          capacity: false,
         },
       ],
     };

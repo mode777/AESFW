@@ -91,6 +91,11 @@ const asString = (value: JsonValue | undefined, path: string): string => {
   return value;
 };
 
+const asBool = (value: JsonValue | undefined, path: string): boolean => {
+  if (typeof value !== 'boolean') return failDecode(path);
+  return value;
+};
+
 const resourceIdOf = (registry: Registry, handle: DefinitionHandle): StringId => {
   const id = registry.stringIdOf('resource', handle);
   if (id === null) {
@@ -178,6 +183,7 @@ export function encodeWorld(world: World, registry: Registry): CanonicalState {
       purpose: reservation.purpose,
       holder: reservation.holder,
       expiry_tick: reservation.expiryTick,
+      capacity: reservation.capacity,
     })),
     accumulators: world.accumulators.entries.map((entry) => ({
       subject: entry.subject,
@@ -331,6 +337,7 @@ const decodeReservations = (registry: Registry, value: JsonValue | undefined): R
       purpose: asString(record['purpose'], '$.ledger.purpose') as Purpose,
       holder: entityId(asInt(record['holder'], '$.ledger.holder')),
       expiryTick: expiry === null ? null : tick(asInt(expiry, '$.ledger.expiry_tick')),
+      capacity: asBool(record['capacity'], '$.ledger.capacity'),
     };
   });
 

@@ -82,7 +82,8 @@ export interface OwnerTable {
   readonly owners: readonly OwnerState[];
 }
 
-/** An active reservation (TDS-12.1, TDS-12.3). */
+/** An active reservation (TDS-12.1, TDS-12.3). `capacity` is true for an
+ * output-capacity reservation (GDD-8.4), false for a quantity reservation. */
 export interface Reservation {
   readonly id: ReservationId;
   readonly inventory: EntityId;
@@ -91,6 +92,7 @@ export interface Reservation {
   readonly purpose: Purpose;
   readonly holder: EntityId;
   readonly expiryTick: Tick | null;
+  readonly capacity: boolean;
 }
 
 /** The reservation ledger, ordered by ascending reservation ID. */

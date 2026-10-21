@@ -11,12 +11,12 @@ import type { EventWriter } from '../events/event-writer.js';
 import { tick as makeTick } from '../ids/index.js';
 import type { Tick } from '../ids/index.js';
 import type { Registry } from '../registry/types.js';
+import { createTransactionWriter } from '../tx/index.js';
 import { hashWorld } from '../world/codec.js';
 import type { World } from '../world/types.js';
 import { PHASE_TABLE } from './phase-table.js';
 import { EMPTY_POLICY_SET } from './policies.js';
 import { createTickScratch } from './scratch.js';
-import { createUnsupportedTransactionWriter } from './tx.js';
 import type {
   PhaseId,
   PolicySet,
@@ -68,11 +68,12 @@ const execute = (
 ): TickOutput => {
   const computed = makeTick(world.tick + 1);
   const events = createEventWriter(computed);
+  const journal: Transaction[] | null = input.options.journal ? [] : null;
   const state: RunnerState = {
     registry,
     world,
     tick: computed,
-    tx: createUnsupportedTransactionWriter(),
+    tx: createTransactionWriter(world, journal),
     events,
     scratch: createTickScratch(),
     policies: EMPTY_POLICY_SET,
@@ -84,7 +85,6 @@ const execute = (
 
   world.tick = computed;
   const hash = input.options.hash ? hashWorld(world, registry) : null;
-  const journal: readonly Transaction[] | null = input.options.journal ? [] : null;
   const metrics: TickMetrics = {};
   return { world, tick: computed, events: events.events, outcomes: [], journal, hash, metrics };
 };

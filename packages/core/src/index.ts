@@ -12,6 +12,7 @@ export * as fx from './fx/index.js';
 export * as det from './det/index.js';
 export * as ids from './ids/index.js';
 export * as world from './world/index.js';
+export * as tx from './tx/index.js';
 export {
   createWorld,
   allocateEntity,
@@ -51,9 +52,20 @@ export type {
   TickMetrics,
   TickOutput,
   TickScratch,
+  AtomicBuilder,
   Transaction,
   TransactionWriter,
+  TxError,
 } from './pipeline/index.js';
+export { createTransactionWriter, releaseExpiredReservations } from './tx/index.js';
+export type {
+  Inventory,
+  InventoryAcceptance,
+  InventoryCapacity,
+  InventoryEntry,
+  Reason,
+  TxEnvironment,
+} from './tx/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { createEmptyRegistry } from './registry/types.js';

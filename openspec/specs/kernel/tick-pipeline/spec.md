@@ -76,11 +76,24 @@ Source: TDS-11.2, VER-5.4
 - **WHEN** a descriptor declares a store kind in `writes` and calls `set` on it during its run
 - **THEN** the run completes and the store holds the value
 
-### Requirement: Later-row seams are registered no-ops or typed not-supported results
-Behavior owned by later roadmap rows SHALL be a registered no-op or a typed not-supported result: `TransactionWriter.atomic` SHALL return `err` with a `not_implemented` diagnostic until `add-inventory-transactions` (1.7), and `PolicySet` SHALL be empty until the policy rows (1.8+).
+### Requirement: Policy set is empty before the policy rows
+Behavior owned by later roadmap rows SHALL be a registered no-op or a typed not-supported result: `PolicySet` SHALL be empty until the policy rows (1.8+).
 
-Source: TDS-12.2, TDS-13
+Source: TDS-13
 
-#### Scenario: Transactions are not implemented yet
-- **WHEN** `ctx.tx.atomic(...)` is called
-- **THEN** it returns `err` with a diagnostic whose code is `not_implemented`
+#### Scenario: The policy set is empty before the policy rows
+- **WHEN** a system runs during `step`
+- **THEN** `ctx.policies` is an empty policy set
+
+### Requirement: The pipeline supplies the transaction writer and journal
+`step` and `runPhases` SHALL construct a `TickContext.tx` transaction writer bound to the world and, when `TickInput.options.journal` is true, to the tick journal, so transactions applied by a system are appended to `TickOutput.journal` in application order and are `null` when journaling is off. Turning journaling on or off SHALL NOT change authoritative state.
+
+Source: TDS-12.4, TDS-10.1
+
+#### Scenario: A system's transactions reach the output journal
+- **WHEN** a system reserves and commits a quantity during a tick with `journal: true`
+- **THEN** `TickOutput.journal` holds the applied transactions in order
+
+#### Scenario: Journaling off yields a null journal
+- **WHEN** the same tick runs with `journal: false`
+- **THEN** `TickOutput.journal` is `null` and the final state hash matches the journaled run

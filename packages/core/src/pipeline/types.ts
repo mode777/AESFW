@@ -7,11 +7,10 @@
  * Source: TDS-10.1, TDS-11.1, TDS-11.2, TDS-11.3
  */
 import type { JsonValue } from '../det/index.js';
-import type { Diagnostic } from '../errors/diagnostic.js';
 import type { DomainEvent, EventWriter } from '../events/event-writer.js';
 import type { Tick } from '../ids/index.js';
 import type { Registry } from '../registry/types.js';
-import type { Result } from '../result.js';
+import type { AtomicBuilder, Transaction, TransactionWriter, TxError } from '../tx/index.js';
 import type { StateHash } from '../world/codec.js';
 import type { ComponentKind, ComponentStores } from '../world/component-store.js';
 import type { ScheduledCommand, World } from '../world/types.js';
@@ -73,16 +72,8 @@ export interface TickScratch {
 /** Resolved policy implementations (TDS-13); empty until the policy rows. */
 export type PolicySet = Readonly<Record<string, never>>;
 
-/** Staged operations of an atomic transaction composite (TDS-12.2). */
-export type AtomicBuilder = { readonly [key: string]: never };
-
-/** A transaction error (TDS-12.2). */
-export type TxError = Diagnostic;
-
-/** The only way to mutate authoritative quantities (TDS-12). */
-export interface TransactionWriter {
-  atomic(build: (builder: AtomicBuilder) => void): Result<void, TxError>;
-}
+/** Re-exported transaction types (TDS-12); implemented by `../tx`. */
+export type { AtomicBuilder, Transaction, TransactionWriter, TxError };
 
 /** The per-run view a system receives (TDS-11.2). */
 export interface TickContext {
@@ -109,9 +100,6 @@ export type PhaseDescriptor = SystemDescriptor;
 
 /** A command outcome (TDS-16); narrowed by `add-session-and-command-gateway` (2.2). */
 export type CommandOutcome = JsonValue;
-
-/** A journaled transaction (TDS-12.1); narrowed by `add-inventory-transactions` (1.7). */
-export type Transaction = JsonValue;
 
 /** Tick metrics (TDS-5.4); populated by later metric rows. */
 export type TickMetrics = { readonly [key: string]: JsonValue };
