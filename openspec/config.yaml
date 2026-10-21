@@ -1,0 +1,92 @@
+schema: spec-driven
+githubCopilot:
+  cloudAgent: false
+
+# Project context: injected into every artifact instruction.
+# Keep this to constraints an agent cannot infer from the code; details live in docs/.
+context: |
+  Project: Abstract Economic Simulation Framework (AESFW). This is a theme-free, deterministic, headless
+  framework for Anno-style economic simulation games. A separate, equally abstract reference implementation
+  (content package `ref.tier` plus a minimalist browser client) is built on top of it.
+  Read AGENTS.md first. It contains the non-negotiable rules.
+
+  Source-of-truth documents (docs/), in order of precedence:
+    docs/01_Core_Game_Framework_GDD.md (GDD-) > docs/02_Simulation_Architecture.md (ARCH-)
+    = docs/03_Content_Configuration_Specification.md (CONT-) = docs/04_Presentation_Integration_Contract.md (PIC-)
+    > docs/05_Technical_Design_Specification.md (TDS-) > docs/06_Verification_Specification.md (VER-, INV-, SCN-)
+    > docs/07_Reference_Implementation_and_Client_Design.md (REF-) > docs/08_Implementation_Roadmap.md.
+  Requirement IDs are <PREFIX>-<section number>, e.g. GDD-12.3, ARCH-5.2, TDS-6.3 (06 section 3).
+  A conflict between documents is a defect. Never resolve it silently: ask the user, or record an
+  amendment in 05 section 26 within the same change.
+
+  Every change corresponds to one row of docs/08_Implementation_Roadmap.md:
+    - change name = the row's Change ID
+    - capability path = the row's Capability (taxonomy in 08 section 6, e.g. sim/production)
+    - scope = the row's Scope; Sources = the normative sections; Depends on = changes that must be archived first
+  Behavior owned by a later roadmap row is out of scope.
+
+  Technology: TypeScript (strict), pnpm workspaces, Vitest + fast-check, Playwright, Vite, TypeBox, yaml.
+  Framework packages: @aesfw/core, content, app, protocol, testkit (pure); @aesfw/host-web, host-node (shell).
+  Reference packages: @aesfw-ref/content (data only), @aesfw-ref/client-web (DOM + SVG, no UI framework).
+
+  Hard constraints (05 sections 4 and 5, 06):
+    - Pure packages perform no I/O and use no clock, Math.random, Date, Intl, console, globals, async code,
+      or module-level mutable state.
+    - Authoritative values are safe integers (base units or permille) computed through the `fx` module.
+      No floating point in authoritative state.
+    - Iteration order is ascending entity ID or another documented total order. Sorting always uses a
+      total-order comparator. Randomness comes only from seeded streams in world.rng.
+    - packages/** never imports reference/**. The client imports only @aesfw/protocol and
+      @aesfw/host-web/client. Framework code, tests, and fixtures are theme-free: only test.* / demo.* IDs,
+      never ref.* IDs or reference codes such as P1, AK1, S1.
+    - All mutations go through commands. All client reads go through projections, read models, or queries.
+    - Golden hashes change only with an explained reason (06 section 9.4).
+
+# Per-artifact rules: additive to the spec-driven schema's built-in guidance.
+rules:
+  proposal:
+    - Start "Why" with the roadmap reference (e.g. "Roadmap 08, M1 item 1.10") and name the risks it retires (R-xx from 08 section 3).
+    - Use the roadmap row's Capability path as the capability. Before introducing a new path, check `openspec list --specs` and 08 section 6; never create near-duplicates.
+    - List "Depends on" changes from the roadmap row and confirm they are archived. If one is not, stop and report it instead of proposing.
+    - Include an explicit "Out of scope" list naming the later roadmap rows (by Change ID) that touch the same area.
+    - In "Impact", name the affected packages, tick phases (02 section 5.2), store kinds, commands, events, error codes, and diagnostic codes.
+    - Mark any change to versioned algorithms, the save format, the protocol version, or golden hashes as **BREAKING** or **HASH-CHANGING**, as applicable.
+  specs:
+    - 'Phrase every requirement with SHALL and end it with a source line, e.g. "Source: GDD-10.2, ARCH-5.2, TDS-12.2".'
+    - Do not restate content of 01-07 beyond what is needed to make the requirement testable; cite instead.
+    - Each scenario maps to exactly one test. Write it as WHEN/THEN with concrete integer values (base units, permille, ticks) and theme-free test.* IDs.
+    - Cover the nominal path, every block reason or rejection/error code introduced, boundary values, ordering between competing subjects, and paused/disabled/inactive exclusion (06 section 5.3).
+    - When the change establishes or affects an invariant (INV-xx) or scenario (SCN-xx) from 06, add a requirement that names it.
+    - 'Specify observable behavior only: state visible through WorldReader or projections, domain events, command outcomes, diagnostics. Do not specify internal data structures.'
+  design:
+    - Do not repeat decisions already fixed in 05. Reference the TDS sections and record only new or refined decisions.
+    - Name the tick phases, system modules (phase-NN-<name>.ts), and declared store reads and writes involved.
+    - State the ordering and rounding rule for every allocation, division, or iteration that affects state.
+    - For every clarification of 01-07, record the exact document text to add or change. List amendments as A-xx following 05 section 26.
+    - If golden hashes change, explain why and which versioned algorithm tags (if any) are bumped.
+    - Note risks and open questions. Do not resolve specification conflicts by assumption; flag them.
+  tasks:
+    - Order tasks as schemas/types, then implementation, then unit tests (runPhases + testkit), then invariants, then scenario/golden tests, then docs, then verification.
+    - Every spec scenario gets its own test task whose title includes the requirement tags, e.g. "[GDD-10.2] ...".
+    - Include tasks to add new error, diagnostic, and event codes to their catalogues, with fixtures (06 sections 10.2, 11).
+    - Include a task to update the affected documents (amendments and clarifications) and docs/08 (if scope, dependencies, or risks changed).
+    - Keep each task completable in under about 2 hours. Split larger ones.
+    - The final task is always "Run pnpm verify and pnpm trace; all green, and no new untraced requirement IDs in the claimed sections".
+
+# Per-operation advisory guidance.
+operations:
+  apply:
+    guidance:
+      - Read AGENTS.md and the cited source sections before writing code. The documents override assumptions.
+      - Implement only the roadmap row's scope. For behavior owned by later rows, leave a registered no-op or a typed "not supported" diagnostic.
+      - Write tests alongside the code. Systems are tested in isolation with runPhases; integration, property, and scenario tests call checkInvariants after every tick.
+      - Never add runtime dependencies to @aesfw/core. Any new dependency in a pure package needs a decision-log entry (05 section 27).
+      - Never regenerate golden hashes to make a test pass. If hashes legitimately change, document why in design.md.
+      - If the specification is ambiguous or contradictory, stop and ask instead of guessing.
+      - Keep test summaries concise. Report failures with the seed (property tests) or the first diverging hash checkpoint.
+  archive:
+    guidance:
+      - Archive only after /opsx-verify passes and pnpm verify and pnpm trace are green.
+      - Confirm that the amendments and clarifications listed in design.md were applied to the documents in docs/.
+      - Mark the roadmap row as done in docs/08 (append "✓ archived <date>" to its Scope cell) and update risks or dependencies that changed.
+      - Summarize the archive outcome before finishing, naming the capabilities synced and the next unblocked roadmap rows.
