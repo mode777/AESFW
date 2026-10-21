@@ -1,10 +1,10 @@
 /**
- * The `checkInvariants` framework (VER-6). It evaluates INV-01 to INV-04,
+ * The `checkInvariants` framework (VER-6). It evaluates INV-01 to INV-05,
  * INV-10, INV-18, INV-21, and INV-24; INV-17 is checked by the clone-run
  * harness. Each later system row extends the catalogue without changing the
  * runner.
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-10, INV-18, INV-21, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, INV-24
  */
 import {
   InvariantViolation,
@@ -15,6 +15,7 @@ import {
   world as core,
 } from '@aesfw/core';
 import type { Inventory, Registry, TickOutput } from '@aesfw/core';
+import type { CapabilityConsumer, CapabilityProvider } from '@aesfw/core';
 
 type World = core.World;
 
@@ -152,6 +153,36 @@ const checkCapacity = (world: World, findings: InvariantFinding[]): void => {
   }
 };
 
+const checkCapabilityAllocation = (world: World, findings: InvariantFinding[]): void => {
+  const providerStore = world.stores.get<CapabilityProvider>('capabilityProvider');
+  const supply = new Map<string, number>();
+  for (const id of providerStore.ids()) {
+    const provider = providerStore.get(id) as CapabilityProvider | null | undefined;
+    if (provider == null) continue;
+    const key = `${provider.scope}:${provider.location ?? 0}:${provider.capability}`;
+    supply.set(key, (supply.get(key) ?? 0) + provider.rate);
+  }
+  const consumerStore = world.stores.get<CapabilityConsumer>('capabilityConsumer');
+  const allocationStore = world.stores.get('capabilityAllocation');
+  const grantedByKey = new Map<string, number>();
+  for (const id of allocationStore.ids()) {
+    const allocation = allocationStore.get(id) as { readonly granted?: number } | null | undefined;
+    const consumer = consumerStore.get(id) as CapabilityConsumer | null | undefined;
+    if (allocation == null || consumer == null) continue;
+    if (consumer.substitutes.length > 0) continue;
+    const key = `${consumer.scope}:${consumer.location ?? 0}:${consumer.capability}`;
+    grantedByKey.set(key, (grantedByKey.get(key) ?? 0) + (allocation.granted ?? 0));
+  }
+  for (const [key, granted] of grantedByKey) {
+    if (granted > (supply.get(key) ?? 0)) {
+      findings.push({
+        id: 'INV-05',
+        message: `capability pool ${key} grants ${granted} above supply ${supply.get(key) ?? 0}`,
+      });
+    }
+  }
+};
+
 const checkConservation = (
   before: World,
   output: TickOutput,
@@ -202,7 +233,7 @@ const checkConservation = (
 /**
  * Evaluates the invariant catalogue over a completed tick (VER-6).
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-10, INV-18, INV-21, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, INV-24
  */
 export function checkInvariants(
   before: World,
@@ -213,6 +244,7 @@ export function checkInvariants(
   checkInventoryNonNegative(output.world, findings);
   checkReservationsWithinStored(output.world, findings);
   checkCapacity(output.world, findings);
+  checkCapabilityAllocation(output.world, findings);
   checkConservation(before, output, findings);
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);

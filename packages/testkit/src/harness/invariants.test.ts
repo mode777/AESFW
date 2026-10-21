@@ -244,3 +244,64 @@ describe('[VER-6] transaction invariants', () => {
     ).toContain('INV-04');
   });
 });
+
+describe('[VER-6] capability invariants', () => {
+  const buildWorld = (granted: number, supply: number) =>
+    world()
+      .store('capabilityProvider', ids.entityId(1), {
+        capability: ids.definitionHandle(0),
+        scope: 'location',
+        location: ids.entityId(9),
+        rate: supply,
+      })
+      .store('capabilityConsumer', ids.entityId(2), {
+        capability: ids.definitionHandle(0),
+        substitutes: [],
+        scope: 'location',
+        location: ids.entityId(9),
+        model: 'proportional',
+        priority: 0,
+        weight: 1000,
+        request: granted,
+      })
+      .store('capabilityAllocation', ids.entityId(2), {
+        capability: ids.definitionHandle(0),
+        granted,
+        shortage: 0,
+      })
+      .build();
+
+  it('[INV-05] a capability over-allocation is reported', () => {
+    const working = buildWorld(50, 10);
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: {},
+    };
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).toContain(
+      'INV-05',
+    );
+  });
+
+  it('[INV-05] a matching capability allocation passes', () => {
+    const working = buildWorld(100, 100);
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: {},
+    };
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).not.toContain(
+      'INV-05',
+    );
+  });
+});

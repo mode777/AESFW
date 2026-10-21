@@ -82,6 +82,22 @@ export { locationOf, locationHubOf } from './sim/location.js';
 export type { Location, LocationHub, LocationProperty } from './sim/location.js';
 export { instantiateWorld } from './sim/instantiate.js';
 export type { InventoryPlan, LocationPlan, WorldPlan } from './sim/instantiate.js';
+export {
+  allocateCapabilities,
+  allocateModel,
+  buildCapabilitySupply,
+  poolKey,
+} from './sim/capabilities/index.js';
+export type {
+  AllocationModel,
+  CapabilityAllocation,
+  CapabilityConsumer,
+  CapabilityPool,
+  CapabilityProvider,
+  CapabilityRequest,
+  CapabilityScope,
+  CapabilitySupply,
+} from './sim/capabilities/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { createEmptyRegistry } from './registry/types.js';
