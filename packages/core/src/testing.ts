@@ -1,10 +1,18 @@
 /**
- * Test-only API of `@aesfw/core` (TDS-4.4, TDS-10.3). Entry points for the
- * tick-pipeline test harness (`runPhases`, `stores`, `phaseTable`) arrive
- * with roadmap rows 0.6 and 0.7; this entry currently ships only the
- * deep-freeze helper that test builds use to freeze definition data
- * (TDS-5.2, TDS-5.5).
+ * Test-only API of `@aesfw/core` (TDS-4.4, TDS-10.3): the deep-freeze helper
+ * (TDS-5.2, TDS-5.5) and the tick-pipeline test harness `runPhases`,
+ * `runSystem`, `stores`, and `phaseTable` (roadmap 0.6).
  */
+import type { ComponentStores } from './world/component-store.js';
+import type { World } from './world/types.js';
+
+export { runPhases, runSystem } from './pipeline/step.js';
+export { phaseTable } from './pipeline/phase-table.js';
+
+/** Direct store access for test setup (TDS-10.3). */
+export function stores(world: World): ComponentStores {
+  return world.stores;
+}
 
 /**
  * Deep-freezes an object graph for test builds: the value itself and every

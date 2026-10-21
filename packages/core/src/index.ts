@@ -12,6 +12,24 @@ export * as fx from './fx/index.js';
 export * as det from './det/index.js';
 export * as ids from './ids/index.js';
 export * as world from './world/index.js';
+export { step } from './pipeline/step.js';
+export { PHASE_TABLE, phaseTable } from './pipeline/phase-table.js';
+export type {
+  CommandOutcome,
+  DomainEvent,
+  EventWriter,
+  PhaseId,
+  PolicySet,
+  StoreKey,
+  SystemDescriptor,
+  TickContext,
+  TickInput,
+  TickMetrics,
+  TickOutput,
+  TickScratch,
+  Transaction,
+  TransactionWriter,
+} from './pipeline/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { createEmptyRegistry } from './registry/types.js';

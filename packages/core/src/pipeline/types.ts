@@ -1,0 +1,137 @@
+/**
+ * The tick pipeline system contract (TDS-11). A `SystemDescriptor` declares
+ * its phase, name, and the stores it reads and writes; a `TickContext` is the
+ * per-run view a system receives. Phases 32 and 33 are pipeline and
+ * application responsibilities and are not system modules (TDS-11.1).
+ *
+ * Source: TDS-10.1, TDS-11.1, TDS-11.2, TDS-11.3
+ */
+import type { JsonValue } from '../det/index.js';
+import type { Diagnostic } from '../errors/diagnostic.js';
+import type { DomainEvent, EventWriter } from '../events/event-writer.js';
+import type { Tick } from '../ids/index.js';
+import type { Registry } from '../registry/types.js';
+import type { Result } from '../result.js';
+import type { StateHash } from '../world/codec.js';
+import type { ComponentKind, ComponentStores } from '../world/component-store.js';
+import type { ScheduledCommand, World } from '../world/types.js';
+
+/** The system phases 01–31 of TDS-11.1. */
+export type PhaseId =
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20
+  | 21
+  | 22
+  | 23
+  | 24
+  | 25
+  | 26
+  | 27
+  | 28
+  | 29
+  | 30
+  | 31;
+
+/** World-level authoritative stores that a system may declare (TDS-11.2). */
+export type WorldStoreKey =
+  | 'rng'
+  | 'owners'
+  | 'ledger'
+  | 'accumulators'
+  | 'timers'
+  | 'exchanges'
+  | 'commandQueue'
+  | 'modules'
+  | 'metrics';
+
+/** A store a system can read or write. */
+export type StoreKey = ComponentKind | WorldStoreKey;
+
+/** Per-tick scratch buffers, reset each tick and never saved (TDS-11.2). */
+export interface TickScratch {
+  readonly values: Map<string, unknown>;
+}
+
+/** Resolved policy implementations (TDS-13); empty until the policy rows. */
+export type PolicySet = Readonly<Record<string, never>>;
+
+/** Staged operations of an atomic transaction composite (TDS-12.2). */
+export type AtomicBuilder = { readonly [key: string]: never };
+
+/** A transaction error (TDS-12.2). */
+export type TxError = Diagnostic;
+
+/** The only way to mutate authoritative quantities (TDS-12). */
+export interface TransactionWriter {
+  atomic(build: (builder: AtomicBuilder) => void): Result<void, TxError>;
+}
+
+/** The per-run view a system receives (TDS-11.2). */
+export interface TickContext {
+  readonly tick: Tick;
+  readonly registry: Registry;
+  readonly world: World;
+  readonly tx: TransactionWriter;
+  readonly events: EventWriter;
+  readonly scratch: TickScratch;
+  readonly policies: PolicySet;
+}
+
+/** A registered system (TDS-11.2). */
+export interface SystemDescriptor {
+  readonly phase: PhaseId;
+  readonly name: string;
+  readonly reads: readonly StoreKey[];
+  readonly writes: readonly StoreKey[];
+  readonly run: (ctx: TickContext) => void;
+}
+
+/** Alias of `SystemDescriptor` used by the test API (TDS-10.3). */
+export type PhaseDescriptor = SystemDescriptor;
+
+/** A command outcome (TDS-16); narrowed by `add-session-and-command-gateway` (2.2). */
+export type CommandOutcome = JsonValue;
+
+/** A journaled transaction (TDS-12.1); narrowed by `add-inventory-transactions` (1.7). */
+export type Transaction = JsonValue;
+
+/** Tick metrics (TDS-5.4); populated by later metric rows. */
+export type TickMetrics = { readonly [key: string]: JsonValue };
+
+/** Input to one tick (TDS-10.1). */
+export interface TickInput {
+  readonly commands: readonly ScheduledCommand[];
+  readonly options: { readonly journal: boolean; readonly hash: boolean };
+}
+
+/** Output of one tick (TDS-10.1). */
+export interface TickOutput {
+  readonly world: World;
+  readonly tick: Tick;
+  readonly events: readonly DomainEvent[];
+  readonly outcomes: readonly CommandOutcome[];
+  readonly journal: readonly Transaction[] | null;
+  readonly hash: StateHash | null;
+  readonly metrics: TickMetrics;
+}
+
+/** The full store container as seen by a system. */
+export type SystemStores = ComponentStores;

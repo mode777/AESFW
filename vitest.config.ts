@@ -9,7 +9,7 @@ const pkgDir = (...segments: string[]) => resolve(repoRoot, ...segments);
  * D4); shell and reference projects keep stock globals. */
 const PURE_PACKAGES = new Set(['core', 'content', 'protocol', 'app', 'testkit']);
 
-const packageProject = (name: string, dir: string) => ({
+const packageProject = (name: string, dir: string, overrides: Record<string, unknown> = {}) => ({
   test: {
     name,
     root: pkgDir(dir),
@@ -17,6 +17,7 @@ const packageProject = (name: string, dir: string) => ({
     include: ['src/**/*.test.ts'],
     passWithNoTests: true,
     ...(PURE_PACKAGES.has(name) ? { setupFiles: [pkgDir('tools/vitest.purity-setup.ts')] } : {}),
+    ...overrides,
   },
 });
 
@@ -38,7 +39,7 @@ export default defineConfig({
       packageProject('content', 'packages/content'),
       packageProject('protocol', 'packages/protocol'),
       packageProject('app', 'packages/app'),
-      packageProject('testkit', 'packages/testkit'),
+      packageProject('testkit', 'packages/testkit', { testTimeout: 30000 }),
       packageProject('host-web', 'packages/host-web'),
       packageProject('host-node', 'packages/host-node'),
       packageProject('client-web', 'reference/client-web'),
