@@ -1,10 +1,10 @@
 /**
- * The `checkInvariants` framework (VER-6). It evaluates INV-01 to INV-05,
+ * The `checkInvariants` framework (VER-6). It evaluates INV-01 to INV-05 and INV-08,
  * INV-10, INV-18, INV-21, and INV-24; INV-17 is checked by the clone-run
  * harness. Each later system row extends the catalogue without changing the
  * runner.
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-08, INV-10, INV-18, INV-21, INV-22, INV-24
  */
 import {
   InvariantViolation,
@@ -184,6 +184,27 @@ const checkCapabilityAllocation = (world: World, findings: InvariantFinding[]): 
   }
 };
 
+const checkSatisfactionRange = (world: World, findings: InvariantFinding[]): void => {
+  const store = world.stores.get('satisfaction');
+  for (const id of store.ids()) {
+    const value = store.get(id) as
+      | { readonly z?: number; readonly categories?: readonly { readonly fulfillment?: number }[] }
+      | null
+      | undefined;
+    if (value == null) continue;
+    const outOfRange = (amount: number | undefined): boolean =>
+      typeof amount === 'number' && (amount < 0 || amount > 1000);
+    if (outOfRange(value.z)) {
+      findings.push({ id: 'INV-08', message: `satisfaction ${id} z is out of range` });
+    }
+    for (const category of value.categories ?? []) {
+      if (outOfRange(category.fulfillment)) {
+        findings.push({ id: 'INV-08', message: `satisfaction ${id} category is out of range` });
+      }
+    }
+  }
+};
+
 const checkProducerConsistency = (world: World, findings: InvariantFinding[]): void => {
   const store = world.stores.get<Producer>('producer');
   for (const id of store.ids()) {
@@ -250,7 +271,7 @@ const checkConservation = (
 /**
  * Evaluates the invariant catalogue over a completed tick (VER-6).
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-08, INV-10, INV-18, INV-21, INV-22, INV-24
  */
 export function checkInvariants(
   before: World,
@@ -263,6 +284,7 @@ export function checkInvariants(
   checkCapacity(output.world, findings);
   checkCapabilityAllocation(output.world, findings);
   checkProducerConsistency(output.world, findings);
+  checkSatisfactionRange(output.world, findings);
   checkConservation(before, output, findings);
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);

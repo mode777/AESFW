@@ -358,3 +358,42 @@ describe('[VER-6] producer invariants', () => {
     );
   });
 });
+
+describe('[VER-6] satisfaction invariants', () => {
+  const buildWorld = (z: number) =>
+    world().store('satisfaction', ids.entityId(1), { z, categories: [] }).build();
+
+  it('[INV-08] a satisfaction above 1000 is reported', () => {
+    const working = buildWorld(1200);
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: {},
+    };
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).toContain(
+      'INV-08',
+    );
+  });
+
+  it('[INV-08] a bounded satisfaction passes', () => {
+    const working = buildWorld(500);
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: {},
+    };
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).not.toContain(
+      'INV-08',
+    );
+  });
+});

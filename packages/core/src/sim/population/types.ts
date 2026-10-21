@@ -8,6 +8,7 @@
 import type { Int } from '../../fx/index.js';
 import type { DefinitionHandle, EntityId } from '../../ids/index.js';
 import type { CapabilityScope } from '../capabilities/index.js';
+import type { CategorySpec, NeedSpec, SatisfactionAggregation } from '../needs/types.js';
 
 /** A resolved population output. */
 export type PopulationOutput = {
@@ -25,6 +26,9 @@ export type Residence = {
   readonly growthPolicy: DefinitionHandle | null;
   readonly consumptionFactor: Int;
   readonly outputs: readonly PopulationOutput[];
+  readonly needs?: readonly NeedSpec[];
+  readonly categories?: readonly CategorySpec[];
+  readonly satisfactionAggregation?: SatisfactionAggregation;
 };
 
 /** A population group component. */
