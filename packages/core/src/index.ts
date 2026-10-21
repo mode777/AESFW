@@ -12,6 +12,30 @@ export * as fx from './fx/index.js';
 export * as det from './det/index.js';
 export * as ids from './ids/index.js';
 export * as world from './world/index.js';
+export {
+  createWorld,
+  allocateEntity,
+  allocateReservation,
+  cloneWorld,
+  encodeWorld,
+  decodeWorld,
+  hashWorld,
+} from './world/index.js';
+export type {
+  CanonicalState,
+  ComponentKind,
+  ComponentStore,
+  ComponentStores,
+  DerivedCaches,
+  OwnerState,
+  OwnerTable,
+  Purpose,
+  Reservation,
+  ScheduledCommand,
+  StateHash,
+  World,
+  WorldSetup,
+} from './world/index.js';
 export { step } from './pipeline/step.js';
 export { PHASE_TABLE, phaseTable } from './pipeline/phase-table.js';
 export type {

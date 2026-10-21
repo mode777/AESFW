@@ -119,7 +119,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 0.4 | `add-deterministic-primitives` | foundation/determinism | canonical JSON, FNV-1a 64, xoshiro128\*\* streams, stable sort, string comparison, branded IDs, `Result`; properties P-04, P-05 ✓ archived 2026-10-21 | TDS-7, TDS-9.4, TDS-15, TDS-19.3, TDS-19.4, TDS-23 | 0.2 | M |
 | 0.5 | `add-world-state-model` | kernel/world-state | `World` record, entity allocator, `ComponentStore` with sorted iteration and tombstones, owners table, encode/decode/clone/hash ✓ archived 2026-10-21 | TDS-8, ARCH-3, ARCH-4.2 | 0.3, 0.4 | M |
 | 0.6 | `add-tick-pipeline-skeleton` | kernel/tick-pipeline | phase table 01–33 as registered no-ops, `SystemDescriptor`, `TickContext`, `EventWriter`, `step`, `runPhases`, write-set checks in test builds ✓ archived 2026-10-21 | TDS-10, TDS-11, ARCH-5 | 0.5 | M |
-| 0.7 | `add-testkit-foundation` | testkit/harness | store-level world builder; `checkInvariants` framework with INV-10, 17, 18, 21, 24; double-run, clone-run, and save-continue harnesses | VER-5.2, VER-6, VER-8.1 | 0.6 | M |
+| 0.7 | `add-testkit-foundation` | testkit/harness | store-level world builder; `checkInvariants` framework with INV-10, 17, 18, 21, 24; double-run, clone-run, and save-continue harnesses ✓ archived 2026-10-21 | VER-5.2, VER-6, VER-8.1 | 0.6 | M |
 | 0.8 | `add-traceability-tool` | testkit/traceability | `pnpm trace`, `exempt.yaml`, generated `docs/traceability.md` | VER-3 | 0.1 | S |
 | 0.9 | `add-browser-determinism-check` | testkit/determinism-matrix | empty-world replay in Vitest browser mode (Chromium) compared with Node | VER-8.2 | 0.7 | S |
 
