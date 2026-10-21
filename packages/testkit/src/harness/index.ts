@@ -4,6 +4,15 @@
  */
 export { world } from './world-builder.js';
 export type { WorldBuilder } from './world-builder.js';
+export {
+  content,
+  definitionById,
+  definitionsOf,
+  diagnosticCodes,
+  expectContentOk,
+  expectNoDiagnostics,
+} from './content-builder.js';
+export type { ContentBuilder, ContentBuildResult } from './content-builder.js';
 export { checkInvariants, expectInvariants } from './invariants.js';
 export type { InvariantFinding } from './invariants.js';
 export {

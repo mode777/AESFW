@@ -9,6 +9,15 @@ export const TESTKIT_PACKAGE_ID = '@aesfw/testkit' as const;
 
 export { world } from './harness/world-builder.js';
 export type { WorldBuilder } from './harness/world-builder.js';
+export {
+  content,
+  definitionById,
+  definitionsOf,
+  diagnosticCodes,
+  expectContentOk,
+  expectNoDiagnostics,
+} from './harness/content-builder.js';
+export type { ContentBuilder, ContentBuildResult } from './harness/content-builder.js';
 export { checkInvariants, expectInvariants } from './harness/invariants.js';
 export type { InvariantFinding } from './harness/invariants.js';
 export {
