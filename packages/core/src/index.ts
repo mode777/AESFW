@@ -66,6 +66,22 @@ export type {
   Reason,
   TxEnvironment,
 } from './tx/index.js';
+export {
+  ABSTRACT_CAPACITY_POLICY_ID,
+  abstractCapacityPolicy,
+  resolveSpatialPolicy,
+} from './policies/spatial/index.js';
+export type { CapacitySummary, PlacementResult, SpatialPolicy } from './policies/spatial/index.js';
+export {
+  SHARED_LOCATION_POLICY_ID,
+  resolveInventoryAccessPolicy,
+  sharedLocationPolicy,
+} from './policies/inventory-access/index.js';
+export type { InventoryAccessPolicy } from './policies/inventory-access/index.js';
+export { locationOf, locationHubOf } from './sim/location.js';
+export type { Location, LocationHub, LocationProperty } from './sim/location.js';
+export { instantiateWorld } from './sim/instantiate.js';
+export type { InventoryPlan, LocationPlan, WorldPlan } from './sim/instantiate.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { createEmptyRegistry } from './registry/types.js';
