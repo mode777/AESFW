@@ -57,7 +57,12 @@ jobs:
       # Owner: add-golden-basic-loop (1.15) and later scenario rows.
 
       # VER-15.3 stage: Chromium determinism replay (L7)
-      # Owner: add-browser-determinism-check (0.9).
+      # Activated by add-browser-determinism-check (roadmap 0.9).
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser determinism (Chromium)
+        run: pnpm test:browser
 
       # VER-15.3 stage: content validation of reference packages (strict)
       # Owner: add-content-package-loader (1.1) and later content rows.

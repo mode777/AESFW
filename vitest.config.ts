@@ -15,6 +15,7 @@ const packageProject = (name: string, dir: string, overrides: Record<string, unk
     root: pkgDir(dir),
     environment: 'node' as const,
     include: ['src/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/*.browser.test.ts'],
     passWithNoTests: true,
     ...(PURE_PACKAGES.has(name) ? { setupFiles: [pkgDir('tools/vitest.purity-setup.ts')] } : {}),
     ...overrides,

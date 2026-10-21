@@ -121,7 +121,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 0.6 | `add-tick-pipeline-skeleton` | kernel/tick-pipeline | phase table 01–33 as registered no-ops, `SystemDescriptor`, `TickContext`, `EventWriter`, `step`, `runPhases`, write-set checks in test builds ✓ archived 2026-10-21 | TDS-10, TDS-11, ARCH-5 | 0.5 | M |
 | 0.7 | `add-testkit-foundation` | testkit/harness | store-level world builder; `checkInvariants` framework with INV-10, 17, 18, 21, 24; double-run, clone-run, and save-continue harnesses ✓ archived 2026-10-21 | VER-5.2, VER-6, VER-8.1 | 0.6 | M |
 | 0.8 | `add-traceability-tool` | testkit/traceability | `pnpm trace`, `exempt.yaml`, generated `docs/traceability.md` ✓ archived 2026-10-21 | VER-3 | 0.1 | S |
-| 0.9 | `add-browser-determinism-check` | testkit/determinism-matrix | empty-world replay in Vitest browser mode (Chromium) compared with Node | VER-8.2 | 0.7 | S |
+| 0.9 | `add-browser-determinism-check` | testkit/determinism-matrix | empty-world replay in Vitest browser mode (Chromium) compared with Node ✓ archived 2026-10-21 | VER-8.2 | 0.7 | S |
 
 **Exit criteria:** an empty world steps 10,000 ticks with stable hashes; hashes are equal in Node and Chromium; a deliberately forbidden import or `Math.random` call fails CI; the trace report is generated.
 

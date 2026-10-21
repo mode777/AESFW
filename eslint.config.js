@@ -92,7 +92,14 @@ const purePackageImports = {
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**', 'vitest.config.ts', 'tools/**'],
+    ignores: [
+      '**/dist/**',
+      '**/coverage/**',
+      '**/node_modules/**',
+      'vitest.config.ts',
+      'vitest.browser.config.ts',
+      'tools/**',
+    ],
   },
   {
     files: ['**/*.ts'],
