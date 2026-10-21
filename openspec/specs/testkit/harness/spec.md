@@ -16,18 +16,19 @@ Source: VER-5.2
 - **THEN** the world has seed `[3, 4]`, tick `10`, the owner in its table, and `value` in the `producer` store for entity `1`
 
 ### Requirement: checkInvariants framework
-`checkInvariants(before, output, registry)` SHALL return the list of violated invariants among INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, and INV-24 as data, and `expectInvariants` SHALL throw an `InvariantViolation` naming the first finding when the list is non-empty. It SHALL cover:
+`checkInvariants(before, output, registry)` SHALL return the list of violated invariants among INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, INV-22, and INV-24 as data, and `expectInvariants` SHALL throw an `InvariantViolation` naming the first finding when the list is non-empty. It SHALL cover:
 - INV-01: no inventory stores a negative quantity.
 - INV-02: for every inventory and resource, the sum of active quantity reservations is at most the stored quantity.
 - INV-03: for every inventory, stored quantity plus capacity reservations is at most each declared capacity rule (total and per resource).
 - INV-04: when `output.journal` is present, for every resource the change in total stored quantity equals deposits minus withdrawals minus commits, and transfers net to zero.
-- INV-05: for every capability pool, the sum of granted allocations is at most the pool supply, and each grant comes from the consumer exact capability or an explicit substitute.
+- INV-05: for every capability pool, the sum of granted allocations is at most the pool supply, and each grant comes from the consumer's exact capability or an explicit substitute.
 - INV-10: every store ID is below `nextEntityId`, and IDs are unique.
 - INV-18: `hashWorld(decodeWorld(encodeWorld(output.world)))` equals `hashWorld(output.world)`.
 - INV-21: a `step` produced an output rather than throwing, and `output.tick` is `before.tick + 1`.
+- INV-22: every producer with a non-empty block-reason list is not `processing`, and every `processing` producer has no block reasons other than `throughput_throttled`.
 - INV-24: each store's `ids()` is in ascending order.
 
-Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, INV-24
+Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, INV-22, INV-24
 
 #### Scenario: A valid empty world has no findings
 - **WHEN** `checkInvariants` is called with a before-world and the output of stepping it
@@ -72,6 +73,14 @@ Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-10, INV-18, INV-21, I
 #### Scenario: A matching capability allocation passes
 - **WHEN** a pool supplies `100` and its consumers are granted `100` in total
 - **THEN** the findings contain no INV-05
+
+#### Scenario: A blocked-but-processing producer is reported
+- **WHEN** a producer is `processing` with a block reason other than `throughput_throttled`
+- **THEN** the findings contain INV-22
+
+#### Scenario: A consistent producer passes
+- **WHEN** a producer is `processing` with no block reasons
+- **THEN** the findings contain no INV-22
 
 ### Requirement: Clone-run harness
 `cloneRun(world, registry, input)` SHALL clone the world, step the original and the clone with the same input, and report success only when their state hashes, events, and outcomes are identical (INV-17).

@@ -24,8 +24,16 @@
           "required": ["policy", "outputs"],
           "properties": {
             "policy": {
-              "const": "infinite_rate",
-              "type": "string"
+              "anyOf": [
+                {
+                  "const": "infinite_rate",
+                  "type": "string"
+                },
+                {
+                  "const": "finite_deposit",
+                  "type": "string"
+                }
+              ]
             },
             "outputs": {
               "type": "array",
@@ -44,6 +52,10 @@
                   }
                 }
               }
+            },
+            "initial_quantity": {
+              "minimum": 0,
+              "type": "integer"
             }
           }
         },

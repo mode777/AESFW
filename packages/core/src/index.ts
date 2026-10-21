@@ -98,6 +98,29 @@ export type {
   CapabilityScope,
   CapabilitySupply,
 } from './sim/capabilities/index.js';
+export {
+  PENDING_OUTPUT_KEY,
+  advanceProcesses,
+  advanceSource,
+  commitProduction,
+  effectiveDuration,
+  evaluatePreconditions,
+  planInputs,
+  planOutputs,
+  recipeOf,
+  reserveProductionIO,
+  staticBlockReasons,
+} from './sim/production/index.js';
+export type {
+  BlockReason,
+  ItemAmount,
+  Producer,
+  ProducerState,
+  RecipeMode,
+  RecipeSpec,
+  ResourceSource,
+  SourceOutput,
+} from './sim/production/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { createEmptyRegistry } from './registry/types.js';

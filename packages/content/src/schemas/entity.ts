@@ -12,8 +12,9 @@ import { IdSchema, InventoryRefSchema, RateRefSchema } from './common.js';
 
 const ResourceSourceSchema = Type.Object(
   {
-    policy: Type.Union([Type.Literal('infinite_rate')]),
+    policy: Type.Union([Type.Literal('infinite_rate'), Type.Literal('finite_deposit')]),
     outputs: Type.Array(RateRefSchema),
+    initial_quantity: Type.Optional(Type.Integer({ minimum: 0 })),
   },
   { additionalProperties: false },
 );

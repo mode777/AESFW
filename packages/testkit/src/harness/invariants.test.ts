@@ -305,3 +305,56 @@ describe('[VER-6] capability invariants', () => {
     );
   });
 });
+
+describe('[VER-6] producer invariants', () => {
+  const buildWorld = (state: 'processing' | 'blocked', blockReasons: readonly string[]) =>
+    world()
+      .store('producer', ids.entityId(1), {
+        recipes: [],
+        recipe: null,
+        processSlots: 1,
+        location: null,
+        inputInventory: null,
+        outputInventory: null,
+        state,
+        blockReasons,
+        progress: 0,
+        inputReservations: [],
+        capacityReservations: [],
+      })
+      .build();
+
+  it('[INV-22] a processing producer with a block reason is reported', () => {
+    const working = buildWorld('processing', ['missing_input']);
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: {},
+    };
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).toContain(
+      'INV-22',
+    );
+  });
+
+  it('[INV-22] a consistent producer passes', () => {
+    const working = buildWorld('processing', []);
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: {},
+    };
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).not.toContain(
+      'INV-22',
+    );
+  });
+});

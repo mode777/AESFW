@@ -16,6 +16,7 @@ import {
 } from '@aesfw/core';
 import type { Inventory, Registry, TickOutput } from '@aesfw/core';
 import type { CapabilityConsumer, CapabilityProvider } from '@aesfw/core';
+import type { Producer } from '@aesfw/core';
 
 type World = core.World;
 
@@ -183,6 +184,22 @@ const checkCapabilityAllocation = (world: World, findings: InvariantFinding[]): 
   }
 };
 
+const checkProducerConsistency = (world: World, findings: InvariantFinding[]): void => {
+  const store = world.stores.get<Producer>('producer');
+  for (const id of store.ids()) {
+    const producer = store.get(id) as Producer | null | undefined;
+    if (producer == null) continue;
+    if (producer.state !== 'processing') continue;
+    const invalid = producer.blockReasons.filter((reason) => reason !== 'throughput_throttled');
+    if (invalid.length > 0) {
+      findings.push({
+        id: 'INV-22',
+        message: `producer ${id} is processing with block reasons ${invalid.join(',')}`,
+      });
+    }
+  }
+};
+
 const checkConservation = (
   before: World,
   output: TickOutput,
@@ -245,6 +262,7 @@ export function checkInvariants(
   checkReservationsWithinStored(output.world, findings);
   checkCapacity(output.world, findings);
   checkCapabilityAllocation(output.world, findings);
+  checkProducerConsistency(output.world, findings);
   checkConservation(before, output, findings);
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);
