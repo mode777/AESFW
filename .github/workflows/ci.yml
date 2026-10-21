@@ -33,8 +33,9 @@ jobs:
         run: pnpm lint
 
       # VER-15.3 stage: dependency rules (dependency-cruiser)
-      # Owner: add-purity-and-boundary-guardrails (roadmap 0.2) - inserts
-      # `pnpm lint:deps` here after lint.
+      # Owned by add-purity-and-boundary-guardrails (roadmap 0.2).
+      - name: Dependency rules
+        run: pnpm depcruise
 
       # VER-15.3 stage: type-check (tsc --build)
       - name: Type-check

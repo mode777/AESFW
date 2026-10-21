@@ -5,6 +5,10 @@ import { defineConfig } from 'vitest/config';
 const repoRoot = dirname(fileURLToPath(import.meta.url));
 const pkgDir = (...segments: string[]) => resolve(repoRoot, ...segments);
 
+/** Pure-package projects run with the ambient-API traps of TDS-5.5 (design
+ * D4); shell and reference projects keep stock globals. */
+const PURE_PACKAGES = new Set(['core', 'content', 'protocol', 'app', 'testkit']);
+
 const packageProject = (name: string, dir: string) => ({
   test: {
     name,
@@ -12,6 +16,7 @@ const packageProject = (name: string, dir: string) => ({
     environment: 'node' as const,
     include: ['src/**/*.test.ts'],
     passWithNoTests: true,
+    ...(PURE_PACKAGES.has(name) ? { setupFiles: [pkgDir('tools/vitest.purity-setup.ts')] } : {}),
   },
 });
 

@@ -505,9 +505,10 @@ Turning journaling or hashing on or off MUST NOT change authoritative state.
 runPhases(world: World, registry: Registry, phases: readonly PhaseId[], input: TickInput): TickOutput;
 stores(world: World): ComponentStores;        // direct store access for test setup
 phaseTable: readonly PhaseDescriptor[];       // for introspection and documentation tests
+deepFreeze<T>(value: T): T;                   // deep-freeze definition data for test builds
 ```
 
-`runPhases` runs only the listed phases, in canonical order, inside one tick. It makes every system testable on its own (06, Section 5).
+`runPhases` runs only the listed phases, in canonical order, inside one tick. It makes every system testable on its own (06, Section 5). `deepFreeze` is exported from `@aesfw/core/testing` from roadmap row 0.2 onward; the registry deep freeze of Sections 5.2 and 5.5 uses it.
 
 ---
 
