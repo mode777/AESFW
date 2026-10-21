@@ -18,12 +18,14 @@ const PACKAGES = ['core', 'content', 'protocol', 'app', 'testkit', 'host-web', '
 /** Declared subpath exports per package (besides the package root). */
 const SUBPATH_ENTRIES = {
   core: ['testing'],
+  testkit: ['scenario'],
   'host-web': ['worker', 'client'],
 };
 
 /** Entry file paths per package, relative to the package directory. */
 const ENTRY_FILES = {
   core: '(src|dist)/(index|testing)\\.(d\\.)?[cm]?[jt]sx?$',
+  testkit: '(src|dist)/(index|scenario/index)\\.(d\\.)?[cm]?[jt]sx?$',
   'host-web': '(src|dist)/(index|worker/index|client/index)\\.(d\\.)?[cm]?[jt]sx?$',
 };
 

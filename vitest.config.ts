@@ -29,6 +29,7 @@ export default defineConfig({
       '@aesfw/content': pkgDir('packages/content/src/index.ts'),
       '@aesfw/protocol': pkgDir('packages/protocol/src/index.ts'),
       '@aesfw/app': pkgDir('packages/app/src/index.ts'),
+      '@aesfw/testkit/scenario': pkgDir('packages/testkit/src/scenario/index.ts'),
       '@aesfw/testkit': pkgDir('packages/testkit/src/index.ts'),
       '@aesfw/host-web/worker': pkgDir('packages/host-web/src/worker/index.ts'),
       '@aesfw/host-web/client': pkgDir('packages/host-web/src/client/index.ts'),

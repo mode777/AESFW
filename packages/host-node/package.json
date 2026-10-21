@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Node CLI host: validate, run, replay, bench.",
+  "bin": {
+    "aesfw": "./dist/bin.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,7 +20,8 @@
     "@aesfw/app": "workspace:*",
     "@aesfw/content": "workspace:*",
     "@aesfw/protocol": "workspace:*",
-    "@aesfw/testkit": "workspace:*"
+    "@aesfw/testkit": "workspace:*",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@types/node": "~22.20.5"
