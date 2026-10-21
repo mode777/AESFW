@@ -16,6 +16,7 @@
     "lint": "eslint . && node tools/lint-theme-free.mjs",
     "depcruise": "depcruise packages reference",
     "test": "vitest run",
+    "test:property": "vitest run \"**/*.prop.test.ts\"",
     "verify": "pnpm format:check && pnpm lint && pnpm depcruise && pnpm type-check && pnpm test"
   },
   "devDependencies": {

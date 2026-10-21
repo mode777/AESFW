@@ -48,7 +48,10 @@ jobs:
         run: pnpm test
 
       # VER-15.3 stage: property tests (L5, PR budget)
-      # Owner: add-fixed-point-arithmetic (0.3) and add-deterministic-primitives (0.4).
+      # Activated by add-fixed-point-arithmetic (roadmap 0.3); extended by
+      # add-deterministic-primitives (0.4) and later property owners.
+      - name: Property tests
+        run: pnpm test:property
 
       # VER-15.3 stage: scenario tests (L6 goldens)
       # Owner: add-golden-basic-loop (1.15) and later scenario rows.

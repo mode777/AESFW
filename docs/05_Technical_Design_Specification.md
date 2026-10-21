@@ -279,6 +279,10 @@ Rules:
 - `Math.floor(a / b)` is exact for safe integers and MAY be used inside `fx`. Outside `fx`, raw `/` on authoritative values is a lint error.
 - An overflow is a framework or content defect, not a game state. It throws `ArithmeticOverflow` (an `InvariantViolation`, Section 23). Content validation (03 §11.6) SHOULD reject configurations whose bounded maxima can overflow.
 - Rounding defaults to `floor` for amounts taken from a pool or produced, and `ceil` for durations (02 §14.1 traversal time). Every other rounding choice is named at the call site.
+- `half_up` rounds to the nearest integer and rounds a tie away from zero (Java `RoundingMode.HALF_UP`).
+- `fx.div` and `fx.mulDiv` throw `InvariantViolation` code `division_by_zero` on a zero divisor; the condition evaluator of Section 14.1 guards this case and yields 0 plus a diagnostic counter instead.
+
+(Amendments: the last two bullets are A-02, added by roadmap row 0.3; the condition-evaluator clause is a clarification, not a conflict.)
 
 ### 6.3 Proportional allocation (algorithm `alloc-v1`)
 
