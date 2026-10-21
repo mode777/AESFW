@@ -65,6 +65,10 @@ importers:
       yaml:
         specifier: 2.9.1
         version: 2.9.1
+    devDependencies:
+      '@types/node':
+        specifier: ~22.20.5
+        version: 22.20.5
 
   packages/core:
     devDependencies:

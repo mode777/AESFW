@@ -1,0 +1,60 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "need_categories", "outputs"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "consumption_factor": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "need_categories": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["resource", "scope", "rate_per_population_per_tick"],
+        "properties": {
+          "resource": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "const": "location",
+                "type": "string"
+              },
+              {
+                "const": "owner",
+                "type": "string"
+              },
+              {
+                "const": "global",
+                "type": "string"
+              }
+            ]
+          },
+          "rate_per_population_per_tick": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "satisfaction_curve": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

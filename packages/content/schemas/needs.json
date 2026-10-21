@@ -1,0 +1,84 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "category", "applies_to", "demand", "fulfillment"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "category": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "applies_to": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "demand": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["type", "resource", "quantity_per_population_per_tick"],
+          "properties": {
+            "type": {
+              "const": "resource_consumption",
+              "type": "string"
+            },
+            "resource": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "quantity_per_population_per_tick": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "inventory_access_purpose": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["type", "resource", "minimum_quantity"],
+          "properties": {
+            "type": {
+              "const": "resource_availability",
+              "type": "string"
+            },
+            "resource": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minimum_quantity": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "fulfillment": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["measurement_window_ticks", "target_ratio"],
+      "properties": {
+        "measurement_window_ticks": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "target_ratio": {
+          "minimum": 0,
+          "maximum": 1000,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

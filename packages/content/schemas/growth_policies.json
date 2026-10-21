@@ -1,0 +1,45 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "interval_ticks"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "interval_ticks": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "increase": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["quantity", "condition"],
+      "properties": {
+        "quantity": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "condition": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "decrease": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["quantity", "condition"],
+      "properties": {
+        "quantity": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "condition": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    }
+  }
+}

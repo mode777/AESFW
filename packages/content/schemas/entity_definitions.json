@@ -1,0 +1,116 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "components"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "includes": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "components": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "resource_source": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["policy", "outputs"],
+          "properties": {
+            "policy": {
+              "const": "infinite_rate",
+              "type": "string"
+            },
+            "outputs": {
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["resource", "quantity_per_tick"],
+                "properties": {
+                  "resource": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "quantity_per_tick": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "producer": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["recipes", "process_slots", "input_inventory", "output_inventory"],
+          "properties": {
+            "recipes": {
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "process_slots": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "input_inventory": {
+              "minLength": 1,
+              "pattern": "^(?:location\\.)?[a-z0-9_]+$",
+              "type": "string"
+            },
+            "output_inventory": {
+              "minLength": 1,
+              "pattern": "^(?:location\\.)?[a-z0-9_]+$",
+              "type": "string"
+            }
+          }
+        },
+        "residence": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["population_tier", "capacity", "growth_policy"],
+          "properties": {
+            "population_tier": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "capacity": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "initial_population": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "growth_policy": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        },
+        "storage_access": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["inventory"],
+          "properties": {
+            "inventory": {
+              "minLength": 1,
+              "pattern": "^(?:location\\.)?[a-z0-9_]+$",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

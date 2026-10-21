@@ -1,0 +1,85 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "mode", "duration_ticks", "inputs", "outputs"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "mode": {
+      "anyOf": [
+        {
+          "const": "batch",
+          "type": "string"
+        },
+        {
+          "const": "continuous",
+          "type": "string"
+        }
+      ]
+    },
+    "duration_ticks": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["resource", "quantity"],
+        "properties": {
+          "resource": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["resource", "quantity"],
+        "properties": {
+          "resource": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "capability_requirements": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["resource", "quantity"],
+        "properties": {
+          "resource": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "conditions": {
+      "minLength": 1,
+      "type": "string"
+    }
+  }
+}

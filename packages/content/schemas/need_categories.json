@@ -1,0 +1,61 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "evaluation", "members"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "evaluation": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "const": "all",
+              "type": "string"
+            },
+            {
+              "const": "weighted_score",
+              "type": "string"
+            }
+          ]
+        },
+        "required_score": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "required_score_by_tier": {
+          "type": "object",
+          "patternProperties": {
+            "^(.*)$": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["need", "weight"],
+        "properties": {
+          "need": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "weight": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}

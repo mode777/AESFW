@@ -1,0 +1,101 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "quantity", "storage", "transportable"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "complexity": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "quantity": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["precision", "scale"],
+      "properties": {
+        "precision": {
+          "anyOf": [
+            {
+              "const": "integer",
+              "type": "string"
+            },
+            {
+              "const": "fixed",
+              "type": "string"
+            }
+          ]
+        },
+        "scale": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      }
+    },
+    "storage": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["policy", "scope"],
+      "properties": {
+        "policy": {
+          "anyOf": [
+            {
+              "const": "normal",
+              "type": "string"
+            },
+            {
+              "const": "recomputed",
+              "type": "string"
+            }
+          ]
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "const": "inventory",
+              "type": "string"
+            },
+            {
+              "const": "location",
+              "type": "string"
+            },
+            {
+              "const": "owner",
+              "type": "string"
+            },
+            {
+              "const": "global",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "transportable": {
+      "type": "boolean"
+    },
+    "substitutes": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "allow_negative": {
+      "type": "boolean"
+    },
+    "presentation_key": {
+      "minLength": 1,
+      "type": "string"
+    }
+  }
+}
