@@ -1,0 +1,160 @@
+import { ids } from '@aesfw/core';
+import { describe, expect, it } from 'vitest';
+
+import type { RawDefinitions } from '../schemas/validate.js';
+import { buildRegistry } from './build.js';
+import { checksum } from './normalize.js';
+
+const resource = (id: string, tags: readonly string[] = ['storable']) => ({
+  id,
+  tags,
+  quantity: { precision: 'fixed', scale: 1000 },
+  storage: { policy: 'normal', scope: 'inventory' },
+  transportable: true,
+});
+
+const recipe = (id: string, inputs: readonly string[], capabilities: readonly string[] = []) => ({
+  id,
+  mode: 'batch',
+  duration_ticks: 10,
+  inputs: inputs.map((r) => ({ resource: r, quantity: 1000 })),
+  outputs: [],
+  capability_requirements: capabilities.map((r) => ({ resource: r, quantity: 1 })),
+});
+
+const producerEntity = (id: string, recipes: readonly string[]) => ({
+  id,
+  components: {
+    producer: {
+      recipes,
+      process_slots: 1,
+      input_inventory: 'location.shared',
+      output_inventory: 'location.shared',
+    },
+  },
+});
+
+const codes = (diagnostics: readonly { readonly code: string }[]) =>
+  diagnostics.map((diagnostic) => diagnostic.code);
+
+describe('[TDS-7] handle assignment', () => {
+  it('[TDS-7] handles are dense and ascending by ID', () => {
+    const { registry } = buildRegistry({
+      resources: [resource('test.resource.b'), resource('test.resource.a')],
+    });
+    expect(registry.handleOf('resource', ids.stringId('test.resource.a'))).toBe(0);
+    expect(registry.handleOf('resource', ids.stringId('test.resource.b'))).toBe(1);
+  });
+
+  it('[TDS-7] unknown lookups return null', () => {
+    const { registry } = buildRegistry({ resources: [resource('test.resource.a')] });
+    expect(registry.stringIdOf('resource', ids.definitionHandle(99))).toBeNull();
+    expect(registry.handleOf('resource', ids.stringId('test.resource.absent'))).toBeNull();
+  });
+
+  it('[TDS-7] handles are independent of input order', () => {
+    const forward = buildRegistry({
+      resources: [resource('test.resource.a'), resource('test.resource.b')],
+    }).registry;
+    const backward = buildRegistry({
+      resources: [resource('test.resource.b'), resource('test.resource.a')],
+    }).registry;
+    expect(forward.handleOf('resource', ids.stringId('test.resource.b'))).toBe(
+      backward.handleOf('resource', ids.stringId('test.resource.b')),
+    );
+  });
+});
+
+describe('[CONT-11.3] reference resolution', () => {
+  it('[CONT-11.3] a resolvable reference is accepted', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.a')],
+      recipes: [recipe('test.recipe.a', ['test.resource.a'])],
+    });
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('[CONT-11.3] an absent reference is reported', () => {
+    const { diagnostics } = buildRegistry({
+      recipes: [recipe('test.recipe.a', ['test.resource.absent'])],
+    });
+    expect(codes(diagnostics)).toEqual(['unresolved_reference']);
+    expect(diagnostics[0]?.args['reference']).toBe('test.resource.absent');
+  });
+
+  it('[CONT-11.3] a wrong-type reference is reported', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.a')],
+      entity_definitions: [producerEntity('test.entity.producer', ['test.resource.a'])],
+    });
+    expect(codes(diagnostics)).toEqual(['reference_type_mismatch']);
+  });
+
+  it('[CONT-11.3] a capability requirement must be a capability', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.a'), resource('test.capability.tier_1', ['capability'])],
+      recipes: [recipe('test.recipe.a', ['test.resource.a'], ['test.resource.a'])],
+    });
+    expect(codes(diagnostics)).toEqual(['invalid_reference_scope']);
+  });
+});
+
+describe('[TDS-20.2] indexes', () => {
+  it('[TDS-20.2] the ID index finds a compiled definition', () => {
+    const { registry } = buildRegistry({ resources: [resource('test.resource.a')] });
+    const handle = registry.handleOf('resource', ids.stringId('test.resource.a'));
+    const compiled = handle === null ? null : registry.definitionOf('resource', handle);
+    expect(compiled?.id).toBe('test.resource.a');
+    expect(compiled?.handle).toBe(0);
+  });
+
+  it('[TDS-20.2] the tag index groups resources by tag', () => {
+    const { registry } = buildRegistry({
+      resources: [
+        resource('test.resource.a', ['storable']),
+        resource('test.resource.b', ['storable']),
+        resource('test.capability.tier_1', ['capability']),
+      ],
+    });
+    expect(registry.tagsOf(ids.stringId('test.resource.a'))).toEqual(['storable']);
+    const capability = registry.handleOf('resource', ids.stringId('test.capability.tier_1'));
+    expect(capability).not.toBeNull();
+  });
+});
+
+describe('[TDS-19.3] normalization and checksum', () => {
+  const definitions: RawDefinitions = {
+    resources: [resource('test.resource.a'), resource('test.resource.b')],
+  };
+
+  it('[TDS-19.3] the checksum is independent of file order', () => {
+    const forward = buildRegistry(definitions).definitions;
+    const backward = buildRegistry({
+      resources: [resource('test.resource.b'), resource('test.resource.a')],
+    }).definitions;
+    expect(checksum(forward)).toBe(checksum(backward));
+  });
+
+  it('[TDS-19.3] the checksum changes with definition data', () => {
+    const before = buildRegistry(definitions).definitions;
+    const changed = buildRegistry({
+      resources: [
+        resource('test.resource.a'),
+        { ...resource('test.resource.b'), transportable: false },
+      ],
+    }).definitions;
+    expect(checksum(before)).not.toBe(checksum(changed));
+  });
+});
+
+describe('[TDS-7] frozen registry', () => {
+  it('[TDS-7] the registry is frozen', () => {
+    const { registry } = buildRegistry({ resources: [resource('test.resource.a')] });
+    const compiled = registry.definitionsOf('resource')[0];
+    expect(compiled).toBeDefined();
+    expect(Object.isFrozen(compiled?.data)).toBe(true);
+    expect(() => {
+      (compiled?.data as { mutated?: boolean }).mutated = true;
+    }).toThrow();
+  });
+});
