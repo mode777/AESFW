@@ -79,6 +79,17 @@ pnpm aesfw validate reference/content/ref.tier --strict
 
 If a command does not exist yet, check the roadmap milestone that introduces it. Do not invent ad-hoc substitutes.
 
+### Browser checks run on the build/verification box
+
+`pnpm test:browser` needs a Chromium that the development container cannot
+launch: it is Alpine/musl and Playwright's Chromium is a glibc build, so the
+browser exits with missing-symbol errors. Run browser checks (`pnpm test:browser`,
+and later Playwright client flows) on the Linux build/verification box over SSH,
+or let CI's L7 stage run them. A local launch failure is an environment
+limitation, not a test failure — do not disable or rewrite the browser test to
+work around it. The Node side of the determinism matrix is `pnpm test` and runs
+locally.
+
 ## Coding conventions (summary of 05 §25)
 
 - TypeScript `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. No `any`.
