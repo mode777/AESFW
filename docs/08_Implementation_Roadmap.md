@@ -133,7 +133,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 
 | # | Change ID | Capability | Scope | Sources | Depends on | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1.1 | `add-content-package-loader` | content/package-loading | `PackageSource`, manifests, dependency versions, strict YAML parsing, diagnostics model | CONT-2, CONT-3, CONT-12, TDS-20.1, TDS-20.3 | 0.4 | M |
+| 1.1 | `add-content-package-loader` | content/package-loading | `PackageSource`, manifests, dependency versions, strict YAML parsing, diagnostics model ✓ archived 2026-10-21 | CONT-2, CONT-3, CONT-12, TDS-20.1, TDS-20.3 | 0.4 | M |
 | 1.2 | `add-core-definition-schemas` | content/schemas | TypeBox schemas for resource (incl. capability), abstract location template, recipe, entity components (source, producer, residence, storage access), population tier, need (resource consumption and availability), need category, growth policy; ID rules; JSON Schema export | CONT-4, CONT-6.1, CONT-6.2, CONT-6.4, CONT-6.7–6.11, CONT-6.13, CONT-6.14, TDS-20.4 | 1.1 | L |
 | 1.3 | `add-definition-composition` | content/composition | includes, merge operations, cycle detection; property P-11 | CONT-5 | 1.2 | S |
 | 1.4 | `add-registry-compilation` | content/registry | reference resolution, handle assignment, indexes, normalization, checksum, frozen `Registry`; property P-12 | CONT-11.3, CONT-12, TDS-7, TDS-20.2 | 1.3, 0.5 | M |
