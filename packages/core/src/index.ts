@@ -122,8 +122,9 @@ export type {
   SourceOutput,
 } from './sim/production/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
-export { isPopulationGroup, isResidence } from './sim/population/index.js';
+export { isPopulationGroup, isResidence, updatePopulation } from './sim/population/index.js';
 export type { PopulationGroup, PopulationOutput, Residence } from './sim/population/index.js';
+export type { Growth, GrowthCondition, GrowthStep } from './sim/population/index.js';
 export { calculatePopulationDemand, deliverNeeds, updateSatisfaction } from './sim/needs/index.js';
 export type {
   CategoryMember,

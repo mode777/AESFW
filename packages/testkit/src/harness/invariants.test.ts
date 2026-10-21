@@ -397,3 +397,40 @@ describe('[VER-6] satisfaction invariants', () => {
     );
   });
 });
+
+describe('[VER-6] population invariants', () => {
+  const buildWorld = (count: number, capacity: number) =>
+    world()
+      .store('populationGroup', ids.entityId(1), {
+        tier: ids.definitionHandle(0),
+        count,
+        capacity,
+      })
+      .build();
+
+  const outputOf = (working: core.World, before: core.World): TickOutput => ({
+    world: working,
+    tick: ids.tick(before.tick + 1),
+    events: [],
+    outcomes: [],
+    journal: null,
+    hash: null,
+    metrics: {},
+  });
+
+  it('[INV-07] a population above capacity is reported', () => {
+    const working = buildWorld(20, 10);
+    const before = cloneWorld(working);
+    expect(
+      checkInvariants(before, outputOf(working, before), registry).map((finding) => finding.id),
+    ).toContain('INV-07');
+  });
+
+  it('[INV-07] a bounded population passes', () => {
+    const working = buildWorld(5, 10);
+    const before = cloneWorld(working);
+    expect(
+      checkInvariants(before, outputOf(working, before), registry).map((finding) => finding.id),
+    ).not.toContain('INV-07');
+  });
+});
