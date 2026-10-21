@@ -1,0 +1,12 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Test and coverage output
+coverage/
+.vite/
+
+# Editor and OS noise
+.DS_Store
+*.log

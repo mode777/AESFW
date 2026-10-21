@@ -1,0 +1,16 @@
+{
+  "name": "@aesfw/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Client-facing DTO types and codecs (doc 04 in TypeScript). Zero runtime dependencies.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}

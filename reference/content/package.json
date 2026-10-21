@@ -1,0 +1,10 @@
+{
+  "name": "@aesfw-ref/content",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference implementation content: data-only packages (ref.tier, ref.tier.presentation).",
+  "files": [
+    "content"
+  ]
+}

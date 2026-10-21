@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/content" },
+    { "path": "packages/protocol" },
+    { "path": "packages/app" },
+    { "path": "packages/testkit" },
+    { "path": "packages/host-web" },
+    { "path": "packages/host-node" },
+    { "path": "reference/client-web" }
+  ]
+}

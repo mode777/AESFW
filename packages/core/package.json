@@ -1,0 +1,16 @@
+{
+  "name": "@aesfw/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Simulation kernel: world state, fixed-point arithmetic, tick pipeline (theme-free).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}

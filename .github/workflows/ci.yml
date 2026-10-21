@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pipeline:
+    name: VER-15.3 pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Toolchain: pnpm from packageManager (corepack pin), Node LTS >= 22 (TDS-2)
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # VER-15.3 stage 1: install (frozen lockfile)
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      # VER-15.3 stage 2: format check
+      - name: Format check
+        run: pnpm format:check
+
+      # VER-15.3 stage 3: lint
+      # Purity restrictions, theme-free lint, and ambient-API traps extend this
+      # stage via add-purity-and-boundary-guardrails (roadmap 0.2).
+      - name: Lint
+        run: pnpm lint
+
+      # VER-15.3 stage: dependency rules (dependency-cruiser)
+      # Owner: add-purity-and-boundary-guardrails (roadmap 0.2) - inserts
+      # `pnpm lint:deps` here after lint.
+
+      # VER-15.3 stage: type-check (tsc --build)
+      - name: Type-check
+        run: pnpm type-check
+
+      # VER-15.3 stage: unit tests (L0-L4, L8, L9)
+      # Per-package coverage thresholds (VER-15.1) activate from the first
+      # milestone in which each package ships features (roadmap 0.3 and later).
+      - name: Unit tests
+        run: pnpm test
+
+      # VER-15.3 stage: property tests (L5, PR budget)
+      # Owner: add-fixed-point-arithmetic (0.3) and add-deterministic-primitives (0.4).
+
+      # VER-15.3 stage: scenario tests (L6 goldens)
+      # Owner: add-golden-basic-loop (1.15) and later scenario rows.
+
+      # VER-15.3 stage: Chromium determinism replay (L7)
+      # Owner: add-browser-determinism-check (0.9).
+
+      # VER-15.3 stage: content validation of reference packages (strict)
+      # Owner: add-content-package-loader (1.1) and later content rows.
+
+      # VER-15.3 stage: build client, then L10 smoke
+      # Owner: add-client-shell (2.8) and add-client-smoke-e2e (2.10).
+
+      # VER-15.3 stage: trace report (warning until M10, then error per 06 3.3)
+      # Owner: add-traceability-tool (0.8).

@@ -1,0 +1,20 @@
+{
+  "name": "@aesfw/content",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Content pipeline: package loading, schemas, validation, compilation (theme-free).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@sinclair/typebox": "0.34.52",
+    "yaml": "2.9.1"
+  }
+}

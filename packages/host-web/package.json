@@ -1,0 +1,25 @@
+{
+  "name": "@aesfw/host-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Web Worker host (./worker) and main-thread session client (./client).",
+  "exports": {
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "default": "./dist/worker/index.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@aesfw/app": "workspace:*",
+    "@aesfw/content": "workspace:*",
+    "@aesfw/protocol": "workspace:*"
+  }
+}

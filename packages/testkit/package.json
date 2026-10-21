@@ -1,0 +1,27 @@
+{
+  "name": "@aesfw/testkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Test infrastructure: builders, invariant checker, harnesses, generators (theme-free).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@aesfw/app": "workspace:*",
+    "@aesfw/content": "workspace:*",
+    "@aesfw/core": "workspace:*",
+    "@aesfw/protocol": "workspace:*",
+    "fast-check": "4.10.2"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.5",
+    "vitest": "5.0.5"
+  }
+}

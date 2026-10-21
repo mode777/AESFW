@@ -1,0 +1,43 @@
+name: Nightly
+
+on:
+  schedule:
+    # 03:00 UTC daily
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    name: VER-15.3 nightly pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # VER-15.3 install (frozen lockfile), then the currently available stages.
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm type-check
+
+      - name: Unit tests
+        run: pnpm test
+
+      # Nightly extensions of VER-15.3, added by their owning roadmap changes:
+      # extended property runs (L5) - add-fixed-point-arithmetic (0.3) and later
+      # determinism replay on all engines (L7) - add-browser-determinism-check (0.9)
+      # full client end-to-end suite (L10) - add-client-smoke-e2e (2.10)
+      # benchmark trends (L11) - add-benchmark-harness (1.16)
+      # mutation testing (Stryker, non-gating until M12) - 06 15.2

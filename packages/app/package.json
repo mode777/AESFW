@@ -1,0 +1,21 @@
+{
+  "name": "@aesfw/app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Application layer: sessions, commands, projections, persistence codecs (theme-free).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@aesfw/content": "workspace:*",
+    "@aesfw/core": "workspace:*",
+    "@aesfw/protocol": "workspace:*"
+  }
+}
