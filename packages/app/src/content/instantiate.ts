@@ -10,6 +10,7 @@ import { allocateEntity, ids } from '@aesfw/core';
 import type {
   CapabilityConsumer,
   CategorySpec,
+  ConnectivityNode,
   DefinitionHandle,
   Growth,
   LocationHub,
@@ -153,6 +154,18 @@ const sourceFrom = (
       : {}),
     ...(condition === null ? {} : { condition }),
   };
+};
+
+const connectivityNodeFrom = (component: unknown): ConnectivityNode | null => {
+  const data = asRecord(component);
+  if (data === null) return null;
+  if (typeof data['requires'] === 'string') {
+    return { role: 'requirement', network: ids.stringId(data['requires']) };
+  }
+  if (typeof data['provides'] === 'string') {
+    return { role: 'provider', network: ids.stringId(data['provides']) };
+  }
+  return null;
 };
 
 const producerFrom = (
@@ -364,6 +377,13 @@ export function instantiateContentEntities(world: World, registry: ContentRegist
       setDefinition();
       const growth = growthFrom(registry, component['growth_policy']);
       if (growth !== null) world.stores.get<Growth>('growth').set(entity, growth);
+    }
+    if (components['connectivity'] !== undefined) {
+      const node = connectivityNodeFrom(components['connectivity']);
+      if (node !== null) {
+        world.stores.get<ConnectivityNode>('connectivityNode').set(entity, node);
+        setDefinition();
+      }
     }
   }
 }

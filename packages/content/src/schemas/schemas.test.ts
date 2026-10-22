@@ -284,6 +284,44 @@ describe('[CONT-6.8][CONT-6.9] entity definition schema', () => {
       }),
     ).toBe(false);
   });
+
+  it('[CONT-6.8] a connectivity requirement component validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.refiner',
+        components: { connectivity: { requires: 'test.connectivity.hub' } },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] a connectivity provider component validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.connector',
+        components: { connectivity: { provides: 'test.connectivity.hub' } },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] a connectivity component with both roles is rejected', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.connector',
+        components: {
+          connectivity: { requires: 'test.connectivity.hub', provides: 'test.connectivity.hub' },
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('[CONT-6.8] a connectivity component with neither role is rejected', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.connector',
+        components: { connectivity: {} },
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('[CONT-6.10] population tier schema', () => {

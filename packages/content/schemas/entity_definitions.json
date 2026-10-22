@@ -305,6 +305,32 @@
               ]
             }
           }
+        },
+        "connectivity": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["requires"],
+              "properties": {
+                "requires": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["provides"],
+              "properties": {
+                "provides": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              }
+            }
+          ]
         }
       }
     }

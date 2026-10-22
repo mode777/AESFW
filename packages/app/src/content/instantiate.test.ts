@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, instantiateWorld, readWorld, ids } from '@aesfw/core';
-import type { ResourceSource, World } from '@aesfw/core';
+import type { ConnectivityNode, ResourceSource, World } from '@aesfw/core';
 import type { ContentRegistry } from '@aesfw/content';
 import { instantiateContentEntities } from './instantiate.js';
 
@@ -180,5 +180,70 @@ describe('[CONT-6.8] source entity instantiation', () => {
       'outputs',
       'policy',
     ]);
+  });
+});
+
+const connectivityRegistry: ContentRegistry = {
+  stringIdOf: () => null,
+  handleOf: () => null,
+  definitionOf: () => null,
+  definitionsOf: (type) =>
+    type === 'entity'
+      ? [
+          {
+            id: 'test.entity.refiner',
+            handle: ids.definitionHandle(9),
+            type: 'entity',
+            data: { components: { connectivity: { requires: 'test.connectivity.hub' } } },
+          },
+          {
+            id: 'test.entity.connector',
+            handle: ids.definitionHandle(10),
+            type: 'entity',
+            data: { components: { connectivity: { provides: 'test.connectivity.hub' } } },
+          },
+          {
+            id: 'test.entity.plain',
+            handle: ids.definitionHandle(11),
+            type: 'entity',
+            data: {
+              components: {
+                resource_source: {
+                  policy: 'infinite_rate',
+                  outputs: [{ resource: 'test.resource.a', quantity_per_tick: 10 }],
+                },
+              },
+            },
+          },
+        ]
+      : [],
+  tagsOf: () => [],
+};
+
+const connectivityNodes = (world: World): readonly (ConnectivityNode | undefined)[] => {
+  const store = world.stores.get<ConnectivityNode>('connectivityNode');
+  return store.ids().map((id) => store.get(id));
+};
+
+describe('[CONT-6.8] connectivity instantiation', () => {
+  it('[CONT-6.8][GDD-9.2] a requiring definition yields a requirement node', () => {
+    const nodes = connectivityNodes(instantiate(connectivityRegistry));
+    expect(nodes).toContainEqual({
+      role: 'requirement',
+      network: ids.stringId('test.connectivity.hub'),
+    });
+  });
+
+  it('[CONT-6.8][GDD-9.9] a providing definition yields a provider node', () => {
+    const nodes = connectivityNodes(instantiate(connectivityRegistry));
+    expect(nodes).toContainEqual({
+      role: 'provider',
+      network: ids.stringId('test.connectivity.hub'),
+    });
+  });
+
+  it('[CONT-6.8] a definition without connectivity yields no node', () => {
+    const nodes = connectivityNodes(instantiate(connectivityRegistry));
+    expect(nodes).toHaveLength(2);
   });
 });

@@ -1,8 +1,8 @@
 /**
  * The entity-definition schema and its components (CONT-6.8, CONT-6.9):
- * resource source, producer, residence, storage access, construction, and
- * placement. Capability, connectivity, maintenance, and lifecycle components
- * belong to later roadmap rows and are intentionally absent.
+ * resource source, producer, residence, storage access, construction,
+ * placement, and connectivity. Capability, maintenance, and lifecycle
+ * components belong to later roadmap rows and are intentionally absent.
  *
  * Source: CONT-6.8, CONT-6.9
  */
@@ -104,6 +104,11 @@ const PlacementSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const ConnectivitySchema = Type.Union([
+  Type.Object({ requires: IdSchema }, { additionalProperties: false }),
+  Type.Object({ provides: IdSchema }, { additionalProperties: false }),
+]);
+
 const ComponentsSchema = Type.Object(
   {
     resource_source: Type.Optional(ResourceSourceSchema),
@@ -112,6 +117,7 @@ const ComponentsSchema = Type.Object(
     storage_access: Type.Optional(StorageAccessSchema),
     construction: Type.Optional(ConstructionSchema),
     placement: Type.Optional(PlacementSchema),
+    connectivity: Type.Optional(ConnectivitySchema),
   },
   { additionalProperties: false },
 );
