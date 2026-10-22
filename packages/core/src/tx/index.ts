@@ -20,6 +20,7 @@ export {
 } from './ledger.js';
 export { createTransactionWriter } from './builder.js';
 export { releaseExpiredReservations } from './expire.js';
+export { resourceAllowsNegative, txEnvironmentFor } from './environment.js';
 export type {
   AccountRequest,
   AtomicBuilder,

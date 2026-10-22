@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, instantiateWorld, readWorld, ids } from '@aesfw/core';
-import type { ConnectivityNode, ResourceSource, World } from '@aesfw/core';
+import type { ConnectivityNode, ResourceSource, Residence, World } from '@aesfw/core';
 import type { ContentRegistry } from '@aesfw/content';
 import { instantiateContentEntities } from './instantiate.js';
 
@@ -245,5 +245,96 @@ describe('[CONT-6.8] connectivity instantiation', () => {
   it('[CONT-6.8] a definition without connectivity yields no node', () => {
     const nodes = connectivityNodes(instantiate(connectivityRegistry));
     expect(nodes).toHaveLength(2);
+  });
+});
+
+const TIER_HANDLE = ids.definitionHandle(20);
+const CURVE_HANDLE = ids.definitionHandle(21);
+
+const tierRegistry: ContentRegistry = {
+  stringIdOf: (type, handle2) => {
+    if (type === 'tier' && handle2 === TIER_HANDLE) return ids.stringId('test.tier.a');
+    if (type === 'curve' && handle2 === CURVE_HANDLE) return ids.stringId('test.curve.income');
+    return null;
+  },
+  handleOf: (type, id) => {
+    if (type === 'tier' && id === ids.stringId('test.tier.a')) return TIER_HANDLE;
+    if (type === 'curve' && id === ids.stringId('test.curve.income')) return CURVE_HANDLE;
+    return null;
+  },
+  definitionOf: (type, handle2) => {
+    if (type === 'tier' && handle2 === TIER_HANDLE) {
+      return {
+        id: 'test.tier.a',
+        handle: TIER_HANDLE,
+        type: 'tier',
+        data: {
+          consumption_factor: 1000,
+          outputs: [
+            { resource: 'test.capability.a', scope: 'location', rate_per_population_per_tick: 1 },
+            {
+              resource: 'test.resource.credits',
+              scope: 'owner',
+              rate_per_population_per_tick: 10,
+              satisfaction_curve: 'test.curve.income',
+            },
+          ],
+        },
+      };
+    }
+    if (type === 'curve' && handle2 === CURVE_HANDLE) {
+      return {
+        id: 'test.curve.income',
+        handle: CURVE_HANDLE,
+        type: 'curve',
+        data: {
+          type: 'piecewise_linear',
+          points: [
+            [0, 0],
+            [1000, 1000],
+          ],
+          extrapolation: 'clamp',
+        },
+      };
+    }
+    return null;
+  },
+  definitionsOf: (type) =>
+    type === 'entity'
+      ? [
+          {
+            id: 'test.entity.residence',
+            handle: ids.definitionHandle(30),
+            type: 'entity',
+            data: {
+              components: {
+                residence: { population_tier: 'test.tier.a', capacity: 10, initial_population: 4 },
+              },
+            },
+          },
+        ]
+      : [],
+  tagsOf: () => [],
+};
+
+describe('[GDD-11.3] income output instantiation', () => {
+  it('[GDD-11.3][TDS-20.2] a configured satisfaction_curve is resolved to its handle', () => {
+    const world = instantiate(tierRegistry);
+    const store = world.stores.get<Residence>('residence');
+    const residence = store.get(store.ids()[0] ?? ids.entityId(0));
+    expect(residence?.outputs).toEqual([
+      {
+        resource: null,
+        ratePerPopulationPerTick: 1,
+        scope: 'location',
+        satisfactionCurve: null,
+      },
+      {
+        resource: null,
+        ratePerPopulationPerTick: 10,
+        scope: 'owner',
+        satisfactionCurve: CURVE_HANDLE,
+      },
+    ]);
   });
 });

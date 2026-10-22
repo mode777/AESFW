@@ -270,7 +270,7 @@ const residenceFrom = (
           : record['scope'] === 'global'
             ? 'global'
             : 'location',
-      satisfactionCurve: null,
+      satisfactionCurve: handle(registry, 'curve', record['satisfaction_curve']),
     } as PopulationOutput;
   });
   const categories = asArray(tierData['need_categories'])

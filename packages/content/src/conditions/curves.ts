@@ -12,10 +12,10 @@ import { diag } from '../diagnostics/diagnostics.js';
 import type { JsonValue } from '../types.js';
 
 /** A curve type (CONT-8). */
-export type CurveType = 'constant' | 'piecewise_linear' | 'step' | 'lookup';
+export type CurveType = fx.CurveType;
 
 /** A curve extrapolation policy (CONT-8). */
-export type Extrapolation = 'clamp' | 'linear' | 'error';
+export type Extrapolation = fx.CurveExtrapolation;
 
 /** A compiled curve (TDS-14.4). */
 export interface CompiledCurve {
@@ -36,8 +36,6 @@ const EXTRAPOLATIONS: readonly Extrapolation[] = ['clamp', 'linear', 'error'];
 
 const isRecord = (value: JsonValue | undefined): value is { readonly [key: string]: JsonValue } =>
   value !== null && value !== undefined && typeof value === 'object' && !Array.isArray(value);
-
-const toInt = (value: number): number => value;
 
 const asPoint = (value: JsonValue | undefined): readonly [number, number] | null => {
   if (!Array.isArray(value) || value.length !== 2) return null;
@@ -84,22 +82,11 @@ export function compileCurve(definition: JsonValue): CompileCurveResult {
   };
 }
 
-const interpolate = (
-  left: readonly [number, number],
-  right: readonly [number, number],
-  input: number,
-): number => {
-  const deltaX = right[0] - left[0];
-  if (deltaX === 0) return right[1];
-  return (
-    left[1] + fx.mulDiv(toInt(right[1] - left[1]), toInt(input - left[0]), toInt(deltaX), 'floor')
-  );
-};
-
 /**
- * Evaluates a curve at `input` (TDS-14.4). Under the `error` policy an
- * out-of-domain input is clamped and a `curve_extrapolation_error` is appended
- * to `diagnostics`.
+ * Evaluates a curve at `input` (TDS-14.4). Evaluation delegates to the pure
+ * fixed-point evaluator in `@aesfw/core`; this wrapper appends the content
+ * diagnostic when the `error` extrapolation policy meets an out-of-domain
+ * input (the evaluator clamps).
  *
  * Source: CONT-8, TDS-14.4
  */
@@ -114,42 +101,12 @@ export function evaluateCurve(
   if (first === undefined || last === undefined) return 0;
   if (curve.type === 'constant') return first[1];
 
-  if (input <= first[0]) {
-    if (input === first[0]) return first[1];
-    if (curve.extrapolation === 'linear' && points.length >= 2) {
-      const second = points[1];
-      if (second !== undefined) return interpolate(first, second, input);
-    }
+  if (input < first[0] || input > last[0]) {
     if (curve.extrapolation === 'error') {
       diagnostics.push(
         diag('curve_extrapolation_error', { definition: curve.id, args: { input } }),
       );
     }
-    return first[1];
   }
-
-  if (input >= last[0]) {
-    if (input === last[0]) return last[1];
-    if (curve.extrapolation === 'linear' && points.length >= 2) {
-      const previous = points[points.length - 2];
-      if (previous !== undefined) return interpolate(previous, last, input);
-    }
-    if (curve.extrapolation === 'error') {
-      diagnostics.push(
-        diag('curve_extrapolation_error', { definition: curve.id, args: { input } }),
-      );
-    }
-    return last[1];
-  }
-
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const left = points[index];
-    const right = points[index + 1];
-    if (left === undefined || right === undefined) continue;
-    if (input >= left[0] && input <= right[0]) {
-      if (curve.type === 'piecewise_linear') return interpolate(left, right, input);
-      return left[1];
-    }
-  }
-  return last[1];
+  return fx.evaluateCompiledCurve(curve, input);
 }

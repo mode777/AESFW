@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { definitionHandle, entityId, ownerHandle, reservationId, tick } from '../ids/index.js';
 import { createEmptyRegistry } from '../registry/types.js';
+import type { Registry } from '../registry/types.js';
 import { stores } from '../testing.js';
 import { createWorld } from '../world/create.js';
 import type { OwnerState, World } from '../world/types.js';
 import { createTransactionWriter } from './builder.js';
+import { txEnvironmentFor } from './environment.js';
 import { quantityOf } from './inventory.js';
 import type { Inventory } from './inventory.js';
 import { findReservation } from './ledger.js';
@@ -587,6 +589,24 @@ describe('[GDD-7.5][ARCH-6.3] owner account', () => {
   it('[ARCH-6.3] an allowed negative balance succeeds', () => {
     const world = makeWorld({}, [makeOwner(0, [], [{ resource: res(0), amount: 100 }])]);
     const writer = createTransactionWriter(world, null, { allowNegative: () => true });
+    const result = writer.atomic((b) =>
+      b.account({ owner: ownerHandle(0), resource: res(0), delta: -200 }),
+    );
+    expect(result.ok).toBe(true);
+    expect(world.owners.owners[0]?.accounts).toEqual([{ resource: res(0), amount: -100 }]);
+  });
+
+  it('[GDD-7.5][TDS-12.2] an environment derived from content allows the negative balance', () => {
+    const world = makeWorld({}, [makeOwner(0, [], [{ resource: res(0), amount: 100 }])]);
+    const balanceRegistry: Registry = {
+      stringIdOf: () => null,
+      handleOf: () => null,
+      definitionDataOf: (type, handle) =>
+        type === 'resource' && handle === res(0)
+          ? { id: 'test.resource.credits', allow_negative: true }
+          : null,
+    };
+    const writer = createTransactionWriter(world, null, txEnvironmentFor(balanceRegistry));
     const result = writer.atomic((b) =>
       b.account({ owner: ownerHandle(0), resource: res(0), delta: -200 }),
     );

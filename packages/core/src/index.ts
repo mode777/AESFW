@@ -69,7 +69,12 @@ export type {
   TransactionWriter,
   TxError,
 } from './pipeline/index.js';
-export { createTransactionWriter, releaseExpiredReservations } from './tx/index.js';
+export {
+  createTransactionWriter,
+  releaseExpiredReservations,
+  resourceAllowsNegative,
+  txEnvironmentFor,
+} from './tx/index.js';
 export type {
   Inventory,
   InventoryAcceptance,

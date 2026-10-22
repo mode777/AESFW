@@ -15,6 +15,7 @@ import {
   encodeWorld,
   hashWorld,
   ids,
+  resourceAllowsNegative,
   world as core,
 } from '@aesfw/core';
 import type { Inventory, Registry, TickOutput } from '@aesfw/core';
@@ -114,6 +115,23 @@ const checkInventoryNonNegative = (world: World, findings: InvariantFinding[]): 
         findings.push({
           id: 'INV-01',
           message: `inventory ${id} resource ${entry.resource} is negative (${entry.quantity})`,
+        });
+      }
+    }
+  }
+};
+
+const checkOwnerAccounts = (
+  world: World,
+  registry: Registry,
+  findings: InvariantFinding[],
+): void => {
+  for (const owner of world.owners.owners) {
+    for (const entry of owner.accounts) {
+      if (entry.amount < 0 && !resourceAllowsNegative(registry, entry.resource)) {
+        findings.push({
+          id: 'INV-01',
+          message: `owner ${owner.handle} resource ${entry.resource} account is negative (${entry.amount}) without allow_negative`,
         });
       }
     }
@@ -350,6 +368,7 @@ export function checkInvariants(
 ): readonly InvariantFinding[] {
   const findings: InvariantFinding[] = [];
   checkInventoryNonNegative(output.world, findings);
+  checkOwnerAccounts(output.world, registry, findings);
   checkReservationsWithinStored(output.world, findings);
   checkCapacity(output.world, findings);
   checkCapabilityAllocation(output.world, findings);

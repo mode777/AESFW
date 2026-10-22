@@ -9,13 +9,16 @@
 import { ArithmeticOverflow, InvariantViolation } from '../errors/invariant-violation.js';
 import { allocate } from './alloc.js';
 import { accumulate } from './accumulate.js';
+import { evaluateCompiledCurve } from './curve.js';
 import { checkSafeInt, isSafeInt, roundRational, toSafeInt } from './round.js';
 import type { Int, Rounding } from './round.js';
 
 export { allocate };
 export { accumulate };
+export { evaluateCompiledCurve };
 export type { AllocationResult } from './alloc.js';
 export type { AccumulatorResult } from './accumulate.js';
+export type { CompiledCurvePoints, CurveType, CurveExtrapolation } from './curve.js';
 export {
   isSafeInt,
   isNonNegativeSafeInt,

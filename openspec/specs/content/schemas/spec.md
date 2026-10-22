@@ -243,6 +243,19 @@ Source: CONT-11.2, TDS-20.2
 - **WHEN** a file's `resources` array holds an item that is not an object
 - **THEN** validation reports `schema_invalid` and does not throw
 
+### Requirement: Balance resource scope validation
+Content validation SHALL report a diagnostic when a resource sets `allow_negative: true` while its storage scope is neither `owner` nor `global`.
+
+Source: CONT-6.3
+
+#### Scenario: allow_negative on an inventory-scoped resource is rejected
+- **WHEN** a package defines a resource with `storage.scope: inventory` and `allow_negative: true`
+- **THEN** validation fails with the scope diagnostic
+
+#### Scenario: allow_negative on an owner-scoped resource is accepted
+- **WHEN** a package defines a resource with `storage.scope: owner` and `allow_negative: true`
+- **THEN** validation passes
+
 ### Requirement: Definition collection catalogue
 `@aesfw/content` SHALL publish the collection catalogue mapping each top-level document key to a core `DefinitionType` — `resources` → `resource`, `location_templates` → `location`, `recipes` → `recipe`, `entity_definitions` → `entity`, `population_tiers` → `tier`, `needs` → `need`, `need_categories` → `needCategory`, `growth_policies` → `growthPolicy`, `conditions` → `condition`, `curves` → `curve` — in canonical order, for the registry compilation of roadmap 1.4 to consume.
 
@@ -253,6 +266,7 @@ Source: CONT-6, CONT-7, CONT-8, TDS-7
 - **THEN** its keys are exactly the ten M1 collections, each mapping to its core definition type
 
 ### Requirement: Published JSON Schema
+
 `@aesfw/content` SHALL export each definition schema as a JSON Schema file under `packages/content/schemas/<collection>.json` (TDS-20.4), generated from the TypeBox schemas. The committed files SHALL equal the schemas the code produces.
 
 Source: TDS-20.4

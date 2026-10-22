@@ -78,6 +78,19 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
         asArray(definition['substitutes']).forEach((entry, index) =>
           check(id, entry, 'resource', `/resources/${id}/substitutes/${index}`),
         );
+        if (
+          definition['allow_negative'] === true &&
+          asRecord(definition['storage'])?.['scope'] !== 'owner' &&
+          asRecord(definition['storage'])?.['scope'] !== 'global'
+        ) {
+          diagnostics.push(
+            diag('resource_allow_negative_scope', {
+              definition: id,
+              path: `/resources/${id}/allow_negative`,
+              args: { scope: asString(asRecord(definition['storage'])?.['scope']) ?? '' },
+            }),
+          );
+        }
       } else if (collection === 'recipes') {
         for (const field of ['inputs', 'outputs'] as const) {
           asArray(definition[field]).forEach((entry, index) =>
@@ -194,6 +207,14 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             asRecord(entry)?.['resource'],
             'resource',
             `/population_tiers/${id}/outputs/${index}/resource`,
+          ),
+        );
+        asArray(definition['outputs']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['satisfaction_curve'],
+            'curve',
+            `/population_tiers/${id}/outputs/${index}/satisfaction_curve`,
           ),
         );
       } else if (collection === 'needs') {

@@ -1,0 +1,13 @@
+scenario:
+  id: test.scenario.economy_income
+  requirements: [GDD-7.5, GDD-20.2]
+  content:
+    packages: [fixtures/content/demo-economy]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 120
+    hash_interval: 10
+    invariants: true

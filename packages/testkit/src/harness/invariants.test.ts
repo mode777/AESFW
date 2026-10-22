@@ -114,6 +114,53 @@ describe('[VER-6] transaction invariants', () => {
     ).toContain('INV-01');
   });
 
+  it('[INV-01][GDD-7.5] a negative account of a non-balance resource is reported', () => {
+    const working = world(resourceRegistry())
+      .owner({
+        handle: ids.ownerHandle(0),
+        knowledge: [],
+        accounts: [{ resource, amount: -5 }],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const output = step(working, resourceRegistry(), input);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-01');
+  });
+
+  it('[INV-01][GDD-7.5] a negative account of a balance resource passes', () => {
+    const balanceRegistry = expectContentOk(
+      content()
+        .define('resources', {
+          id: 'test.r.credits',
+          quantity: { precision: 'fixed', scale: 1000 },
+          storage: { policy: 'normal', scope: 'owner' },
+          transportable: false,
+          allow_negative: true,
+        })
+        .build(),
+    ).registry;
+    const credits = balanceRegistry.handleOf('resource', ids.stringId('test.r.credits'));
+    if (credits === null) throw new Error('balance resource missing');
+    const working = world(balanceRegistry)
+      .owner({
+        handle: ids.ownerHandle(0),
+        knowledge: [],
+        accounts: [{ resource: credits, amount: -5 }],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const output = step(working, balanceRegistry, input);
+    expect(checkInvariants(before, output, balanceRegistry)).toEqual([]);
+  });
+
   it('[INV-02] reservations exceeding stored quantity are reported', () => {
     const working = buildWorld([{ resource, quantity: 100 }]);
     working.ledger = {

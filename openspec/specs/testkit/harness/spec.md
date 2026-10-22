@@ -17,7 +17,7 @@ Source: VER-5.2
 
 ### Requirement: checkInvariants framework
 `checkInvariants(before, output, registry)` SHALL return the list of violated invariants among INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-21, INV-22, and INV-24 as data, and `expectInvariants` SHALL throw an `InvariantViolation` naming the first finding when the list is non-empty. It SHALL cover:
-- INV-01: no inventory stores a negative quantity.
+- INV-01: no inventory stores a negative quantity, and no owner account entry is negative unless its resource declares `allow_negative`.
 - INV-02: for every inventory and resource, the sum of active quantity reservations is at most the stored quantity.
 - INV-03: for every inventory, stored quantity plus capacity reservations is at most each declared capacity rule (total and per resource).
 - INV-04: when `output.journal` is present, for every resource the change in total stored quantity equals deposits minus withdrawals minus commits, and transfers net to zero.
@@ -51,6 +51,14 @@ Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, I
 #### Scenario: A negative stored quantity is reported
 - **WHEN** an inventory entry holds a negative quantity in the output world
 - **THEN** the findings contain INV-01
+
+#### Scenario: A negative account of a non-balance resource is reported
+- **WHEN** an owner account entry holds a negative amount of a resource that does not declare `allow_negative`
+- **THEN** the findings contain INV-01
+
+#### Scenario: A negative account of a balance resource passes
+- **WHEN** an owner account entry holds a negative amount of a resource that declares `allow_negative: true`
+- **THEN** the findings contain no INV-01
 
 #### Scenario: Reservations exceeding stored quantity are reported
 - **WHEN** the ledger holds active quantity reservations above the stored quantity for an inventory and resource

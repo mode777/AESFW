@@ -11,7 +11,7 @@ import type { EventWriter } from '../events/event-writer.js';
 import { tick as makeTick } from '../ids/index.js';
 import type { Tick } from '../ids/index.js';
 import type { Registry } from '../registry/types.js';
-import { createTransactionWriter } from '../tx/index.js';
+import { createTransactionWriter, txEnvironmentFor } from '../tx/index.js';
 import { hashWorld } from '../world/codec.js';
 import type { ScheduledCommand, World } from '../world/types.js';
 import { compareScheduledCommands } from '../commands/order.js';
@@ -87,7 +87,7 @@ const execute = (
     registry,
     world,
     tick: computed,
-    tx: createTransactionWriter(world, journal),
+    tx: createTransactionWriter(world, journal, txEnvironmentFor(registry)),
     events,
     scratch: createTickScratch(),
     policies: EMPTY_POLICY_SET,

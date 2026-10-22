@@ -98,6 +98,80 @@ describe('[CONT-11.3] reference resolution', () => {
     expect(codes(diagnostics)).toEqual(['invalid_reference_scope']);
   });
 
+  it('[CONT-6.3] allow_negative on an inventory-scoped resource is rejected', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [{ ...resource('test.resource.credits'), allow_negative: true }],
+    });
+    expect(codes(diagnostics)).toEqual(['resource_allow_negative_scope']);
+    expect(diagnostics[0]?.path).toBe('/resources/test.resource.credits/allow_negative');
+  });
+
+  it('[CONT-6.3] allow_negative on an owner-scoped resource is accepted', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [
+        {
+          ...resource('test.resource.credits'),
+          storage: { policy: 'normal', scope: 'owner' },
+          allow_negative: true,
+        },
+      ],
+    });
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('[CONT-6.10] an unresolvable satisfaction_curve is reported', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.credits')],
+      population_tiers: [
+        {
+          id: 'test.tier.a',
+          consumption_factor: 1000,
+          outputs: [
+            {
+              resource: 'test.resource.credits',
+              scope: 'owner',
+              rate_per_population_per_tick: 10,
+              satisfaction_curve: 'test.curve.absent',
+            },
+          ],
+        },
+      ],
+    });
+    expect(codes(diagnostics)).toContain('unresolved_reference');
+  });
+
+  it('[CONT-6.10] a resolvable satisfaction_curve is accepted', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.credits')],
+      curves: [
+        {
+          id: 'test.curve.income',
+          type: 'piecewise_linear',
+          points: [
+            [0, 0],
+            [1000, 1000],
+          ],
+          extrapolation: 'clamp',
+        },
+      ],
+      population_tiers: [
+        {
+          id: 'test.tier.a',
+          consumption_factor: 1000,
+          outputs: [
+            {
+              resource: 'test.resource.credits',
+              scope: 'owner',
+              rate_per_population_per_tick: 10,
+              satisfaction_curve: 'test.curve.income',
+            },
+          ],
+        },
+      ],
+    });
+    expect(diagnostics).toEqual([]);
+  });
+
   it('[CONT-11.3] a construction cost resource must resolve', () => {
     const { diagnostics } = buildRegistry({
       entity_definitions: [
