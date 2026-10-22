@@ -13,6 +13,7 @@ import type { Diagnostic } from '../errors/diagnostic.js';
 import { InvariantViolation } from '../errors/invariant-violation.js';
 import { entityId, ownerHandle, reservationId, stringId, tick } from '../ids/index.js';
 import type { Brand, DefinitionHandle, StringId } from '../ids/index.js';
+import type { Command } from '../commands/types.js';
 import type { DefinitionType, Registry } from '../registry/types.js';
 import { err, ok } from '../result.js';
 import type { Result } from '../result.js';
@@ -388,7 +389,8 @@ const decodeCommands = (value: JsonValue | undefined): ScheduledCommand[] =>
       actor: ownerHandle(asInt(record['actor'], '$.command_queue.actor')),
       tick: tick(asInt(record['tick'], '$.command_queue.tick')),
       seq: asInt(record['seq'], '$.command_queue.seq'),
-      command: record['command'] ?? null,
+      // Command payload validation is owned by `add-save-load` (2.5).
+      command: record['command'] as unknown as Command,
     };
   });
 
@@ -540,7 +542,7 @@ export function cloneWorld(world: World): World {
     },
     commandQueue: world.commandQueue.map((command) => ({
       ...command,
-      command: cloneJson(command.command),
+      command: { ...command.command },
     })),
     modules: {
       enabled: [...world.modules.enabled],

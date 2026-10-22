@@ -11,6 +11,14 @@ export const CORE_PACKAGE_ID = '@aesfw/core' as const;
 export * as fx from './fx/index.js';
 export * as det from './det/index.js';
 export * as ids from './ids/index.js';
+export type {
+  DefinitionHandle,
+  EntityId,
+  OwnerHandle,
+  ReservationId,
+  StringId,
+  Tick,
+} from './ids/index.js';
 export * as world from './world/index.js';
 export * as tx from './tx/index.js';
 export {
@@ -21,6 +29,7 @@ export {
   encodeWorld,
   decodeWorld,
   hashWorld,
+  entityExists,
 } from './world/index.js';
 export type {
   CanonicalState,
@@ -140,6 +149,10 @@ export type {
 } from './sim/needs/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
+export { ERROR_CODES } from './errors/codes.js';
+export type { ErrorCode, ErrorCodeSpec } from './errors/codes.js';
+export { compareScheduledCommands } from './commands/index.js';
+export type { Command, CommandError, CommandType } from './commands/index.js';
 export { createEmptyRegistry } from './registry/types.js';
 export type { DefinitionType, Registry } from './registry/types.js';
 export { ok, err } from './result.js';

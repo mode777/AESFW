@@ -34,5 +34,6 @@ export type {
   WorldSetup,
 } from './types.js';
 export { allocateEntity, allocateReservation, createWorld } from './create.js';
+export { entityExists } from './exists.js';
 export { cloneWorld, decodeWorld, encodeWorld, hashWorld } from './codec.js';
 export type { CanonicalState, StateHash } from './codec.js';

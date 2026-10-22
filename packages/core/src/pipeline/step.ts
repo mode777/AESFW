@@ -13,10 +13,11 @@ import type { Tick } from '../ids/index.js';
 import type { Registry } from '../registry/types.js';
 import { createTransactionWriter } from '../tx/index.js';
 import { hashWorld } from '../world/codec.js';
-import type { World } from '../world/types.js';
+import type { ScheduledCommand, World } from '../world/types.js';
+import { compareScheduledCommands } from '../commands/order.js';
 import { PHASE_TABLE } from './phase-table.js';
 import { EMPTY_POLICY_SET } from './policies.js';
-import { createTickScratch } from './scratch.js';
+import { createTickScratch, readCommandOutcomes } from './scratch.js';
 import type {
   PhaseId,
   PolicySet,
@@ -40,6 +41,14 @@ interface RunnerState {
   readonly scratch: TickScratch;
   readonly policies: PolicySet;
 }
+
+const mergeScheduledCommands = (world: World, commands: readonly ScheduledCommand[]): void => {
+  if (commands.length === 0) return;
+  const known = new Set(world.commandQueue.map((scheduled) => scheduled.commandId));
+  const added = commands.filter((scheduled) => !known.has(scheduled.commandId));
+  if (added.length === 0) return;
+  world.commandQueue = [...world.commandQueue, ...added].sort(compareScheduledCommands);
+};
 
 const runOne = (descriptor: SystemDescriptor, state: RunnerState): void => {
   const original = state.world.stores;
@@ -79,6 +88,8 @@ const execute = (
     policies: EMPTY_POLICY_SET,
   };
 
+  mergeScheduledCommands(world, input.commands);
+
   for (const descriptor of descriptors) {
     runOne(descriptor, state);
   }
@@ -86,7 +97,15 @@ const execute = (
   world.tick = computed;
   const hash = input.options.hash ? hashWorld(world, registry) : null;
   const metrics: TickMetrics = {};
-  return { world, tick: computed, events: events.events, outcomes: [], journal, hash, metrics };
+  return {
+    world,
+    tick: computed,
+    events: events.events,
+    outcomes: readCommandOutcomes(state.scratch),
+    journal,
+    hash,
+    metrics,
+  };
 };
 
 /**

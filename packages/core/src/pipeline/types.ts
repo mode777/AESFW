@@ -98,8 +98,9 @@ export interface SystemDescriptor {
 /** Alias of `SystemDescriptor` used by the test API (TDS-10.3). */
 export type PhaseDescriptor = SystemDescriptor;
 
-/** A command outcome (TDS-16); narrowed by `add-session-and-command-gateway` (2.2). */
-export type CommandOutcome = JsonValue;
+/** A command outcome (TDS-16). */
+export type { CommandOutcome } from '../commands/types.js';
+import type { CommandOutcome } from '../commands/types.js';
 
 /** Tick metrics (TDS-5.4); populated by later metric rows. */
 export type TickMetrics = { readonly [key: string]: JsonValue };

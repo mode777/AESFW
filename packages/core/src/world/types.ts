@@ -7,6 +7,7 @@
  * Source: TDS-8.1, TDS-8.4, ARCH-4.2
  */
 import type { JsonValue, RngStream, Seed } from '../det/index.js';
+import type { Command } from '../commands/types.js';
 import type { Int } from '../fx/index.js';
 import type {
   DefinitionHandle,
@@ -141,16 +142,15 @@ export interface ExchangePriceTable {
 }
 
 /**
- * An accepted future command (TDS-16.2). The `command` payload is an opaque
- * canonical value in M0; `add-session-and-command-gateway` (2.2) narrows it to
- * the `Command` union.
+ * An accepted future command (TDS-16.2). The `command` payload is the internal
+ * `Command` union.
  */
 export interface ScheduledCommand {
   readonly commandId: string;
   readonly actor: OwnerHandle;
   readonly tick: Tick;
   readonly seq: number;
-  readonly command: JsonValue;
+  readonly command: Command;
 }
 
 /** Optional-module state (02 §15.2). */

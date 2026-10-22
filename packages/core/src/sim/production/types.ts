@@ -55,6 +55,7 @@ export type Producer = {
   readonly state: ProducerState;
   readonly blockReasons: readonly BlockReason[];
   readonly progress: Int;
+  readonly processPriority?: Int;
   readonly inputReservations: readonly ReservationId[];
   readonly capacityReservations: readonly ReservationId[];
 };
