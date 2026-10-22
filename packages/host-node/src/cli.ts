@@ -10,6 +10,7 @@ import { join, relative } from 'node:path';
 
 import { createMemorySource, loadContent } from '@aesfw/content';
 import type { Diagnostic, PackageSource } from '@aesfw/content';
+import { runBenchmark } from '@aesfw/testkit/bench';
 import { parseScenario, runScenario } from '@aesfw/testkit/scenario';
 import { parse as parseYaml } from 'yaml';
 
@@ -101,6 +102,38 @@ const runRun = (args: readonly string[], io: CliIo): CliResult => {
   };
 };
 
+const runBench = (args: readonly string[], io: CliIo): CliResult => {
+  const name = optionValue(args, '--scenario') ?? 'bench_small';
+  const iterations = numberOption(args, '--iterations') ?? 200;
+  const warmup = numberOption(args, '--warmup') ?? 20;
+  const scenarioPath = `fixtures/scenarios/${name}.yaml`;
+  const text = io.readFile(scenarioPath);
+  if (text === null) return { exitCode: 1, output: `scenario not found: ${scenarioPath}` };
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(text);
+  } catch (error) {
+    return { exitCode: 1, output: `invalid yaml: ${String(error)}` };
+  }
+  const parsedScenario = parseScenario(
+    (parsed as { readonly scenario?: unknown }).scenario ?? parsed,
+  );
+  if (parsedScenario.scenario === null) {
+    return { exitCode: 1, output: parsedScenario.errors.join('\n') };
+  }
+  const sources = parsedScenario.scenario.content.packages.map((dir) => io.readPackage(dir));
+  const content = loadContent(sources, { strictness: 'strict' });
+  if (content.content === null) {
+    return { exitCode: 1, output: formatDiagnostics(content.diagnostics) };
+  }
+  const result = runBenchmark(parsedScenario.scenario, content.content, {
+    iterations,
+    warmup,
+    now: () => performance.now(),
+  });
+  return { exitCode: 0, output: JSON.stringify(result, null, 2) };
+};
+
 /**
  * Runs an `aesfw` command (TDS-21.2).
  *
@@ -110,7 +143,8 @@ export function runCli(args: readonly string[], io: CliIo): CliResult {
   const [command, ...rest] = args;
   if (command === 'validate') return runValidate(rest, io);
   if (command === 'run') return runRun(rest, io);
-  return { exitCode: 1, output: 'usage: aesfw <validate|run> ...' };
+  if (command === 'bench') return runBench(rest, io);
+  return { exitCode: 1, output: 'usage: aesfw <validate|run|bench> ...' };
 }
 
 /** The Node file-system I/O implementation. */

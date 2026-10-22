@@ -12,6 +12,10 @@
     "./scenario": {
       "types": "./dist/scenario/index.d.ts",
       "default": "./dist/scenario/index.js"
+    },
+    "./bench": {
+      "types": "./dist/bench/index.d.ts",
+      "default": "./dist/bench/index.js"
     }
   },
   "files": [

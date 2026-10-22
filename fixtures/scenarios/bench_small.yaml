@@ -1,0 +1,13 @@
+scenario:
+  id: bench.small
+  requirements: [TDS-24, VER-14]
+  content:
+    packages: [fixtures/content/demo-basic-loop]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 200
+    hash_interval: 0
+    invariants: false

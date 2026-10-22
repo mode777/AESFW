@@ -148,7 +148,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 1.13 | `add-population-growth` | sim/population | growth policies (phase 23), fraction accumulation; INV-07 ✓ archived 2026-10-21 | GDD-11.4, CONT-6.14 | 1.12, 1.6 | S |
 | 1.14 | `add-scenario-runner-and-cli` | host/cli | scenario format and pure runner (`@aesfw/testkit/scenario`); `aesfw validate`, `aesfw run` ✓ archived 2026-10-21 | VER-9.1, VER-9.2, TDS-21.2 | 1.5 | M |
 | 1.15 | `add-golden-basic-loop` | testkit/scenarios | `fixtures/content/demo-basic-loop` from CONT-14; SCN-01 with goldens ✓ archived 2026-10-21 | VER-9.3, GDD-23.1 | 1.13, 1.14 | S |
-| 1.16 | `add-benchmark-harness` | testkit/bench | `bench.small`, `aesfw bench`, JSON results, nightly trend job | TDS-24, VER-14 | 1.14 | S |
+| 1.16 | `add-benchmark-harness` | testkit/bench | `bench.small`, `aesfw bench`, JSON results, nightly trend job ✓ archived 2026-10-22 | TDS-24, VER-14 | 1.14 | S |
 
 **Exit criteria:** SCN-01 passes with invariants after every tick and identical hashes in the double-run and save-continue harnesses; `bench.small` baseline recorded.
 

@@ -20,6 +20,7 @@
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "trace": "node tools/trace/index.mjs",
     "golden:update": "node tools/golden/index.mjs",
+    "bench": "node packages/host-node/dist/bin.js bench --scenario bench_small --iterations 200 --warmup 20",
     "verify": "pnpm format:check && pnpm lint && pnpm depcruise && pnpm type-check && pnpm test"
   },
   "devDependencies": {

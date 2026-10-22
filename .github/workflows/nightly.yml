@@ -35,6 +35,16 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      # VER-14 benchmark trends (L11), owner add-benchmark-harness (1.16).
+      - name: Benchmark trends
+        run: pnpm bench | tee bench-results.json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results
+          path: bench-results.json
+
       # Nightly extensions of VER-15.3, added by their owning roadmap changes:
       # extended property runs (L5) - add-fixed-point-arithmetic (0.3) and later
       # determinism replay on all engines (L7) - add-browser-determinism-check (0.9)

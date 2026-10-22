@@ -1,6 +1,8 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createMemorySource } from '@aesfw/content';
 import { describe, expect, it } from 'vitest';
-import { runCli } from './cli.js';
+import { fileSystemIo, runCli } from './cli.js';
 import type { CliIo } from './cli.js';
 
 const manifest = [
@@ -86,5 +88,29 @@ describe('[TDS-21.2] aesfw CLI', () => {
     );
     const report = JSON.parse(result.output) as { checkpoints: readonly { tick: number }[] };
     expect(report.checkpoints.map((checkpoint) => checkpoint.tick)).toEqual([1]);
+  });
+});
+
+const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+const realIo: CliIo = {
+  readPackage: (dir) => fileSystemIo().readPackage(resolve(repoRoot, dir)),
+  readFile: (path) => fileSystemIo().readFile(resolve(repoRoot, path)),
+};
+
+describe('[TDS-21.2] aesfw bench', () => {
+  it('[TDS-21.2] the bench command prints JSON', () => {
+    const result = runCli(
+      ['bench', '--scenario', 'bench_small', '--iterations', '5', '--warmup', '1'],
+      realIo,
+    );
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.output) as {
+      scenario: string;
+      iterations: number;
+      medianMs: number;
+      p95Ms: number;
+    };
+    expect(parsed.scenario).toBe('bench.small');
+    expect(parsed.iterations).toBe(5);
   });
 });
