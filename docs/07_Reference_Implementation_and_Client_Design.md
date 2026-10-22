@@ -248,7 +248,7 @@ Each view lists the read models it uses (04 §10) and the commands it can issue 
 ### 12.2 Location grid
 
 - **Shows:** a 40×40 SVG grid with non-buildable cells hatched, slot markers, entities as shapes (Section 10.2), working areas, coverage radii on demand, and connectivity to the hub on demand (overlay key `C`).
-- **Data:** location summary (04 §10.2), entity snapshots.
+- **Data:** entity and location snapshots (04 §9.1: `location.grid`, `location.properties.values`, `entity.spatial`, `entity.connectivity`), plus the location summary (04 §10.2) for aggregates.
 - **Commands:** `PlaceEntityPlan` (placement mode, Section 13.3), `CancelEntityPlan`, `CommitConstruction`, `DeconstructEntity`, `SetEntityEnabled`.
 - **Overlays:** suitability per selected property, coverage, connectivity, throughput pressure, and block reasons. Overlays are client-local view state.
 

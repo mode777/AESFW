@@ -867,6 +867,7 @@ This entity-scoped optimistic concurrency (amendment A5) keeps commands usable w
 - `diffProjection` produces a delta between two projections of the same actor, so deltas inherit the fog filtering.
 - Read models (04 §10) are pure functions over `WorldReader` and `Registry`: entity detail, location summary, need breakdown, transport detail, planning metrics, owner economy, exchange quotes.
 - Derived values (rates, supported population, recovery estimates) are computed here and never written back (02 §8.2).
+- The projection exposes each grid-policy location's grid geometry (`grid`: width, height, blocked cells), each placed entity's logical transform and footprint (`spatial`), and each connectivity node (`connectivity`: role, network, connected).
 
 ### 18.5 Planning metrics
 
@@ -1125,6 +1126,11 @@ Pure packages never throw for expected outcomes. `InvariantViolation` signals a 
 | A5 | 04 §12, §13 | `expected_session_revision` is checked per referenced entity (Section 18.3). | Session-wide checks would reject almost every command while the game runs. |
 | A6 | 02 §17 | Networking is out of scope for v1. The protocol and command log are designed so that host-authoritative networking can be added. | Scope. |
 | A7 | 03 §1 | YAML is the only authoring format in v1. The canonical normalized representation is canonical JSON (Section 19.3). | One parser, one canonical form. |
+| A8 | 03 §6.8 | The entity `connectivity` component declares exactly one of `requires` (needs the named network) or `provides` (extends the named network, e.g. the connector archetype of 01 §9.11). | The provider form was unspecified though 01 §9.2 requires provider and requirement components. |
+| A9 | 04 §9.1 | The snapshot carries a grid-policy location's `grid` (width, height, blocked cells), a placed entity's `spatial.footprint`, and an entity's `connectivity` (role, network, connected). | The client grid (07 §12.2) needs topology, footprint, and connectivity; they were exposed but unspecified. |
+| A10 | 04 §9.3 | The omitted-attribute list for an unknown location names property values, region, grid geometry, connectivity, and foreign entities. | Reconciles §9.3 with the attributes the snapshot actually carries. |
+| A11 | 04 §10.2 | The location summary is delivered incrementally; grid topology and the property vector are read from the snapshot (§9.1); a field may not be depended on until a roadmap row owns it. | Prevents a client depending on an unowned field. |
+| A12 | 04 §20 | A value absent from §9, §10, or §12 SHALL NOT be displayed; extending a view therefore extends the contract and its owning row first (08 §7.4). | Makes the snapshot/query traceability criterion actionable. |
 
 When an amendment is accepted, the affected document is updated in the same change, with a note referencing this table.
 

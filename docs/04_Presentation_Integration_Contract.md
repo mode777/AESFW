@@ -198,6 +198,10 @@ snapshot:
         region: example.region.alpha
         values:
           example.property.suitability_p1: 1000
+      grid:
+        width: 40
+        height: 40
+        blocked: [0, 1, 40]
       throughput:
         capacity: 60000
         requested: 54000
@@ -224,6 +228,11 @@ snapshot:
       spatial:
         logical_position: [10, 12]
         orientation: 1
+        footprint: { width: 3, height: 3 }
+      connectivity:
+        role: requirement
+        network: example.connectivity.hub_network
+        connected: true
       production:
         recipe_id: example.recipe.c
         state: processing
@@ -231,6 +240,8 @@ snapshot:
         progress_scale: 1000
         block_reasons: []
 ```
+
+A grid-policy location carries its `grid` (width, height, and the packed indices of its non-buildable cells); a placed entity carries its `spatial.footprint`; an entity that carries a connectivity node exposes its `connectivity` role, network, and derived connected state. (Amended by A9, 05 §26.)
 
 ### 9.2 Incremental delta
 
@@ -256,7 +267,7 @@ Deltas are applied only to the matching base revision. On mismatch, request a ne
 
 ### 9.3 Owner-filtered visibility
 
-Snapshots, deltas, read models, and events are produced **per actor**. When fog is enabled, a location whose knowledge state is `unknown` for the actor appears only with its ID and known connections (location 200 above); property values, source slots, region, capacity, and foreign entities are omitted by the adapter. Clients therefore cannot leak undiscovered information, even if modified. A `LocationDiscovered` event is followed by the newly visible attributes in the next delta.
+Snapshots, deltas, read models, and events are produced **per actor**. When fog is enabled, a location whose knowledge state is `unknown` for the actor appears only with its ID and known connections (location 200 above); property values, region, grid geometry, connectivity, and foreign entities are omitted by the adapter. (Amended by A10, 05 §26.) Clients therefore cannot leak undiscovered information, even if modified. A `LocationDiscovered` event is followed by the newly visible attributes in the next delta.
 
 ---
 
@@ -291,6 +302,8 @@ The adapter may expose purpose-built read models.
 - Entity counts
 - Connections and endpoints
 - Net production/consumption rates
+
+**Delivery.** The location summary is delivered incrementally. Grid topology and the property vector are read from the snapshot (§9.1); the summary reports the aggregates. A field may not be depended on by a client until a roadmap row owns its delivery, and every row that adds a field cites this section (08 §7.4). (Amended by A11, 05 §26.)
 
 ### 10.3 Need breakdown
 
@@ -566,7 +579,7 @@ Missing nonessential assets produce warnings and fallbacks, not simulation load 
 - Replacing all models, icons, names, and sounds does not alter state hashes.
 - A missed domain event is corrected by the next snapshot.
 - Every user mutation maps to a validated command.
-- Every displayed mechanic can be traced to snapshot/query data.
+- Every displayed mechanic can be traced to snapshot/query data. A value absent from §9, §10, or §12 SHALL NOT be displayed; extending a view therefore extends the contract and its owning roadmap row first (08 §7.4). (Amended by A12, 05 §26.)
 - Supported population per chain can be displayed for every consumed resource.
 - No projection exposes attributes of locations unknown to the requesting owner.
 - Missing mappings use generic fallbacks.

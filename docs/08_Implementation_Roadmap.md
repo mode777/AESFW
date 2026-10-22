@@ -404,6 +404,7 @@ Capability: sim/production
 Sources: GDD-4.3, GDD-9.4, GDD-9.5, GDD-10.1–10.4, ARCH-5.2 (phases 07, 11–13), TDS-11, TDS-12
 Depends on: add-capability-allocation (archived)
 Must establish: INV-15, INV-22; L1 tests per VER-5.3
+Surfaces: content schema (entity `producer`), phase 07, projection `ProductionDto` (§7.4)
 Out of scope: slot/area sources (3.5), throughput throttling (5.1), modifiers (12.4)
 ```
 
@@ -411,7 +412,7 @@ Out of scope: slot/area sources (3.5), throughput throttling (5.1), modifiers (1
 
 | Artifact | Content |
 | --- | --- |
-| `proposal.md` | **Why:** the roadmap item and the risks it retires. **What:** the behavior delivered. **Out of scope:** explicitly the later roadmap items that touch the same area. **Impact:** packages and phases touched. |
+| `proposal.md` | **Why:** the roadmap item and the risks it retires. **What:** the behavior delivered. **Out of scope:** explicitly the later roadmap items that touch the same area. **Impact:** packages, phases, and every integration surface (§7.4) the change touches. |
 | `specs/<capability>/spec.md` | Requirements phrased with SHALL. Each requirement cites its sources (`Source: GDD-10.2, ARCH-5.2`). Each scenario (WHEN/THEN) corresponds to exactly one test, whose title carries the same IDs (06 §3.2). |
 | `design.md` | Only decisions not already fixed by 05. Reference 05 sections instead of repeating them. Record any amendment to 01–07 and any golden-hash change (06 §9.4). |
 | `tasks.md` | Implementation, tests (unit, invariants, scenarios), trace tags, documentation updates, and golden updates as separate, checkable tasks. The last task is always "run `pnpm verify` and `pnpm trace`". |
@@ -423,6 +424,27 @@ Out of scope: slot/area sources (3.5), throughput throttling (5.1), modifiers (1
 - Each change adds or extends the theme-free framework fixtures it needs. Reference content changes are separate rows.
 - Before archiving: run `/opsx-verify`, then sync specs (`/opsx-sync`) and archive (`/opsx-archive`).
 - New risks, amendments, or reordered dependencies are recorded in this roadmap by the change that discovers them.
+
+### 7.4 Integration surfaces
+
+A change owns not only the kernel state it introduces but every surface through which that state is authored, exposed, or driven. The M3 gaps (rows 3.4b, 3.6b, 3.7b) all came from leaving a surface unowned: the connectivity content component, the spatial projection, and the host routing of `placement_query`.
+
+Before proposing, list the surfaces the change must also update, and carry them into the proposal's **Impact** and the task list:
+
+| Surface | Update when the change… |
+| --- | --- |
+| Content schema and pipeline | introduces or changes content-authored fields (03 §6), including reference resolution and instantiation. |
+| Projection and read models | introduces or changes state a client must observe (04 §9, §10): the per-actor snapshot/delta DTOs and their codecs, and the read models. |
+| Protocol | changes any wire DTO or worker message (04 §9, §12; 05 §22). |
+| Host message handling | introduces a query or command the client sends (05 §21.1). |
+| Client views and selectors | changes what the reference client renders or how it submits commands (07 §12–§13). |
+
+Rules:
+
+- A row that introduces state, a command, a query, or a content field MUST either update the dependent surface in the same change or name the owning row in **Depends on**; it MUST NOT leave the surface unowned.
+- A client or reference-content row MUST list, in **Depends on**, the framework rows that expose the data and commands it consumes.
+- No view may display a value absent from 04 §9, §10, or §12; extending a view therefore extends the contract and its owning row (04 §20).
+- Each row's **Sources** MUST include the contract sections of every surface it touches (for example `PIC-9.1`, `PIC-10.2`, `PIC-12.1`, `TDS-18.4`, `TDS-21.1`, `CONT-6.8`), not only the kernel sections.
 
 ---
 
@@ -457,6 +479,7 @@ At the end of every milestone:
 - The dependency graph is acyclic, and every dependency points to an earlier or same-milestone change.
 - Every scenario in 06 §9.3 is produced by a row in the milestone 06 lists. SCN-13 and SCN-18 are produced in two stages (2.5 and 12.7; 4.5 and 11.3).
 - Every acceptance criterion of 01–04 (06 §16) is covered by the exit criteria of some milestone.
+- Every field of 04 §9, §10, and §12 and every 03 §6 component referenced by a milestone row has an owning row, per the integration-surface rules of §7.4.
 - Each milestone retires at least one risk or delivers a demonstrable playable increment.
 
 ---
@@ -496,7 +519,9 @@ Rows 3.1–3.8 are archived. Exit criteria and their verification:
 | INV-20 holds | Spatial and connectivity cache-rebuild property tests (`spatial.prop.test.ts`, `connectivity.prop.test.ts`) and the invariant harness (`packages/testkit/src/harness/invariants.ts`) |
 | A player can build the R1 chain from scratch in the browser | Not run in this environment: the Alpine/musl development container cannot launch Playwright's Chromium. The R1 content, the `placement_query` round-trip, and the `PlaceEntityPlan`/`CommitConstruction`/`CancelEntityPlan`/`DeconstructEntity` command path are covered by the test suite; the browser flow is deferred to the CI L7 stage and is not claimed here. |
 
-**Spec reconciliation.** No normative amendment to 01–07 was required by any M3 row. The client continued to import only `@aesfw/protocol` and `@aesfw/host-web/client`; no framework, save-format, protocol-version, or golden change was introduced.
+**Gap closure.** Three framework gaps surfaced during M3 and were closed by added rows 3.4b (`add-connectivity-content-component`), 3.6b (`add-spatial-projection-data`), and 3.7b (`add-placement-query-host`). Root cause: the M3 slice skipped the projection and content-schema legs of §2.3, and the one-capability-per-row rule left the integration work without a spec home, because the drafting guide did not require a change to enumerate its integration surfaces. Change `close-integration-surface-gaps` closes the documentation defects (amendments A8–A12 to 03/04 and A13–A15 to 05/07/08) and adds the integration-surface rules in §7.4, so a later row cannot introduce state without owning its content-schema, projection, protocol, host, and client surfaces.
+
+**Spec reconciliation.** No M3 row required a normative amendment to 01–07; the gaps they exposed are closed by the post-milestone amendment change `close-integration-surface-gaps` (A8–A15). The client continued to import only `@aesfw/protocol` and `@aesfw/host-web/client`; no framework, save-format, protocol-version, or golden change was introduced.
 
 **Risks.** R-09 (spatial and placement complexity) retired: the grid policy, construction lifecycle, placement predicates and commands, connectivity, slot/area sources, the per-actor spatial projection, and the client placement mode all work end to end. R-06 (browser performance) still has no M3-specific measurement; the 40×40 grid and ghost rendering budgets (07 §14.6) remain to be checked on the build/verification box.
 

@@ -388,6 +388,16 @@ entity_definition:
       initially_enabled: true
 ```
 
+The `connectivity` component declares exactly one of `requires` (the entity needs the named connectivity network) or `provides` (the entity extends the named connectivity network, for example the connector archetype of 01 §9.11). A definition that declares both or neither is invalid. (Amended by A8, 05 §26.)
+
+```yaml
+entity_definition:
+  id: example.entity.connector
+  components:
+    connectivity:
+      provides: example.connectivity.hub_network
+```
+
 Area and slot sources:
 
 ```yaml
