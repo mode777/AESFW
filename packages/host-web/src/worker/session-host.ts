@@ -9,9 +9,13 @@
 import {
   advance,
   createSession,
+  definitionMetadata,
   diffProjection,
+  entityDetail,
   instantiateContentEntities,
   load,
+  locationSummary,
+  needBreakdown,
   project,
   save,
   submitCommand,
@@ -20,7 +24,7 @@ import type { SaveDocument, SessionState } from '@aesfw/app';
 import { createMemorySource, defaultWorldPlan, loadContent } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { InvariantViolation, instantiateWorld } from '@aesfw/core';
-import type { DomainEvent, OwnerHandle } from '@aesfw/core';
+import type { DefinitionType, DomainEvent, OwnerHandle } from '@aesfw/core';
 import { PROTOCOL_VERSION, decodeWorkerRequest } from '@aesfw/protocol';
 import type {
   ContentSourceDto,
@@ -86,6 +90,40 @@ const toEventDto = (sessionId: string, event: DomainEvent): EventDto => ({
   subjects: [...event.subjects],
   payload: (event.payload ?? {}) as JsonObject,
 });
+
+const answerQuery = (
+  session: SessionState | null,
+  content: CompiledContent | null,
+  query: JsonObject,
+): JsonObject => {
+  if (session === null || content === null) return {};
+  const kind = query['kind'];
+  const entity = typeof query['entity_id'] === 'number' ? query['entity_id'] : null;
+  if (kind === 'entity_detail' && entity !== null) {
+    return { entity_detail: entityDetail(session, entity) as unknown as JsonValue };
+  }
+  if (kind === 'need_breakdown' && entity !== null) {
+    return { need_breakdown: needBreakdown(session, entity) as unknown as JsonValue };
+  }
+  if (kind === 'location_summary' && typeof query['location_id'] === 'number') {
+    return {
+      location_summary: locationSummary(
+        session,
+        session.settings.actor,
+        query['location_id'],
+      ) as unknown as JsonValue,
+    };
+  }
+  if (kind === 'definition_metadata' && typeof query['definition_type'] === 'string') {
+    return {
+      definition_metadata: definitionMetadata(
+        content,
+        query['definition_type'] as DefinitionType,
+      ) as unknown as JsonValue,
+    };
+  }
+  return {};
+};
 
 /**
  * Creates a session host over the injected port, clock, and storage
@@ -309,9 +347,14 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
         }
         if (request.speed !== undefined) speed = request.speed;
         return;
-      case 'query':
-        post({ kind: 'query_result', protocol_version: PROTOCOL_VERSION, result: {} });
+      case 'query': {
+        post({
+          kind: 'query_result',
+          protocol_version: PROTOCOL_VERSION,
+          result: answerQuery(session, content, request.query),
+        });
         return;
+      }
       case 'save':
         if (session !== null) {
           await options.storage.put(request.slot, save(session));

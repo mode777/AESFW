@@ -167,4 +167,34 @@ describe('[TDS-21.1] session host', () => {
     expect(errors).toHaveLength(1);
     if (errors[0]?.kind === 'error') expect(errors[0].code).toBe('non_canonical_value');
   });
+
+  it('[TDS-21.1] an entity-detail query yields a read model', () => {
+    const { port } = setup((session) => {
+      session.world.stores.get('producer').set(ids.entityId(3), {
+        recipes: [],
+        recipe: null,
+        processSlots: 1,
+        location: null,
+        inputInventory: null,
+        outputInventory: null,
+        state: 'idle',
+        blockReasons: [],
+        progress: 0,
+        inputReservations: [],
+        capacityReservations: [],
+      });
+    });
+    init(port);
+    port.send({
+      kind: 'query',
+      protocol_version: PROTOCOL_VERSION,
+      actor_id: 'test.owner.1',
+      query: { kind: 'entity_detail', entity_id: 3 },
+    });
+    const results = port.of('query_result');
+    expect(results).toHaveLength(1);
+    if (results[0]?.kind === 'query_result') {
+      expect(results[0].result['entity_detail']).toMatchObject({ entity_id: 3 });
+    }
+  });
 });

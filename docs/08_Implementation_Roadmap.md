@@ -168,7 +168,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 2.6 | `add-web-worker-host` | host/web | worker entry, `SessionClient`, message protocol, clock and speed, catch-up limit, coalescing, IndexedDB saves, error boundary ✓ archived 2026-10-22 | TDS-21.1 | 2.3, 2.5 | M |
 | 2.7 | `add-reference-content-seed` | reference/content | R0 content and presentation package skeleton ✓ archived 2026-10-22 | REF-3–6 | 1.15 | S |
 | 2.8 | `add-client-shell` | reference/client | Vite app, tokens, layout, signals, mirror, view state, i18n with fallback, top bar controls, debug overlay ✓ archived 2026-10-22 | REF-9–11, REF-12.5, REF-14 | 2.6, 2.7 | M |
-| 2.9 | `add-client-inspector-and-tables` | reference/client | entity and residence inspector; inventory and population tables; table mode; enable and recipe commands | REF-12.3, REF-12.4, REF-15 | 2.8, 2.4 | M |
+| 2.9 | `add-client-inspector-and-tables` | reference/client | entity and residence inspector; inventory and population tables; table mode; enable and recipe commands ✓ archived 2026-10-22 | REF-12.3, REF-12.4, REF-15 | 2.8, 2.4 | M |
 | 2.10 | `add-client-smoke-e2e` | reference/client | Playwright smoke flows 1, 2, 4, 6; browser hash equals CLI hash for the same command log | VER-13.2, VER-8.2 | 2.9 | S |
 
 **Exit criteria:** the R0 loop runs in the browser; disabling a producer visibly lowers satisfaction; save → reload → continue works; browser and CLI hashes match. **Demo:** first playtest of the closed loop.

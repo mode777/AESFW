@@ -16,9 +16,9 @@ Source: TDS-21.1, TDS-18.1
 - **THEN** it posts a `ready` response with the session id and tick `0`
 
 ### Requirement: Subscription and snapshots
-On a `subscribe` request the host SHALL post a full `snapshot` response for the requested actor, and SHALL thereafter publish coalesced `delta` responses as ticks advance. A `command` request SHALL post a `command_result`; a `query` request SHALL post a `query_result`.
+On a `subscribe` request the host SHALL post a full `snapshot` response for the requested actor, and SHALL thereafter publish coalesced `delta` responses as ticks advance. A `command` request SHALL post a `command_result`. A `query` request SHALL post a `query_result` whose `result` is the read model named by the query's `kind`: `entity_detail` (an `EntityDetailDto`), `need_breakdown` (a `NeedBreakdownDto[]`), `location_summary` (a `LocationSummaryDto`), or `definition_metadata` (a `DefinitionMetadataDto[]`); an unknown `kind` SHALL post an empty object.
 
-Source: TDS-21.1, PIC-9
+Source: TDS-21.1, PIC-10
 
 #### Scenario: Subscribe yields a snapshot
 - **WHEN** the host receives `{ kind: 'subscribe', protocol_version: 1, actor_id: 'test.owner.1' }`
@@ -27,6 +27,10 @@ Source: TDS-21.1, PIC-9
 #### Scenario: A command yields a result
 - **WHEN** the host receives a `command` request
 - **THEN** it posts a `command_result` response
+
+#### Scenario: An entity-detail query yields a read model
+- **WHEN** the host receives `{ kind: 'query', protocol_version: 1, actor_id: 'test.owner.1', query: { kind: 'entity_detail', entity_id: 3 } }`
+- **THEN** it posts a `query_result` whose `result.entity_detail` carries entity `3`
 
 ### Requirement: Clock control and coalescing
 The host SHALL own the only clock. A `control` request with action `run` SHALL start advancing ticks on the injected timer at the configured speed, `pause` SHALL stop, `speed` SHALL set the ticks per tick duration, and `step` SHALL advance the requested number of ticks immediately. Each wake SHALL advance at most `max_catch_up_ticks` ticks (default `8`) and SHALL post a single `delta` response covering all ticks since the last publication, carrying every event since then.
