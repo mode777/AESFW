@@ -25,6 +25,7 @@ const packageProject = (name: string, dir: string, overrides: Record<string, unk
 export default defineConfig({
   resolve: {
     alias: {
+      '@aesfw/core/testing': pkgDir('packages/core/src/testing.ts'),
       '@aesfw/core': pkgDir('packages/core/src/index.ts'),
       '@aesfw/content': pkgDir('packages/content/src/index.ts'),
       '@aesfw/protocol': pkgDir('packages/protocol/src/index.ts'),

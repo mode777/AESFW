@@ -184,7 +184,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | # | Change ID | Capability | Scope | Sources | Depends on | Size |
 | --- | --- | --- | --- | --- | --- | --- |
 | 3.1 | `add-grid-spatial-policy` | sim/spatial | grid policy, buildable mask (fixed or seeded), footprints, orientation, occupancy cache, distance and radius queries; INV-20 ✓ archived 2026-10-22 | GDD-6.1, ARCH-11, CONT-6.4, TDS-8.4 | 1.8 | L |
-| 3.2 | `add-construction-lifecycle` | sim/construction | lifecycle states, plans, cost reservation, commit policies, cancellation, deconstruction policies (phases 03, 30) | GDD-9.1, GDD-18.1, GDD-18.3, CONT-6.8 | 3.1, 1.7 | L |
+| 3.2 | `add-construction-lifecycle` | sim/construction | lifecycle states, plans, cost reservation, commit policies, cancellation, deconstruction policies (phases 03, 30) ✓ archived 2026-10-22 | GDD-9.1, GDD-18.1, GDD-18.3, CONT-6.8 | 3.1, 1.7 | L |
 | 3.3 | `add-placement-predicates-and-commands` | sim/construction | generic predicates; `placement_query`; `PlaceEntityPlan`, `CancelEntityPlan`, `CommitConstruction`, `DeconstructEntity` | GDD-18.2, PIC-12.1, ARCH-7.3 | 3.2, 2.2 | M |
 | 3.4 | `add-connectivity-requirement` | sim/spatial | connectivity provider and requirement, binary hub access, `missing_inventory_access`, phase 04 rebuild | GDD-10.2, GDD-9.9, ARCH-5.2 | 3.1 | M |
 | 3.5 | `add-slot-and-area-sources` | sim/production | source slots, working-area claims, property-vector scaling, regenerating and condition-dependent sources | GDD-6.5, GDD-9.5, CONT-6.8 | 3.1, 1.10 | M |

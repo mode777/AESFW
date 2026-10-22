@@ -145,6 +145,24 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             `/entity_definitions/${id}/components/resource_source/outputs/${index}/resource`,
           ),
         );
+        const construction = asRecord(components?.['construction']);
+        asArray(construction?.['costs']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/entity_definitions/${id}/components/construction/costs/${index}/resource`,
+          ),
+        );
+        const deconstruction = asRecord(construction?.['deconstruction']);
+        asArray(deconstruction?.['returns']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/entity_definitions/${id}/components/construction/deconstruction/returns/${index}/resource`,
+          ),
+        );
       } else if (collection === 'population_tiers') {
         asArray(definition['need_categories']).forEach((entry, index) =>
           check(id, entry, 'needCategory', `/population_tiers/${id}/need_categories/${index}`),

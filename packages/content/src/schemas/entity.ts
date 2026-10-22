@@ -1,14 +1,14 @@
 /**
  * The entity-definition schema and its M1 components (CONT-6.8, CONT-6.9):
- * resource source, producer, residence, and storage access. Placement,
- * construction, capability, connectivity, maintenance, and lifecycle
- * components belong to later roadmap rows and are intentionally absent.
+ * resource source, producer, residence, storage access, and construction.
+ * Placement, capability, connectivity, maintenance, and lifecycle components
+ * belong to later roadmap rows and are intentionally absent.
  *
  * Source: CONT-6.8, CONT-6.9
  */
 import { Type } from '@sinclair/typebox';
 
-import { IdSchema, InventoryRefSchema, RateRefSchema } from './common.js';
+import { IdSchema, InventoryRefSchema, ItemRefSchema, RateRefSchema } from './common.js';
 
 const ResourceSourceSchema = Type.Object(
   {
@@ -46,12 +46,36 @@ const StorageAccessSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const DeconstructionSchema = Type.Object(
+  {
+    duration_ticks: Type.Integer({ minimum: 0 }),
+    returns: Type.Array(ItemRefSchema),
+    cancel_reservations: Type.Optional(Type.Boolean()),
+  },
+  { additionalProperties: false },
+);
+
+const ConstructionSchema = Type.Object(
+  {
+    duration_ticks: Type.Integer({ minimum: 0 }),
+    costs: Type.Array(ItemRefSchema),
+    commit_policy: Type.Union([
+      Type.Literal('start'),
+      Type.Literal('continuous'),
+      Type.Literal('completion'),
+    ]),
+    deconstruction: Type.Optional(DeconstructionSchema),
+  },
+  { additionalProperties: false },
+);
+
 const ComponentsSchema = Type.Object(
   {
     resource_source: Type.Optional(ResourceSourceSchema),
     producer: Type.Optional(ProducerSchema),
     residence: Type.Optional(ResidenceSchema),
     storage_access: Type.Optional(StorageAccessSchema),
+    construction: Type.Optional(ConstructionSchema),
   },
   { additionalProperties: false },
 );

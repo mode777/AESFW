@@ -121,6 +121,83 @@
               "type": "string"
             }
           }
+        },
+        "construction": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["duration_ticks", "costs", "commit_policy"],
+          "properties": {
+            "duration_ticks": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "costs": {
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["resource", "quantity"],
+                "properties": {
+                  "resource": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "commit_policy": {
+              "anyOf": [
+                {
+                  "const": "start",
+                  "type": "string"
+                },
+                {
+                  "const": "continuous",
+                  "type": "string"
+                },
+                {
+                  "const": "completion",
+                  "type": "string"
+                }
+              ]
+            },
+            "deconstruction": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["duration_ticks", "returns"],
+              "properties": {
+                "duration_ticks": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "returns": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": ["resource", "quantity"],
+                    "properties": {
+                      "resource": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "quantity": {
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "cancel_reservations": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
         }
       }
     }

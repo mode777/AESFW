@@ -140,6 +140,36 @@ describe('[CONT-6.8][CONT-6.9] entity definition schema', () => {
       }),
     ).toBe(false);
   });
+
+  it('[CONT-6.8] a construction component validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.builder',
+        components: {
+          construction: {
+            duration_ticks: 10,
+            costs: [{ resource: 'test.resource.build', quantity: 5000 }],
+            commit_policy: 'completion',
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] an unknown commit policy is rejected', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.builder',
+        components: {
+          construction: {
+            duration_ticks: 10,
+            costs: [],
+            commit_policy: 'whenever',
+          },
+        },
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('[CONT-6.10] population tier schema', () => {

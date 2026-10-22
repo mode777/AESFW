@@ -193,6 +193,35 @@ export type {
   Satisfaction,
   SatisfactionAggregation,
 } from './sim/needs/index.js';
+export {
+  LIFECYCLE_STATES,
+  LIFECYCLE_TRANSITIONS,
+  canTransition,
+  commitReservations,
+  compactStores,
+  constructionPlanOf,
+  constructionProgressOf,
+  createConstructionPlan,
+  finalizeLifecycle,
+  lifecycleOf,
+  reconcileOperationalStates,
+  releaseReservations,
+  removeEntity,
+  requestCancellation,
+  requestDeconstruction,
+  reserveConstructionCosts,
+  resolveConstruction,
+  setLifecycle,
+} from './sim/construction/index.js';
+export type {
+  CommitPolicy,
+  ConstructionCost,
+  ConstructionPlan,
+  ConstructionProgress,
+  DeconstructPolicy,
+  Lifecycle,
+  LifecycleState,
+} from './sim/construction/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { ERROR_CODES } from './errors/codes.js';

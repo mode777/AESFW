@@ -97,6 +97,25 @@ describe('[CONT-11.3] reference resolution', () => {
     });
     expect(codes(diagnostics)).toEqual(['invalid_reference_scope']);
   });
+
+  it('[CONT-11.3] a construction cost resource must resolve', () => {
+    const { diagnostics } = buildRegistry({
+      entity_definitions: [
+        {
+          id: 'test.entity.builder',
+          components: {
+            construction: {
+              duration_ticks: 10,
+              costs: [{ resource: 'test.resource.absent', quantity: 5000 }],
+              commit_policy: 'completion',
+            },
+          },
+        },
+      ],
+    });
+    expect(codes(diagnostics)).toEqual(['unresolved_reference']);
+    expect(diagnostics[0]?.args['reference']).toBe('test.resource.absent');
+  });
 });
 
 describe('[TDS-20.2] indexes', () => {
