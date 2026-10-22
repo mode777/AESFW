@@ -66,3 +66,125 @@ body {
   font-size: var(--size-1);
   white-space: pre-wrap;
 }
+
+.panels {
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
+  gap: 12px;
+  padding: 12px;
+  overflow: auto;
+}
+
+.navigator {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.location-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grid-legend,
+.grid-status {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: var(--size-1);
+  color: var(--ink-2);
+}
+
+.grid-svg {
+  width: 100%;
+  max-height: 70vh;
+  border: var(--stroke-1) solid var(--rule);
+  background: var(--paper);
+}
+
+.grid-cells {
+  fill: var(--accent);
+  fill-opacity: 0.12;
+}
+
+.grid-rules {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 0.03;
+}
+
+.grid-suitability {
+  fill: var(--focus);
+  fill-opacity: 0.18;
+}
+
+.grid-entity rect,
+.grid-entity polygon,
+.grid-entity circle,
+.grid-entity line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 0.08;
+}
+
+.grid-entity.shape-dot circle,
+.grid-entity.shape-square circle {
+  fill: var(--ink);
+}
+
+.grid-entity .inner,
+.grid-entity .working-area {
+  stroke: var(--ink-2);
+  stroke-width: 0.05;
+}
+
+.grid-entity .working-area {
+  stroke-dasharray: 0.2 0.15;
+}
+
+.grid-entity .progress {
+  fill: var(--ink);
+  stroke: none;
+}
+
+.grid-entity .glyph {
+  fill: var(--accent);
+  stroke: none;
+  font-family: var(--font-num);
+  font-size: 0.6px;
+}
+
+.grid-entity.dashed rect,
+.grid-entity.dashed polygon,
+.grid-entity.dashed circle {
+  stroke-dasharray: 0.25 0.15;
+}
+
+.grid-entity.state-blocked rect,
+.grid-entity.state-blocked polygon,
+.grid-entity.state-blocked circle,
+.grid-entity.state-blocked line {
+  stroke: var(--accent);
+}
+
+.grid-entity.state-throttled rect,
+.grid-entity.state-throttled polygon,
+.grid-entity.state-throttled circle {
+  stroke: var(--ink);
+}
+
+.grid-connectivity line {
+  stroke: var(--ink-2);
+  stroke-width: 0.05;
+  stroke-dasharray: 0.2 0.15;
+}
+
+.grid-connectivity circle {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.08;
+}
+
+.grid-connectivity.connected circle {
+  fill: var(--accent);
+}

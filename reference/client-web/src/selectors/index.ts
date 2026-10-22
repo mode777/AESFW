@@ -13,6 +13,28 @@ import type {
 } from '@aesfw/protocol';
 import type { I18n } from '../i18n/index.js';
 
+export {
+  archetypeOf,
+  connectivityOverlay,
+  entityShapes,
+  gridCells,
+  shapeGrammar,
+  stateEncoding,
+  suitabilityOverlay,
+} from './grid.js';
+export type {
+  ConnectivityMarker,
+  EntityShape,
+  EntityState,
+  GridCell,
+  GridCellModel,
+  InteriorEncoding,
+  ShapeArchetype,
+  ShapeDescriptor,
+  ShapeKind,
+  StateEncoding,
+} from './grid.js';
+
 /** One labelled inspector row. */
 export interface InspectorRow {
   readonly label: string;
