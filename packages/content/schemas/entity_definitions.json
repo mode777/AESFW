@@ -32,6 +32,22 @@
                 {
                   "const": "finite_deposit",
                   "type": "string"
+                },
+                {
+                  "const": "regenerating_deposit",
+                  "type": "string"
+                },
+                {
+                  "const": "slot_dependent",
+                  "type": "string"
+                },
+                {
+                  "const": "area_dependent",
+                  "type": "string"
+                },
+                {
+                  "const": "condition_dependent",
+                  "type": "string"
                 }
               ]
             },
@@ -53,9 +69,41 @@
                 }
               }
             },
+            "depletion": {
+              "anyOf": [
+                {
+                  "const": "none",
+                  "type": "string"
+                },
+                {
+                  "const": "finite",
+                  "type": "string"
+                },
+                {
+                  "const": "regenerating",
+                  "type": "string"
+                }
+              ]
+            },
             "initial_quantity": {
               "minimum": 0,
               "type": "integer"
+            },
+            "regeneration_per_tick": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "maximum_quantity": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "scale_by_property": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "condition": {
+              "minLength": 1,
+              "type": "string"
             }
           }
         },
@@ -222,6 +270,24 @@
               "additionalItems": false,
               "minItems": 2,
               "maxItems": 2
+            },
+            "working_area": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["cells"],
+              "properties": {
+                "cells": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "exclusive": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "requires_slot": {
+              "minLength": 1,
+              "type": "string"
             },
             "conditions": {
               "anyOf": [

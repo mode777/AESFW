@@ -12,6 +12,7 @@ import type {
   LocationGridPlan,
   LocationPlan,
   LocationProperty,
+  SourceSlot,
   WorldPlan,
 } from '@aesfw/core';
 
@@ -36,6 +37,21 @@ const mapProperties = (value: JsonValue | undefined): LocationProperty[] => {
   return Object.keys(record)
     .sort(det.compareStrings)
     .map((key) => ({ property: ids.stringId(key), value: Number(record[key] ?? 0) }));
+};
+
+const mapSourceSlots = (value: JsonValue | undefined): SourceSlot[] => {
+  if (!Array.isArray(value)) return [];
+  const slots: SourceSlot[] = [];
+  for (const entry of value as readonly JsonValue[]) {
+    const record = asRecord(entry);
+    if (record === null) continue;
+    const type = record['type'];
+    const count = record['count'];
+    if (typeof type !== 'string') continue;
+    if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) continue;
+    slots.push({ type: ids.stringId(type), count });
+  }
+  return slots.sort((a, b) => det.compareStrings(a.type, b.type));
 };
 
 const mapInventories = (value: JsonValue | undefined): InventoryPlan[] => {
@@ -117,6 +133,7 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
         spatialPolicy,
         capacity: grid.width * grid.height,
         properties: mapProperties(data['properties']),
+        sourceSlots: mapSourceSlots(data['source_slots']),
         region: null,
         active: true,
         inventories: mapInventories(data['inventories']),
@@ -143,6 +160,7 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
       spatialPolicy,
       capacity: totalCapacity,
       properties: mapProperties(data['properties']),
+      sourceSlots: mapSourceSlots(data['source_slots']),
       region: null,
       active: true,
       inventories: mapInventories(data['inventories']),

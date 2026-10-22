@@ -70,6 +70,24 @@ describe('[CONT-6.4] location template schema', () => {
   it('[CONT-6.4] a location template without activation is rejected', () => {
     expect(valid(LocationTemplateSchema, { ...template, activation: undefined })).toBe(false);
   });
+
+  it('[CONT-6.4] a location template with source slots validates', () => {
+    expect(
+      valid(LocationTemplateSchema, {
+        ...template,
+        source_slots: [{ type: 'test.slot.a', count: 2 }],
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.4] a negative slot count is rejected', () => {
+    expect(
+      valid(LocationTemplateSchema, {
+        ...template,
+        source_slots: [{ type: 'test.slot.a', count: -1 }],
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('[CONT-6.7] recipe schema', () => {
@@ -205,6 +223,64 @@ describe('[CONT-6.8][CONT-6.9] entity definition schema', () => {
       valid(EntityDefinitionSchema, {
         id: 'test.entity.builder',
         components: { placement: { capacity_cost: -1 } },
+      }),
+    ).toBe(false);
+  });
+
+  it('[CONT-6.8] an area extractor entity definition validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.area_extractor',
+        components: {
+          placement: { footprint: [3, 3], working_area: { cells: 12, exclusive: true } },
+          resource_source: {
+            policy: 'area_dependent',
+            outputs: [{ resource: 'test.resource.a', quantity_per_tick: 66 }],
+            scale_by_property: 'test.property.suitability',
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] a slot extractor entity definition validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.slot_extractor',
+        components: {
+          placement: { footprint: [3, 3], requires_slot: 'test.slot.a' },
+          resource_source: {
+            policy: 'slot_dependent',
+            depletion: 'none',
+            outputs: [{ resource: 'test.resource.a', quantity_per_tick: 66 }],
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] a regenerating source entity definition validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.regenerating_source',
+        components: {
+          resource_source: {
+            policy: 'regenerating_deposit',
+            initial_quantity: 1000,
+            regeneration_per_tick: 100,
+            maximum_quantity: 1000,
+            outputs: [{ resource: 'test.resource.a', quantity_per_tick: 100 }],
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] an unknown source policy is rejected', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.source',
+        components: { resource_source: { policy: 'magic', outputs: [] } },
       }),
     ).toBe(false);
   });

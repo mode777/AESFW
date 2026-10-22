@@ -100,7 +100,7 @@ export {
 } from './policies/inventory-access/index.js';
 export type { InventoryAccessPolicy } from './policies/inventory-access/index.js';
 export { locationOf, locationHubOf } from './sim/location.js';
-export type { Location, LocationHub, LocationProperty } from './sim/location.js';
+export type { Location, LocationHub, LocationProperty, SourceSlot } from './sim/location.js';
 export {
   addOccupancy,
   buildableCount,
@@ -175,6 +175,7 @@ export {
   commitProduction,
   effectiveDuration,
   evaluatePreconditions,
+  evaluateSourcePreconditions,
   planInputs,
   planOutputs,
   recipeOf,
@@ -189,7 +190,11 @@ export type {
   RecipeMode,
   RecipeSpec,
   ResourceSource,
+  SourceConditionEvaluator,
   SourceOutput,
+  SourcePolicy,
+  SourceSlotBinding,
+  WorkingAreaClaim,
 } from './sim/production/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
 export { isPopulationGroup, isResidence, updatePopulation } from './sim/population/index.js';

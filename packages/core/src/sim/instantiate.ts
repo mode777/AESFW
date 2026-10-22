@@ -12,7 +12,7 @@ import type { DefinitionHandle, EntityId, OwnerHandle } from '../ids/index.js';
 import type { Inventory, InventoryAcceptance, InventoryCapacity } from '../tx/inventory.js';
 import type { OwnerState, World } from '../world/types.js';
 import { allocateEntity } from '../world/create.js';
-import type { Location, LocationHub, LocationProperty } from './location.js';
+import type { Location, LocationHub, LocationProperty, SourceSlot } from './location.js';
 import { buildableMask } from './spatial.js';
 import type { LocationGrid } from './spatial.js';
 
@@ -39,6 +39,7 @@ export type LocationPlan = {
   readonly spatialPolicy: string;
   readonly capacity: Int;
   readonly properties: readonly LocationProperty[];
+  readonly sourceSlots?: readonly SourceSlot[];
   readonly region: DefinitionHandle | null;
   readonly active: boolean;
   readonly inventories: readonly InventoryPlan[];
@@ -120,6 +121,9 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
       active: locationPlan.active,
       owner: plan.owner,
       ...(grid === null ? {} : { grid }),
+      ...(locationPlan.sourceSlots === undefined || locationPlan.sourceSlots.length === 0
+        ? {}
+        : { sourceSlots: locationPlan.sourceSlots }),
     });
     const inventories: EntityId[] = [];
     for (const inventoryPlan of locationPlan.inventories) {

@@ -16,6 +16,12 @@ export type LocationProperty = {
   readonly value: Int;
 };
 
+/** A finite count of source slots of one type (CONT-6.4). */
+export type SourceSlot = {
+  readonly type: StringId;
+  readonly count: Int;
+};
+
 /** A location component (GDD-6.1). */
 export type Location = {
   readonly template: DefinitionHandle;
@@ -28,6 +34,8 @@ export type Location = {
   readonly owner: OwnerHandle | null;
   /** Grid geometry, present only for a grid-policy location (GDD-6.1). */
   readonly grid?: LocationGrid;
+  /** Finite source slots per type, ascending by type (GDD-9.5, CONT-6.4). */
+  readonly sourceSlots?: readonly SourceSlot[];
 };
 
 /** The inventories of a location, in ascending entity-ID order. */

@@ -19,7 +19,8 @@ import {
 } from '@aesfw/core';
 import type { Inventory, Registry, TickOutput } from '@aesfw/core';
 import type { CapabilityConsumer, CapabilityProvider } from '@aesfw/core';
-import type { Producer } from '@aesfw/core';
+import type { Location } from '@aesfw/core';
+import type { Producer, ResourceSource, SourceSlotBinding, WorkingAreaClaim } from '@aesfw/core';
 import type { PopulationGroup } from '@aesfw/core';
 
 type World = core.World;
@@ -262,6 +263,34 @@ const checkProducerConsistency = (world: World, findings: InvariantFinding[]): v
   }
 };
 
+const checkSourceConsistency = (world: World, findings: InvariantFinding[]): void => {
+  const sourceStore = world.stores.get<ResourceSource>('resourceSource');
+  const bindingStore = world.stores.get<SourceSlotBinding>('sourceSlotBinding');
+  const claimStore = world.stores.get<WorkingAreaClaim>('workingArea');
+  for (const id of sourceStore.ids()) {
+    const source = sourceStore.get(id) as ResourceSource | null | undefined;
+    if (source == null) continue;
+    if ((source.blockReasons?.length ?? 0) > 0 && (bindingStore.has(id) || claimStore.has(id))) {
+      findings.push({
+        id: 'INV-22',
+        message: `blocked source ${id} holds a slot binding or working-area claim`,
+      });
+    }
+  }
+  for (const id of bindingStore.ids()) {
+    const binding = bindingStore.get(id) as SourceSlotBinding | null | undefined;
+    if (binding == null) continue;
+    const location = world.stores.get<Location>('location').get(binding.location);
+    const slot = location?.sourceSlots?.find((entry) => entry.type === binding.slotType);
+    if (slot === undefined || slot.count <= 0) {
+      findings.push({
+        id: 'INV-22',
+        message: `source ${id} holds a slot binding to a missing slot`,
+      });
+    }
+  }
+};
+
 const checkConservation = (
   before: World,
   output: TickOutput,
@@ -325,6 +354,7 @@ export function checkInvariants(
   checkCapacity(output.world, findings);
   checkCapabilityAllocation(output.world, findings);
   checkProducerConsistency(output.world, findings);
+  checkSourceConsistency(output.world, findings);
   checkPopulationBounds(output.world, findings);
   checkSatisfactionRange(output.world, findings);
   checkConservation(before, output, findings);

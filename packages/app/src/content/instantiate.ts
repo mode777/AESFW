@@ -20,6 +20,7 @@ import type {
   RecipeSpec,
   Residence,
   ResourceSource,
+  SourcePolicy,
   World,
 } from '@aesfw/core';
 import type { CompiledDefinition, ContentRegistry } from '@aesfw/content';
@@ -84,31 +85,73 @@ const recipeSpec = (registry: ContentRegistry, id: unknown): RecipeSpec | null =
   };
 };
 
+const SOURCE_POLICIES: readonly SourcePolicy[] = [
+  'infinite_rate',
+  'finite_deposit',
+  'regenerating_deposit',
+  'slot_dependent',
+  'area_dependent',
+  'condition_dependent',
+];
+
+const sourcePolicy = (value: unknown): SourcePolicy =>
+  typeof value === 'string' && (SOURCE_POLICIES as readonly string[]).includes(value)
+    ? (value as SourcePolicy)
+    : 'infinite_rate';
+
 const sourceFrom = (
   registry: ContentRegistry,
   component: Data,
+  placement: Data,
   location: number,
   inventory: number | null,
 ): ResourceSource => {
-  const policy = component['policy'] === 'finite_deposit' ? 'finite_deposit' : 'infinite_rate';
+  const policy = sourcePolicy(component['policy']);
+  const initial =
+    typeof component['initial_quantity'] === 'number' ? component['initial_quantity'] : 0;
   const outputs = asArray(component['outputs']).map((entry) => {
     const record = asRecord(entry) ?? {};
-    return {
+    const base = {
       resource: handle(registry, 'resource', record['resource']),
       rate: typeof record['quantity_per_tick'] === 'number' ? record['quantity_per_tick'] : 0,
-      remaining:
-        policy === 'finite_deposit'
-          ? typeof component['initial_quantity'] === 'number'
-            ? component['initial_quantity']
-            : 0
-          : null,
     };
+    if (policy === 'finite_deposit') return { ...base, remaining: initial };
+    if (policy === 'regenerating_deposit') {
+      return {
+        ...base,
+        remaining: initial,
+        ...(typeof component['regeneration_per_tick'] === 'number'
+          ? { regeneration: component['regeneration_per_tick'] }
+          : {}),
+        ...(typeof component['maximum_quantity'] === 'number'
+          ? { maximum: component['maximum_quantity'] }
+          : {}),
+      };
+    }
+    return { ...base, remaining: null };
   });
+  const workingArea = asRecord(placement['working_area']);
+  const condition = handle(registry, 'condition', component['condition']);
   return {
     policy,
     location: ids.entityId(location),
     inventory: inventory === null ? null : ids.entityId(inventory),
     outputs: outputs as ResourceSource['outputs'],
+    ...(typeof component['scale_by_property'] === 'string'
+      ? { scaleByProperty: ids.stringId(component['scale_by_property']) }
+      : {}),
+    ...(typeof placement['requires_slot'] === 'string'
+      ? { slotType: ids.stringId(placement['requires_slot']) }
+      : {}),
+    ...(workingArea !== null && typeof workingArea['cells'] === 'number'
+      ? {
+          workingAreaCells: workingArea['cells'],
+          ...(typeof workingArea['exclusive'] === 'boolean'
+            ? { workingAreaExclusive: workingArea['exclusive'] }
+            : {}),
+        }
+      : {}),
+    ...(condition === null ? {} : { condition }),
   };
 };
 
@@ -289,9 +332,10 @@ export function instantiateContentEntities(world: World, registry: ContentRegist
     };
     if (components['resource_source'] !== undefined) {
       const component = asRecord(components['resource_source']) ?? {};
+      const placement = asRecord(components['placement']) ?? {};
       world.stores
         .get<ResourceSource>('resourceSource')
-        .set(entity, sourceFrom(registry, component, location, inventory));
+        .set(entity, sourceFrom(registry, component, placement, location, inventory));
       setDefinition();
     } else if (components['producer'] !== undefined) {
       const component = asRecord(components['producer']) ?? {};

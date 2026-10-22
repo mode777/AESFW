@@ -145,6 +145,12 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             `/entity_definitions/${id}/components/resource_source/outputs/${index}/resource`,
           ),
         );
+        check(
+          id,
+          source?.['condition'],
+          'condition',
+          `/entity_definitions/${id}/components/resource_source/condition`,
+        );
         const construction = asRecord(components?.['construction']);
         asArray(construction?.['costs']).forEach((entry, index) =>
           check(

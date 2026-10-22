@@ -152,6 +152,8 @@ ThroughputAllocation
 ModifierSet
 ```
 
+`SourceSlotBinding` is carried by the `sourceSlotBinding` store kind (TDS-8.3) and names the bound slot type and location; `WorkingAreaClaim` is carried by the `workingArea` store kind (TDS-8.3) and names the claimed location, cell count, and exclusivity. A slot-dependent source binds exactly one slot; an area-dependent source claims one exclusive working area.
+
 #### Population
 
 ```text

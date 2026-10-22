@@ -32,6 +32,24 @@
         }
       }
     },
+    "source_slots": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["type", "count"],
+        "properties": {
+          "type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "count": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      }
+    },
     "inventories": {
       "type": "array",
       "items": {

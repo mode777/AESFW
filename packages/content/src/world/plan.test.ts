@@ -83,6 +83,28 @@ describe('[CONT-6.4][CONT-6.6] default world plan', () => {
     ]);
   });
 
+  it('[CONT-6.4] source slots are ordered by ascending type', () => {
+    const result = defaultWorldPlan(
+      registryFor([
+        template('test.location.a', {
+          source_slots: [
+            { type: 'test.slot.b', count: 0 },
+            { type: 'test.slot.a', count: 2 },
+          ],
+        }),
+      ]),
+    );
+    expect(result.plan.locations[0]?.sourceSlots).toEqual([
+      { type: ids.stringId('test.slot.a'), count: 2 },
+      { type: ids.stringId('test.slot.b'), count: 0 },
+    ]);
+  });
+
+  it('[CONT-6.4] a template without source slots maps to none', () => {
+    const result = defaultWorldPlan(registryFor([template('test.location.a')]));
+    expect(result.plan.locations[0]?.sourceSlots).toEqual([]);
+  });
+
   it('[CONT-6.4] a missing total capacity is reported', () => {
     const result = defaultWorldPlan(
       registryFor([template('test.location.a', { spatial_parameters: {} })]),

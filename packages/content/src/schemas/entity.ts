@@ -12,9 +12,23 @@ import { IdSchema, InventoryRefSchema, ItemRefSchema, RateRefSchema } from './co
 
 const ResourceSourceSchema = Type.Object(
   {
-    policy: Type.Union([Type.Literal('infinite_rate'), Type.Literal('finite_deposit')]),
+    policy: Type.Union([
+      Type.Literal('infinite_rate'),
+      Type.Literal('finite_deposit'),
+      Type.Literal('regenerating_deposit'),
+      Type.Literal('slot_dependent'),
+      Type.Literal('area_dependent'),
+      Type.Literal('condition_dependent'),
+    ]),
     outputs: Type.Array(RateRefSchema),
+    depletion: Type.Optional(
+      Type.Union([Type.Literal('none'), Type.Literal('finite'), Type.Literal('regenerating')]),
+    ),
     initial_quantity: Type.Optional(Type.Integer({ minimum: 0 })),
+    regeneration_per_tick: Type.Optional(Type.Integer({ minimum: 0 })),
+    maximum_quantity: Type.Optional(Type.Integer({ minimum: 0 })),
+    scale_by_property: Type.Optional(IdSchema),
+    condition: Type.Optional(IdSchema),
   },
   { additionalProperties: false },
 );
@@ -75,6 +89,16 @@ const PlacementSchema = Type.Object(
     footprint: Type.Optional(
       Type.Tuple([Type.Integer({ minimum: 1 }), Type.Integer({ minimum: 1 })]),
     ),
+    working_area: Type.Optional(
+      Type.Object(
+        {
+          cells: Type.Integer({ minimum: 0 }),
+          exclusive: Type.Optional(Type.Boolean()),
+        },
+        { additionalProperties: false },
+      ),
+    ),
+    requires_slot: Type.Optional(IdSchema),
     conditions: Type.Optional(Type.Union([IdSchema, Type.Array(IdSchema)])),
   },
   { additionalProperties: false },

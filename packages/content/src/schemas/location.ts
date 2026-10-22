@@ -25,6 +25,14 @@ const InventorySchema = Type.Object(
   { additionalProperties: false },
 );
 
+const SourceSlotSchema = Type.Object(
+  {
+    type: IdSchema,
+    count: Type.Integer({ minimum: 0 }),
+  },
+  { additionalProperties: false },
+);
+
 /** A location template definition (CONT-6.4). */
 export const LocationTemplateSchema = Type.Object(
   {
@@ -33,6 +41,7 @@ export const LocationTemplateSchema = Type.Object(
     spatial_parameters: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
     tags: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
     properties: Type.Optional(Type.Record(Type.String(), Type.Integer())),
+    source_slots: Type.Optional(Type.Array(SourceSlotSchema)),
     inventories: Type.Array(InventorySchema),
     activation: Type.Object({ initial: Type.Boolean() }, { additionalProperties: false }),
   },

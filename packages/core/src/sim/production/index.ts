@@ -6,7 +6,11 @@
  */
 export { advanceSource } from './sources.js';
 export type { SourceTick } from './sources.js';
-export { evaluatePreconditions, staticBlockReasons } from './preconditions.js';
+export {
+  evaluatePreconditions,
+  evaluateSourcePreconditions,
+  staticBlockReasons,
+} from './preconditions.js';
 export { reserveProductionIO } from './reserve.js';
 export { advanceProcesses } from './advance.js';
 export { commitProduction } from './commit.js';
@@ -20,5 +24,9 @@ export type {
   RecipeMode,
   RecipeSpec,
   ResourceSource,
+  SourceConditionEvaluator,
   SourceOutput,
+  SourcePolicy,
+  SourceSlotBinding,
+  WorkingAreaClaim,
 } from './types.js';

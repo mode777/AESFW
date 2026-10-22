@@ -6,8 +6,8 @@ import { createWorld } from '../../world/create.js';
 import type { World } from '../../world/types.js';
 import type { Location, LocationHub } from '../location.js';
 import type { LogicalTransform } from '../spatial.js';
-import { staticBlockReasons } from './preconditions.js';
-import type { Producer, RecipeSpec } from './types.js';
+import { staticBlockReasons, evaluateSourcePreconditions } from './preconditions.js';
+import type { Producer, RecipeSpec, ResourceSource } from './types.js';
 
 const res = (value: number) => definitionHandle(value);
 
@@ -161,5 +161,115 @@ describe('[GDD-10.3] production preconditions', () => {
       'entity_disabled',
       'missing_inventory_access',
     ]);
+  });
+});
+
+const source = (overrides: Partial<ResourceSource> = {}): ResourceSource => ({
+  policy: 'infinite_rate',
+  location: entityId(1),
+  inventory: entityId(2),
+  outputs: [{ resource: res(0), rate: 1000, remaining: null }],
+  ...overrides,
+});
+
+const setSource = (world: World, id: number, value: ResourceSource): void => {
+  stores(world).get<ResourceSource>('resourceSource').set(entityId(id), value);
+};
+
+const sourceOf = (world: World, id: number): ResourceSource | undefined =>
+  stores(world).get<ResourceSource>('resourceSource').get(entityId(id));
+
+const alwaysTrue = (): boolean => true;
+const alwaysFalse = (): boolean => false;
+
+describe('[GDD-10.3][GDD-9.5] resource-source preconditions', () => {
+  it('[GDD-10.3] a disabled source is blocked', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    stores(world).get('enabled').set(entityId(4), { enabled: false });
+    setSource(world, 4, source());
+    evaluateSourcePreconditions(world, alwaysTrue);
+    expect(sourceOf(world, 4)?.blockReasons).toEqual(['entity_disabled']);
+  });
+
+  it('[GDD-10.3] a deficit-paused source is blocked', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    world.owners = {
+      owners: [
+        {
+          handle: ownerHandle(0),
+          knowledge: [],
+          accounts: [],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: [entityId(4)],
+        },
+      ],
+    };
+    setSource(world, 4, source());
+    evaluateSourcePreconditions(world, alwaysTrue);
+    expect(sourceOf(world, 4)?.blockReasons).toContain('paused_by_deficit');
+  });
+
+  it('[GDD-10.3] a source at an inactive location is blocked', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    const location = stores(world).get<Location>('location').get(entityId(1));
+    if (location !== undefined) {
+      stores(world)
+        .get<Location>('location')
+        .set(entityId(1), { ...location, active: false });
+    }
+    setSource(world, 4, source());
+    evaluateSourcePreconditions(world, alwaysTrue);
+    expect(sourceOf(world, 4)?.blockReasons).toContain('location_inactive');
+  });
+
+  it('[GDD-10.3] a source without inventory access is blocked', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    setSource(world, 4, source({ inventory: null }));
+    evaluateSourcePreconditions(world, alwaysTrue);
+    expect(sourceOf(world, 4)?.blockReasons).toContain('missing_inventory_access');
+  });
+
+  it('[GDD-9.5] a condition-dependent source is blocked while its condition is false', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    setSource(world, 4, source({ policy: 'condition_dependent', condition: res(9) }));
+    evaluateSourcePreconditions(world, alwaysFalse);
+    expect(sourceOf(world, 4)?.blockReasons).toContain('condition_false');
+  });
+
+  it('[GDD-9.5] a condition-dependent source with a true condition is not blocked', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    setSource(world, 4, source({ policy: 'condition_dependent', condition: res(9) }));
+    evaluateSourcePreconditions(world, alwaysTrue);
+    expect(sourceOf(world, 4)?.blockReasons).toBeUndefined();
+  });
+
+  it('[GDD-10.3] a clean source is not blocked', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    setSource(world, 4, source());
+    evaluateSourcePreconditions(world, alwaysTrue);
+    expect(sourceOf(world, 4)?.blockReasons).toBeUndefined();
+  });
+
+  it('[GDD-10.3] source block reasons are ordered', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    const location = stores(world).get<Location>('location').get(entityId(1));
+    if (location !== undefined) {
+      stores(world)
+        .get<Location>('location')
+        .set(entityId(1), { ...location, active: false });
+    }
+    stores(world).get('enabled').set(entityId(4), { enabled: false });
+    setSource(world, 4, source());
+    evaluateSourcePreconditions(world, alwaysTrue);
+    expect(sourceOf(world, 4)?.blockReasons).toEqual(['entity_disabled', 'location_inactive']);
   });
 });
