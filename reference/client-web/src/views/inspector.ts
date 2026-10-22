@@ -9,7 +9,7 @@ import type { SessionClient } from '@aesfw/host-web/client';
 import type { EntityDetailDto, JsonObject, NeedBreakdownDto } from '@aesfw/protocol';
 import { h, replaceChildren } from '../dom/h.js';
 import type { I18n } from '../i18n/index.js';
-import { entityInspector, needRows } from '../selectors/index.js';
+import { constructionCommands, entityInspector, needRows } from '../selectors/index.js';
 
 /** A mounted inspector. */
 export interface Inspector {
@@ -54,6 +54,14 @@ export function createInspector(client: SessionClient, actorId: string, i18n: I1
       onclick: () =>
         command('SetEntityEnabled', { entity_id: detail.entity_id, enabled: !detail.enabled }),
     });
+    const construction = constructionCommands(detail.lifecycle).map((type) =>
+      h('button', {
+        class: 'inspector-command',
+        'data-testid': `inspector-command-${type}`,
+        text: i18n.t(type),
+        onclick: () => command(type, { entity_id: detail.entity_id }),
+      }),
+    );
     const needs = needRows(breakdown, i18n).map((row) =>
       h(
         'div',
@@ -62,7 +70,7 @@ export function createInspector(client: SessionClient, actorId: string, i18n: I1
         h('span', { class: 'value', text: `${row.delivered}/${row.demand}` }),
       ),
     );
-    replaceChildren(body, h('h2', { text: vm.title }), ...rows, toggle, ...needs);
+    replaceChildren(body, h('h2', { text: vm.title }), ...rows, toggle, ...construction, ...needs);
   };
 
   show(null, []);

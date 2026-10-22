@@ -26,6 +26,7 @@ export interface TopBar {
 export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewState): TopBar {
   const tick = h('span', { class: 'tick', 'data-testid': 'topbar-tick', text: 'tick 0' });
   const speed = h('span', { class: 'speed', 'data-testid': 'topbar-speed', text: '×1' });
+  const mode = h('span', { class: 'mode', 'data-testid': 'topbar-mode', text: 'inspect' });
   const blocked = h('span', {
     class: 'blocked',
     'data-testid': 'topbar-blocked',
@@ -73,6 +74,7 @@ export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewSt
     h('span', { class: 'brand', text: 'TIER' }),
     tick,
     speed,
+    mode,
     h('span', { class: 'controls' }, play, pause, step, speedUp, save, load),
     blocked,
   );
@@ -81,15 +83,16 @@ export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewSt
     const projection = mirror.projection();
     tick.textContent = `tick ${projection?.tick ?? 0}`;
     speed.textContent = `×${Number(speed.dataset['speed'] ?? '1')}`;
+    mode.textContent = view.mode();
     const entities = projection?.entities ?? [];
     const blockedCount = entities.filter(
       (entity) => (entity.production?.block_reasons.length ?? 0) > 0,
     ).length;
     blocked.textContent = `${blockedCount} blocked`;
-    void view;
   };
 
   mirror.projection.subscribe(update);
+  view.mode.subscribe(update);
   update();
   return { el, update };
 }

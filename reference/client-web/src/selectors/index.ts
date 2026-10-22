@@ -34,6 +34,27 @@ export type {
   ShapeKind,
   StateEncoding,
 } from './grid.js';
+export {
+  commandNotice,
+  constructionCommands,
+  ghostShape,
+  ghostValidity,
+  paletteEntries,
+  placeEntityPlanPayload,
+  placementFootprint,
+  placementKeyAction,
+  placementQueryPayload,
+  reasonLabels,
+} from './placement.js';
+export type {
+  Footprint,
+  GhostShape,
+  GhostValidity,
+  GridBounds,
+  PaletteEntry,
+  PlacementAction,
+  PlacementActionKind,
+} from './placement.js';
 
 /** One labelled inspector row. */
 export interface InspectorRow {

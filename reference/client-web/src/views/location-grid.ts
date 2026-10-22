@@ -1,20 +1,23 @@
 /**
  * The location grid view (REF-12.2, REF-14.3). Renders the active location's
- * cells, entities as shapes, and the connectivity and suitability overlays as
- * layered SVG. It reads the mirror and client-local view state and computes no
- * mechanics.
+ * cells, entities as shapes, the placement ghost, and the connectivity and
+ * suitability overlays as layered SVG. It reads the mirror and client-local
+ * view state and computes no mechanics.
  *
- * Source: REF-12.2, REF-14.3
+ * Source: REF-12.2, REF-13.3, REF-14.3
  */
 import { h, replaceChildren, svg } from '../dom/h.js';
 import type { I18n } from '../i18n/index.js';
 import {
   connectivityOverlay,
   entityShapes,
+  ghostShape,
+  ghostValidity,
   gridCells,
+  reasonLabels,
   suitabilityOverlay,
 } from '../selectors/index.js';
-import type { EntityShape, ShapeArchetype } from '../selectors/index.js';
+import type { EntityShape, Footprint, GhostShape, ShapeArchetype } from '../selectors/index.js';
 import type { Mirror } from '../store/mirror.js';
 import type { ViewState } from '../store/view-state.js';
 
@@ -24,7 +27,16 @@ export interface LocationGrid {
   update(): void;
 }
 
-const geometry = (shape: EntityShape): SVGElement[] => {
+/** The dependencies the grid reads and calls back into (REF-13.3). */
+export interface LocationGridDeps {
+  readonly archetypes: () => ReadonlyMap<string, ShapeArchetype>;
+  readonly footprints: () => ReadonlyMap<string, Footprint>;
+  readonly propertyId: string;
+  readonly onCursorMove?: (position: readonly [number, number]) => void;
+  readonly onConfirm?: () => void;
+}
+
+const shapeGeometry = (shape: GhostShape): SVGElement[] => {
   const { x, y, width, height } = shape;
   const cx = x + width / 2;
   const cy = y + height / 2;
@@ -76,6 +88,14 @@ const geometry = (shape: EntityShape): SVGElement[] => {
       }
     }
   }
+  return nodes;
+};
+
+const geometry = (shape: EntityShape): SVGElement[] => {
+  const nodes = shapeGeometry(shape);
+  const { x, y, width, height } = shape;
+  const cx = x + width / 2;
+  const cy = y + height / 2;
   if (shape.state.progressPermille !== undefined) {
     const ratio = Math.min(1, Math.max(0, shape.state.progressPermille / 1000));
     nodes.push(
@@ -124,25 +144,28 @@ const renderShape = (shape: EntityShape): SVGElement => {
 };
 
 /**
- * Creates the location grid view (REF-12.2).
+ * Creates the location grid view (REF-12.2, REF-13.3).
  *
- * Source: REF-12.2, REF-14.3
+ * Source: REF-12.2, REF-13.3, REF-14.3
  */
 export function createLocationGrid(
   mirror: Mirror,
   view: ViewState,
   i18n: I18n,
-  archetypes: () => ReadonlyMap<string, ShapeArchetype>,
-  propertyId: string,
+  deps: LocationGridDeps,
 ): LocationGrid {
   const legend = h('div', { class: 'grid-legend', 'data-testid': 'grid-legend' });
   const status = h('p', { class: 'grid-status', 'data-testid': 'grid-status' });
+  const ghostStatus = h('p', { class: 'grid-ghost-status', 'data-testid': 'grid-ghost-status' });
   const svgRoot = svg('svg', {
     class: 'grid-svg',
     'data-testid': 'location-grid',
     xmlns: 'http://www.w3.org/2000/svg',
   });
-  const el = h('div', { class: 'location-grid' }, legend, status, svgRoot);
+  const el = h('div', { class: 'location-grid' }, legend, status, ghostStatus, svgRoot);
+
+  let width = 0;
+  let height = 0;
 
   const update = (): void => {
     const projection = mirror.projection();
@@ -150,24 +173,32 @@ export function createLocationGrid(
     const requested = view.location();
     const location = locations.find((entry) => entry.entity_id === requested) ?? locations[0];
     if (location === undefined) {
+      width = 0;
+      height = 0;
       svgRoot.removeAttribute('viewBox');
       replaceChildren(svgRoot);
       legend.textContent = '';
+      ghostStatus.textContent = '';
       status.textContent = i18n.t('grid.no_location');
       return;
     }
     const model = gridCells(location);
     if (model === null) {
+      width = 0;
+      height = 0;
       svgRoot.removeAttribute('viewBox');
       replaceChildren(svgRoot);
       legend.textContent = '';
+      ghostStatus.textContent = '';
       status.textContent = i18n.t('grid.no_grid');
       return;
     }
+    width = model.width;
+    height = model.height;
     svgRoot.setAttribute('viewBox', `0 0 ${model.width} ${model.height}`);
 
     const entities = projection?.entities ?? [];
-    const shapes = entityShapes(location, entities, archetypes());
+    const shapes = entityShapes(location, entities, deps.archetypes());
     const blockedPath = model.cells
       .filter((cell) => cell.blocked)
       .map((cell) => `M${cell.x} ${cell.y}h1v1h-1z`)
@@ -186,7 +217,7 @@ export function createLocationGrid(
     const overlay = view.overlay();
     const overlayNodes: SVGElement[] = [];
     if (overlay === 'suitability') {
-      const value = suitabilityOverlay(location, propertyId);
+      const value = suitabilityOverlay(location, deps.propertyId);
       overlayNodes.push(
         svg('rect', {
           class: 'grid-suitability',
@@ -197,7 +228,7 @@ export function createLocationGrid(
           'data-suitability': value ?? '',
         }),
       );
-      legend.textContent = `${i18n.t('overlay.suitability')}: ${i18n.t(propertyId)} ${
+      legend.textContent = `${i18n.t('overlay.suitability')}: ${i18n.t(deps.propertyId)} ${
         value ?? '-'
       }`;
     } else if (overlay === 'connectivity') {
@@ -225,17 +256,59 @@ export function createLocationGrid(
       legend.textContent = '';
     }
 
+    const ghostNodes: SVGElement[] = [];
+    const placement = view.placement();
+    if (view.mode() === 'place' && placement.definitionId !== null) {
+      const footprint = deps.footprints().get(placement.definitionId);
+      if (footprint !== undefined) {
+        const archetype = deps.archetypes().get(placement.definitionId) ?? 'unknown';
+        const ghost = ghostShape(placement, footprint, archetype);
+        const validity = ghostValidity(placement.result);
+        const group = svg('g', {
+          class: `placement-ghost ghost-${validity}`,
+          'data-testid': 'placement-ghost',
+          'data-validity': validity,
+          'data-definition': placement.definitionId,
+        });
+        for (const node of shapeGeometry(ghost)) group.append(node);
+        ghostNodes.push(group);
+        const reasons =
+          placement.result === null ? [] : reasonLabels(placement.result.reasons, i18n);
+        ghostStatus.textContent = [i18n.t(`placement.${validity}`), ...reasons].join(' · ');
+      } else {
+        ghostStatus.textContent = '';
+      }
+    } else {
+      ghostStatus.textContent = '';
+    }
+
     replaceChildren(
       svgRoot,
       background,
       svg('g', { class: 'grid-overlay' }, ...overlayNodes),
       svg('g', { class: 'grid-entities' }, ...shapes.map(renderShape)),
+      svg('g', { class: 'grid-ghost' }, ...ghostNodes),
     );
     status.textContent = `${model.width}×${model.height} · ${shapes.length}`;
   };
 
+  svgRoot.addEventListener('pointermove', (event) => {
+    if (view.mode() !== 'place' || width === 0 || height === 0) return;
+    const rect = svgRoot.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const x = Math.floor(((event.clientX - rect.left) / rect.width) * width);
+    const y = Math.floor(((event.clientY - rect.top) / rect.height) * height);
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    deps.onCursorMove?.([x, y]);
+  });
+  svgRoot.addEventListener('click', () => {
+    if (view.mode() === 'place') deps.onConfirm?.();
+  });
+
   view.location.subscribe(update);
   view.overlay.subscribe(update);
+  view.mode.subscribe(update);
+  view.placement.subscribe(update);
   mirror.projection.subscribe(update);
   update();
   return { el, update };

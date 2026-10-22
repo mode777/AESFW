@@ -188,3 +188,82 @@ body {
 .grid-connectivity.connected circle {
   fill: var(--accent);
 }
+
+.top-bar .mode {
+  font-family: var(--font-num);
+  color: var(--ink-2);
+}
+
+.palette-title {
+  margin: 8px 0 0;
+  font-size: var(--size-1);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+
+.build-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.palette-item {
+  padding: 2px 6px;
+  border: var(--stroke-1) solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.palette-item.selected {
+  outline: var(--stroke-2) solid var(--focus);
+}
+
+.palette-item:focus-visible {
+  outline: var(--stroke-3) solid var(--focus);
+}
+
+.grid-ghost-status {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: var(--size-1);
+  color: var(--ink-2);
+}
+
+.placement-ghost rect,
+.placement-ghost polygon,
+.placement-ghost circle,
+.placement-ghost line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 0.1;
+  stroke-dasharray: 0.25 0.15;
+}
+
+.placement-ghost.ghost-unknown rect,
+.placement-ghost.ghost-unknown polygon,
+.placement-ghost.ghost-unknown circle,
+.placement-ghost.ghost-unknown line {
+  stroke: var(--ink-2);
+}
+
+.placement-ghost.ghost-invalid rect,
+.placement-ghost.ghost-invalid polygon,
+.placement-ghost.ghost-invalid circle,
+.placement-ghost.ghost-invalid line {
+  stroke: var(--accent);
+}
+
+.notice {
+  min-height: var(--size-2);
+  padding: 0 12px;
+  font-family: var(--font-num);
+  font-size: var(--size-1);
+  color: var(--ink-2);
+}
+
+.notice[data-message] {
+  color: var(--accent);
+}

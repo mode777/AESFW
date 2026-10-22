@@ -8,21 +8,35 @@ import { PROTOCOL_VERSION } from '@aesfw/protocol';
 import type {
   DefinitionMetadataDto,
   EntityDetailDto,
+  LocationDto,
   LocationSummaryDto,
   NeedBreakdownDto,
+  PlacementResultDto,
 } from '@aesfw/protocol';
 import { R0_CONTENT } from './content/r0.js';
 import { h, replaceChildren } from './dom/h.js';
 import { createI18n } from './i18n/index.js';
-import { archetypeOf } from './selectors/index.js';
-import type { ShapeArchetype } from './selectors/index.js';
+import {
+  archetypeOf,
+  commandNotice,
+  gridCells,
+  paletteEntries,
+  placeEntityPlanPayload,
+  placementFootprint,
+  placementKeyAction,
+  placementQueryPayload,
+} from './selectors/index.js';
+import type { Footprint, PaletteEntry, ShapeArchetype } from './selectors/index.js';
 import { createWorkerClient } from './session/client.js';
 import { createMirror } from './store/mirror.js';
-import { createViewState, toggleOverlay } from './store/view-state.js';
+import { createViewState, nextMode, toggleOverlay } from './store/view-state.js';
+import type { PlacementCursor } from './store/view-state.js';
+import { createBuildPalette } from './views/build-palette.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
 import { createInspector } from './views/inspector.js';
 import { createInventoryTable } from './views/inventory-table.js';
 import { createLocationGrid } from './views/location-grid.js';
+import { createNotice } from './views/notice.js';
 import { createPopulationTable } from './views/population-table.js';
 import { createTopBar } from './views/top-bar.js';
 
@@ -34,6 +48,14 @@ const CLIENT_STRINGS: Readonly<Record<string, string>> = {
   'grid.no_grid': 'No grid',
   'overlay.connectivity': 'Connectivity',
   'overlay.suitability': 'Suitability',
+  'palette.title': 'Build',
+  'mode.inspect': 'inspect',
+  'mode.place': 'place',
+  'mode.route-edit': 'route-edit',
+  'placement.unknown': 'preview',
+  'placement.valid': 'valid',
+  'placement.invalid': 'invalid',
+  'command.rejected': 'Command rejected',
 };
 
 interface QueryResult {
@@ -41,12 +63,13 @@ interface QueryResult {
   readonly need_breakdown?: readonly NeedBreakdownDto[];
   readonly location_summary?: LocationSummaryDto | null;
   readonly definition_metadata?: readonly DefinitionMetadataDto[];
+  readonly placement_result?: PlacementResultDto | null;
 }
 
 /**
  * Mounts the reference client into `root` (REF-14.1).
  *
- * Source: REF-14.1
+ * Source: REF-14.1, REF-13.1, REF-13.2, REF-13.3
  */
 export function mount(root: HTMLElement): void {
   const { client } = createWorkerClient();
@@ -57,8 +80,100 @@ export function mount(root: HTMLElement): void {
   const inspector = createInspector(client, ACTOR_ID, i18n);
   const inventory = createInventoryTable(i18n);
   const population = createPopulationTable(i18n);
+  const notice = createNotice();
   const archetypes = new Map<string, ShapeArchetype>();
-  const grid = createLocationGrid(mirror, view, i18n, () => archetypes, SUITABILITY_PROPERTY);
+  const footprints = new Map<string, Footprint>();
+  let palette: readonly PaletteEntry[] = [];
+
+  const currentLocation = (): LocationDto | undefined => {
+    const projection = mirror.projection();
+    const locations = projection?.locations ?? [];
+    const requested = view.location();
+    return locations.find((entry) => entry.entity_id === requested) ?? locations[0];
+  };
+
+  const gridBounds = (): { width: number; height: number } | null => {
+    const location = currentLocation();
+    if (location === undefined) return null;
+    const model = gridCells(location);
+    return model === null ? null : { width: model.width, height: model.height };
+  };
+
+  const requestPlacementQuery = (): void => {
+    const location = currentLocation();
+    if (location === undefined) return;
+    const payload = placementQueryPayload(view.placement(), location.entity_id);
+    if (payload === null) return;
+    client.query(ACTOR_ID, payload);
+  };
+
+  let framePending = false;
+  const schedulePlacementQuery = (): void => {
+    if (framePending) return;
+    framePending = true;
+    const run = (): void => {
+      framePending = false;
+      requestPlacementQuery();
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else run();
+  };
+
+  const startPlacement = (definitionId: string): void => {
+    const bounds = gridBounds();
+    const current = view.placement();
+    const position: readonly [number, number] =
+      bounds === null
+        ? current.position
+        : [Math.floor((bounds.width - 1) / 2), Math.floor((bounds.height - 1) / 2)];
+    view.mode.set('place');
+    view.placement.set({
+      definitionId,
+      position,
+      orientation: current.orientation,
+      result: null,
+    });
+    paletteView.show(palette, definitionId);
+    schedulePlacementQuery();
+  };
+
+  const setCursor = (cursor: PlacementCursor): void => {
+    view.placement.set(cursor);
+    schedulePlacementQuery();
+  };
+
+  const cancelPlacement = (): void => {
+    const current = view.placement();
+    view.mode.set('inspect');
+    view.placement.set({ ...current, definitionId: null, result: null });
+    paletteView.show(palette, null);
+  };
+
+  const submitPlacement = (): void => {
+    const location = currentLocation();
+    if (location === undefined) return;
+    const payload = placeEntityPlanPayload(view.placement(), location.entity_id);
+    if (payload === null) return;
+    client.command({
+      command_id: `client-place-${Date.now()}`,
+      actor_id: ACTOR_ID,
+      type: 'PlaceEntityPlan',
+      payload,
+    });
+  };
+
+  const paletteView = createBuildPalette((definitionId) => startPlacement(definitionId));
+  const grid = createLocationGrid(mirror, view, i18n, {
+    archetypes: () => archetypes,
+    footprints: () => footprints,
+    propertyId: SUITABILITY_PROPERTY,
+    onCursorMove: (position) => {
+      const current = view.placement();
+      if (position[0] === current.position[0] && position[1] === current.position[1]) return;
+      setCursor({ ...current, position, result: null });
+    },
+    onConfirm: () => submitPlacement(),
+  });
   const entityList = h('div', { class: 'entity-list', 'data-testid': 'entity-list' });
   const locationList = h('div', { class: 'location-list', 'data-testid': 'location-list' });
 
@@ -127,6 +242,9 @@ export function mount(root: HTMLElement): void {
         mirror.applyDelta(response.delta, response.events);
         refreshLists();
         break;
+      case 'command_result':
+        notice.show(commandNotice(response.result, i18n));
+        break;
       case 'query_result': {
         const result = response.result as QueryResult;
         if (result.entity_detail !== undefined) {
@@ -144,8 +262,16 @@ export function mount(root: HTMLElement): void {
         if (result.definition_metadata !== undefined) {
           for (const definition of result.definition_metadata) {
             archetypes.set(definition.definition_id, archetypeOf(definition));
+            const footprint = placementFootprint(definition);
+            if (footprint !== null) footprints.set(definition.definition_id, footprint);
           }
+          palette = paletteEntries(result.definition_metadata, i18n);
+          paletteView.show(palette, view.placement().definitionId);
           grid.update();
+        }
+        if (result.placement_result !== undefined) {
+          const placement = view.placement();
+          view.placement.set({ ...placement, result: result.placement_result });
         }
         break;
       }
@@ -159,21 +285,52 @@ export function mount(root: HTMLElement): void {
   const panels = h(
     'div',
     { class: 'panels' },
-    h('aside', { class: 'navigator' }, entityList, locationList),
+    h(
+      'aside',
+      { class: 'navigator' },
+      entityList,
+      locationList,
+      h('h3', { class: 'palette-title', text: i18n.t('palette.title') }),
+      paletteView.el,
+    ),
     h('main', { class: 'canvas' }, grid.el),
     inspector.el,
     inventory.el,
     population.el,
   );
-  root.append(topBar.el, panels, debug.el);
+  root.append(topBar.el, panels, notice.el, debug.el);
 
   document.addEventListener('keydown', (event) => {
     if (event.key === '`') view.debug.set(!view.debug());
+    if (view.mode() === 'place') {
+      const bounds = gridBounds();
+      if (bounds !== null) {
+        const action = placementKeyAction(view.placement(), event.key, bounds);
+        if (action.kind !== 'none') {
+          event.preventDefault();
+          if (action.kind === 'confirm') submitPlacement();
+          else if (action.kind === 'cancel') cancelPlacement();
+          else setCursor(action.cursor);
+          return;
+        }
+      }
+    }
+    if (event.key === 'b' || event.key === 'B') {
+      const next = nextMode(view.mode(), event.key);
+      view.mode.set(next);
+      if (next === 'place' && view.placement().definitionId === null && palette[0] !== undefined) {
+        startPlacement(palette[0].definitionId);
+      }
+      return;
+    }
     if (event.key === ' ') {
       event.preventDefault();
       client.control('run');
     }
-    if (event.key === 'Escape') view.overlay.set(null);
+    if (event.key === 'Escape') {
+      cancelPlacement();
+      view.overlay.set(null);
+    }
     if (event.key === 'c' || event.key === 'C' || event.key === 's' || event.key === 'S') {
       view.overlay.set(toggleOverlay(view.overlay(), event.key));
     }

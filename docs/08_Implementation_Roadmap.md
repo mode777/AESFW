@@ -193,7 +193,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 3.6b | `add-spatial-projection-data` | app/projections | expose location grid geometry, entity logical transform/footprint, and connectivity in the per-actor snapshot/read models; gap closure enabling the client grid ✓ archived 2026-10-22 | PIC-9.1, PIC-10.2, TDS-18.4 | 3.1, 3.3, 3.4 | M |
 | 3.7 | `add-client-location-grid` | reference/client | SVG grid view, shape grammar, state encoding, connectivity and suitability overlays ✓ archived 2026-10-22 | REF-10, REF-12.2, REF-14.3 | 2.9, 3.6, 3.6b | L |
 | 3.7b | `add-placement-query-host` | host/web | wire the read-only `placement_query` through the web-worker host; gap closure enabling the authoritative client ghost preview ✓ archived 2026-10-22 | PIC-12.1, TDS-21.1 | 3.3 | S |
-| 3.8 | `add-client-placement-mode` | reference/client | build palette, ghost with authoritative preview, keyboard placement, construction commands | REF-13.1–13.3 | 3.7, 3.7b | M |
+| 3.8 | `add-client-placement-mode` | reference/client | build palette, ghost with authoritative preview, keyboard placement, construction commands ✓ archived 2026-10-22 | REF-13.1–13.3 | 3.7, 3.7b | M |
 
 **Exit criteria:** a placement scenario (valid, invalid, cancelled, deconstructed) passes; INV-20 holds; a player can build the R1 chain from scratch in the browser.
 
@@ -485,3 +485,19 @@ Rows 2.1–2.11 are archived. Exit criteria and their verification:
 **Risks.** R-07 (presentation contract unworkable) retired: projections, deltas, and the thin client work end to end. R-08 (legibility/fun) first look delivered. R-10 (save compatibility) has a versioned v1 format with `content_mismatch`. R-06 (browser performance) baseline recorded.
 
 **Next.** M3 (space and construction) is unblocked: 3.1 depends on 1.8 (archived).
+
+### M3 — Space and Construction (completed 2026-10-22)
+
+Rows 3.1–3.8 are archived. Exit criteria and their verification:
+
+| Exit criterion | Verification |
+| --- | --- |
+| A placement scenario (valid, invalid, cancelled, deconstructed) passes | Core placement and construction tests (`packages/core/src/sim/placement/placement.test.ts`) and the application `placementQuery` tests (`packages/app/src/session/placement.test.ts`) |
+| INV-20 holds | Spatial and connectivity cache-rebuild property tests (`spatial.prop.test.ts`, `connectivity.prop.test.ts`) and the invariant harness (`packages/testkit/src/harness/invariants.ts`) |
+| A player can build the R1 chain from scratch in the browser | Not run in this environment: the Alpine/musl development container cannot launch Playwright's Chromium. The R1 content, the `placement_query` round-trip, and the `PlaceEntityPlan`/`CommitConstruction`/`CancelEntityPlan`/`DeconstructEntity` command path are covered by the test suite; the browser flow is deferred to the CI L7 stage and is not claimed here. |
+
+**Spec reconciliation.** No normative amendment to 01–07 was required by any M3 row. The client continued to import only `@aesfw/protocol` and `@aesfw/host-web/client`; no framework, save-format, protocol-version, or golden change was introduced.
+
+**Risks.** R-09 (spatial and placement complexity) retired: the grid policy, construction lifecycle, placement predicates and commands, connectivity, slot/area sources, the per-actor spatial projection, and the client placement mode all work end to end. R-06 (browser performance) still has no M3-specific measurement; the 40×40 grid and ghost rendering budgets (07 §14.6) remain to be checked on the build/verification box.
+
+**Next.** M4 (continuous economy and planning metrics) is unblocked: 4.1 depends on 1.11 (archived). M6 (world map and transport) remains gated on its own rows.

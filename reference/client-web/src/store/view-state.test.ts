@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createViewState, toggleOverlay } from './view-state.js';
+import { createViewState, nextMode, toggleOverlay } from './view-state.js';
 
 describe('[REF-12.2] grid overlay view state', () => {
   it('[REF-12.2] the connectivity key selects the connectivity overlay', () => {
@@ -18,5 +18,30 @@ describe('[REF-12.2] grid overlay view state', () => {
     const view = createViewState();
     view.location.set(5);
     expect(view.location()).toBe(5);
+  });
+});
+
+describe('[REF-13.1][REF-13.2] placement mode view state', () => {
+  it('[REF-13.1][REF-13.2] the build key enters place mode', () => {
+    expect(nextMode('inspect', 'b')).toBe('place');
+  });
+
+  it('[REF-13.1][REF-13.2] Escape returns to inspect mode', () => {
+    expect(nextMode('place', 'Escape')).toBe('inspect');
+  });
+
+  it('[REF-13.1][REF-13.2] an unrelated key leaves the mode unchanged', () => {
+    expect(nextMode('place', 'x')).toBe('place');
+  });
+
+  it('[REF-13.1][REF-13.2] the placement cursor is client-local state', () => {
+    const view = createViewState();
+    view.placement.set({
+      definitionId: 'test.entity.a',
+      position: [1, 2],
+      orientation: 0,
+      result: null,
+    });
+    expect(view.placement().definitionId).toBe('test.entity.a');
   });
 });
