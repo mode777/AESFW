@@ -19,3 +19,4 @@ export type {
   SessionState,
   SubmitResult,
 } from './session/index.js';
+export { diffProjection, project } from './projections/index.js';

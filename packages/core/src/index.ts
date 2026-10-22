@@ -30,7 +30,9 @@ export {
   decodeWorld,
   hashWorld,
   entityExists,
+  readWorld,
 } from './world/index.js';
+export type { WorldReader } from './world/index.js';
 export type {
   CanonicalState,
   ComponentKind,

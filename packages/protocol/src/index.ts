@@ -72,6 +72,7 @@ export type {
 } from './worker.js';
 
 export { decodeCommandEnvelope, decodeCommandResult } from './codecs/commands.js';
+export { applyDelta, canApplyDelta } from './delta.js';
 export { decodeSnapshot, decodeSnapshotDelta } from './codecs/snapshot.js';
 export { decodeEvent } from './codecs/events.js';
 export { decodeDefinitionMetadata } from './codecs/metadata.js';
