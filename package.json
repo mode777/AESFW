@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:property": "vitest run prop.test.ts",
     "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:e2e": "playwright test",
     "trace": "node tools/trace/index.mjs",
     "golden:update": "node tools/golden/index.mjs",
     "bench": "node packages/host-node/dist/bin.js bench --scenario bench_small --iterations 200 --warmup 20",

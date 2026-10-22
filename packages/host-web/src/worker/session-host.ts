@@ -161,6 +161,7 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
         protocol_version: PROTOCOL_VERSION,
         delta,
         events: pendingEvents,
+        ...(lastGoodHash === '' ? {} : { hash: lastGoodHash }),
       });
     }
     lastPublished = snapshot;

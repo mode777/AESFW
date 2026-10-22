@@ -196,6 +196,11 @@ export function decodeWorkerResponse(value: unknown): DecodeResult<WorkerRespons
         protocol_version: version,
         delta: decodedDelta.value,
         events,
+        ...(value['hash'] === undefined
+          ? {}
+          : isString(value['hash'])
+            ? { hash: value['hash'] }
+            : {}),
       });
     }
     case 'command_result': {

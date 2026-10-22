@@ -111,6 +111,7 @@ export interface WorkerDeltaResponseDto {
   readonly protocol_version: ProtocolVersion;
   readonly delta: SnapshotDeltaDto;
   readonly events: readonly EventDto[];
+  readonly hash?: string;
 }
 
 /** The result of a submitted command (TDS-21.1, PIC-13). */

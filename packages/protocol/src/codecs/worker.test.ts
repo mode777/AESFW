@@ -69,4 +69,43 @@ describe('[TDS-21.1] worker response codec', () => {
     expect(decoded.ok).toBe(false);
     if (!decoded.ok) expect(decoded.error[0]?.code).toBe('protocol.unknown_kind');
   });
+
+  it('[TDS-21.1] a delta with a hash decodes', () => {
+    const decoded = decodeWorkerResponse({
+      kind: 'delta',
+      protocol_version: 1,
+      delta: {
+        session_id: 's1',
+        from_revision: 0,
+        to_revision: 1,
+        tick: 1,
+        entity_updates: [],
+        inventory_updates: [],
+      },
+      events: [],
+      hash: '0123456789abcdef',
+    });
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok && decoded.value.kind === 'delta') {
+      expect(decoded.value.hash).toBe('0123456789abcdef');
+    }
+  });
+
+  it('[TDS-21.1] a delta without a hash decodes', () => {
+    const decoded = decodeWorkerResponse({
+      kind: 'delta',
+      protocol_version: 1,
+      delta: {
+        session_id: 's1',
+        from_revision: 0,
+        to_revision: 1,
+        tick: 1,
+        entity_updates: [],
+        inventory_updates: [],
+      },
+      events: [],
+    });
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok && decoded.value.kind === 'delta') expect(decoded.value.hash).toBeUndefined();
+  });
 });

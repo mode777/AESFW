@@ -57,13 +57,23 @@ export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewSt
       update();
     },
   });
+  const save = h('button', {
+    'data-testid': 'topbar-save',
+    text: 'save',
+    onclick: () => client.save('auto'),
+  });
+  const load = h('button', {
+    'data-testid': 'topbar-load',
+    text: 'load',
+    onclick: () => client.load('auto'),
+  });
   const el = h(
     'header',
     { class: 'top-bar', 'data-testid': 'top-bar' },
     h('span', { class: 'brand', text: 'TIER' }),
     tick,
     speed,
-    h('span', { class: 'controls' }, play, pause, step, speedUp),
+    h('span', { class: 'controls' }, play, pause, step, speedUp, save, load),
     blocked,
   );
 

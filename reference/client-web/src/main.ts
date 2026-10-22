@@ -83,6 +83,7 @@ export function mount(root: HTMLElement): void {
         break;
       case 'delta':
         mirror.applyDelta(response.delta, response.events);
+        if (response.hash !== undefined) metadata.lastHash = response.hash;
         refreshLists();
         break;
       case 'query_result': {
