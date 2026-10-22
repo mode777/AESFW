@@ -304,6 +304,8 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
           case 'step':
             advanceTicks(request.ticks ?? 1);
             break;
+          case 'speed':
+            break;
         }
         if (request.speed !== undefined) speed = request.speed;
         return;

@@ -19,7 +19,7 @@ const PACKAGES = ['core', 'content', 'protocol', 'app', 'testkit', 'host-web', '
 const SUBPATH_ENTRIES = {
   core: ['testing'],
   testkit: ['scenario', 'bench'],
-  'host-web': ['worker', 'client'],
+  'host-web': ['worker', 'client', 'worker\\?worker', 'client\\?client'],
 };
 
 /** Entry file paths per package, relative to the package directory. */

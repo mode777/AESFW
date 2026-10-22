@@ -11,7 +11,7 @@ import type { JsonObject, WireId, WireInt } from './scalars.js';
 import type { ProtocolVersion } from './version.js';
 
 /** The clock/control actions the client may send (TDS-21.1). */
-export type WorkerControlAction = 'run' | 'pause' | 'step';
+export type WorkerControlAction = 'run' | 'pause' | 'step' | 'speed';
 
 /** A single content file passed to the worker (TDS-21.1). */
 export interface ContentFileDto {

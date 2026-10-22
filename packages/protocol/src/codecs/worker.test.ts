@@ -32,6 +32,17 @@ describe('[TDS-21.1] worker request codec', () => {
     expect(decoded.ok).toBe(false);
     if (!decoded.ok) expect(decoded.error[0]?.code).toBe('protocol.invalid_field');
   });
+
+  it('[TDS-21.1] a speed control decodes', () => {
+    const decoded = decodeWorkerRequest({
+      kind: 'control',
+      protocol_version: 1,
+      action: 'speed',
+      speed: 4,
+    });
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok && decoded.value.kind === 'control') expect(decoded.value.action).toBe('speed');
+  });
 });
 
 describe('[TDS-21.1] worker response codec', () => {

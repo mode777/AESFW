@@ -98,6 +98,7 @@ export default tseslint.config(
       '**/node_modules/**',
       'vitest.config.ts',
       'vitest.browser.config.ts',
+      '**/vite.config.ts',
       'tools/**',
     ],
   },

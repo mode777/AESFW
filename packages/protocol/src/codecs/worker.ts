@@ -44,7 +44,7 @@ const RESPONSE_KINDS: readonly string[] = [
   'error',
 ];
 
-const CONTROL_ACTIONS: readonly string[] = ['run', 'pause', 'step'];
+const CONTROL_ACTIONS: readonly string[] = ['run', 'pause', 'step', 'speed'];
 
 function checkEnvelope(value: Record<string, unknown>, kinds: readonly string[]): ProtocolError[] {
   const version = value['protocol_version'];

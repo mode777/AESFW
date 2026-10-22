@@ -1,0 +1,19 @@
+:root {
+  --paper: #f7f7f4;
+  --ink: #151515;
+  --ink-2: #5c5c5c;
+  --ink-3: #a3a3a3;
+  --rule: #dedede;
+  --accent: #d9480f;
+  --focus: #1c6dd0;
+  --font-ui: system-ui, sans-serif;
+  --font-num: ui-monospace, monospace;
+  --size-1: 11px;
+  --size-2: 13px;
+  --size-3: 16px;
+  --size-4: 20px;
+  --stroke-1: 1px;
+  --stroke-2: 1.5px;
+  --stroke-3: 2px;
+  --motion: 120ms ease-out;
+}
