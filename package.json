@@ -16,7 +16,7 @@
     "lint": "eslint . && node tools/lint-theme-free.mjs",
     "depcruise": "depcruise packages reference",
     "test": "vitest run",
-    "test:property": "vitest run \"**/*.prop.test.ts\"",
+    "test:property": "vitest run prop.test.ts",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "trace": "node tools/trace/index.mjs",
     "golden:update": "node tools/golden/index.mjs",
