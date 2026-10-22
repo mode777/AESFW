@@ -486,6 +486,24 @@ describe('[GDD-18.1][ARCH-7.3] placement and construction commands', () => {
     }
   });
 
+  it('[GDD-20.2] a placed entity carries its location owner', () => {
+    const world = makeWorld();
+    addGridLocation(world);
+    const command = scheduled(
+      {
+        type: 'PlaceEntityPlan',
+        definition: definitionHandle(ENTITY),
+        location: entityId(1),
+        transform: transform(entityId(1), 1, 1),
+      },
+      0,
+    );
+    runPhases(world, registry, [1], input([command]));
+    expect(stores(world).get<{ owner: number }>('owner').get(entityId(100))).toEqual({
+      owner: ownerHandle(0),
+    });
+  });
+
   it('[GDD-9.1] cancel applies from planned and is rejected from active', () => {
     const world = makeWorld();
     addGridLocation(world);

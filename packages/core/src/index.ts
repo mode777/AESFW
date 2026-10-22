@@ -202,6 +202,13 @@ export type {
   WorkingAreaClaim,
 } from './sim/production/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
+export { applyMaintenance, dueLines, isCharging } from './sim/economy/index.js';
+export type {
+  ChargePolicy,
+  Maintenance,
+  MaintenanceInput,
+  ShortagePolicy,
+} from './sim/economy/index.js';
 export { isPopulationGroup, isResidence, updatePopulation } from './sim/population/index.js';
 export type { PopulationGroup, PopulationOutput, Residence } from './sim/population/index.js';
 export type { Growth, GrowthCondition, GrowthStep } from './sim/population/index.js';

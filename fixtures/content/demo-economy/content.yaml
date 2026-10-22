@@ -114,6 +114,13 @@ entity_definitions:
         process_slots: 1
         input_inventory: location.shared
         output_inventory: location.shared
+      maintenance:
+        interval_ticks: 10
+        inputs:
+          - resource: demo.resource.credits
+            quantity: 500
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
 
   - id: demo.entity.residence
     components:

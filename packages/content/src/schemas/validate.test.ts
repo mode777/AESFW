@@ -78,6 +78,70 @@ describe('[CONT-11.2][TDS-20.2] raw-document schema validation', () => {
     expect(codes(result.diagnostics)).toEqual(['invalid_id']);
     expect(result.diagnostics[0]?.path).toBe('/resources/0/id');
   });
+
+  it('[CONT-6.8] a maintenance component validates', () => {
+    const result = validateSchemas([
+      file({
+        entity_definitions: [
+          {
+            id: 'test.entity.maintained',
+            components: {
+              maintenance: {
+                interval_ticks: 60,
+                inputs: [{ resource: 'test.resource.credits', quantity: 30000 }],
+                charge_policy: 'while_enabled',
+                shortage_policy: 'owner_deficit_policy',
+              },
+            },
+          },
+        ],
+      }),
+    ]);
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it('[CONT-6.8] a maintenance component with an unknown field is rejected', () => {
+    const result = validateSchemas([
+      file({
+        entity_definitions: [
+          {
+            id: 'test.entity.maintained',
+            components: {
+              maintenance: {
+                interval_ticks: 60,
+                inputs: [{ resource: 'test.resource.credits', quantity: 1 }],
+                charge_policy: 'while_enabled',
+                shortage_policy: 'ignore',
+                debt: true,
+              },
+            },
+          },
+        ],
+      }),
+    ]);
+    expect(codes(result.diagnostics)).toContain('schema_invalid');
+  });
+
+  it('[CONT-6.8] a maintenance component with an empty inputs list is rejected', () => {
+    const result = validateSchemas([
+      file({
+        entity_definitions: [
+          {
+            id: 'test.entity.maintained',
+            components: {
+              maintenance: {
+                interval_ticks: 60,
+                inputs: [],
+                charge_policy: 'while_enabled',
+                shortage_policy: 'ignore',
+              },
+            },
+          },
+        ],
+      }),
+    ]);
+    expect(codes(result.diagnostics)).toContain('schema_invalid');
+  });
 });
 
 describe('[TDS-7] definition collection catalogue', () => {

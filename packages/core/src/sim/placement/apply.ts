@@ -87,6 +87,10 @@ export function applyPlaceEntityPlan(
   world.stores
     .get<{ definition: number }>('definition')
     .set(entity, { definition: command.definition });
+  const owner = component.owner;
+  if (owner !== null) {
+    world.stores.get<{ owner: number }>('owner').set(entity, { owner });
+  }
   world.stores.get('placement').set(entity, {
     capacityCost: spec.capacityCost,
     footprint: spec.footprint,

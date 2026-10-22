@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, instantiateWorld, readWorld, ids } from '@aesfw/core';
-import type { ConnectivityNode, ResourceSource, Residence, World } from '@aesfw/core';
+import type { ConnectivityNode, Maintenance, ResourceSource, Residence, World } from '@aesfw/core';
 import type { ContentRegistry } from '@aesfw/content';
 import { instantiateContentEntities } from './instantiate.js';
 
@@ -336,5 +336,62 @@ describe('[GDD-11.3] income output instantiation', () => {
         satisfactionCurve: CURVE_HANDLE,
       },
     ]);
+  });
+});
+
+describe('[GDD-20.2] entity owner attribution', () => {
+  it('[GDD-20.2] instantiated entities carry their location owner', () => {
+    const world = instantiate(registry);
+    const store = world.stores.get<{ owner: number }>('owner');
+    const owners = store.ids().map((id) => store.get(id));
+    expect(owners.length).toBeGreaterThan(0);
+    for (const owner of owners) expect(owner).toEqual({ owner: ids.ownerHandle(0) });
+  });
+});
+
+describe('[GDD-20.1] maintenance instantiation', () => {
+  it('[GDD-20.1][CONT-6.8] a maintenance component instantiates with its policies', () => {
+    const maintenanceRegistry: ContentRegistry = {
+      stringIdOf: (type, handle2) =>
+        type === 'resource' && handle2 === ids.definitionHandle(40)
+          ? ids.stringId('test.resource.credits')
+          : null,
+      handleOf: (type, id) =>
+        type === 'resource' && id === ids.stringId('test.resource.credits')
+          ? ids.definitionHandle(40)
+          : null,
+      definitionOf: () => null,
+      definitionsOf: (type) =>
+        type === 'entity'
+          ? [
+              {
+                id: 'test.entity.maintained',
+                handle: ids.definitionHandle(41),
+                type: 'entity',
+                data: {
+                  components: {
+                    maintenance: {
+                      interval_ticks: 60,
+                      inputs: [{ resource: 'test.resource.credits', quantity: 30000 }],
+                      charge_policy: 'while_enabled',
+                      shortage_policy: 'owner_deficit_policy',
+                    },
+                  },
+                },
+              },
+            ]
+          : [],
+      tagsOf: () => [],
+    };
+    const world = instantiate(maintenanceRegistry);
+    const store = world.stores.get<Maintenance>('maintenance');
+    const component = store.get(store.ids()[0] ?? ids.entityId(0));
+    expect(component).toEqual({
+      intervalTicks: 60,
+      inputs: [{ resource: ids.definitionHandle(40), quantity: 30000 }],
+      chargePolicy: 'while_enabled',
+      shortagePolicy: 'owner_deficit_policy',
+      arrears: [],
+    });
   });
 });

@@ -209,6 +209,7 @@ export const phase01ApplyCommands: SystemDescriptor = {
   reads: ['commandQueue', 'location', 'locationHub'],
   writes: [
     'definition',
+    'owner',
     'lifecycle',
     'enabled',
     'placement',

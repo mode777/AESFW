@@ -197,6 +197,27 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             `/entity_definitions/${id}/components/placement/conditions/${index}`,
           ),
         );
+        const maintenance = asRecord(components?.['maintenance']);
+        if (maintenance !== null) {
+          if (maintenance['charge_policy'] === 'while_processing' && producer === null) {
+            diagnostics.push(
+              diag('maintenance_while_processing_requires_producer', {
+                definition: id,
+                path: `/entity_definitions/${id}/components/maintenance/charge_policy`,
+                args: {},
+              }),
+            );
+          }
+          if (maintenance['shortage_policy'] === 'trigger_transition') {
+            diagnostics.push(
+              diag('unsupported_shortage_policy', {
+                definition: id,
+                path: `/entity_definitions/${id}/components/maintenance/shortage_policy`,
+                args: { policy: 'trigger_transition' },
+              }),
+            );
+          }
+        }
       } else if (collection === 'population_tiers') {
         asArray(definition['need_categories']).forEach((entry, index) =>
           check(id, entry, 'needCategory', `/population_tiers/${id}/need_categories/${index}`),

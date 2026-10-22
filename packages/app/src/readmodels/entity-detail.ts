@@ -5,8 +5,8 @@
  * Source: PIC-10.1, TDS-18.4
  */
 import { readWorld } from '@aesfw/core';
-import type { PopulationGroup, Registry, Residence, Satisfaction } from '@aesfw/core';
-import type { EntityDetailDto, ProductionDto, ResidenceDto } from '@aesfw/protocol';
+import type { Maintenance, PopulationGroup, Registry, Residence, Satisfaction } from '@aesfw/core';
+import type { EntityDetailDto, MaintenanceDto, ProductionDto, ResidenceDto } from '@aesfw/protocol';
 import type { SessionState } from '../session/types.js';
 
 const AVAILABLE_COMMANDS = [
@@ -69,6 +69,15 @@ export function entityDetail(session: SessionState, entity: number): EntityDetai
       ? undefined
       : { population: group.count, satisfaction: satisfaction?.z ?? 0, band: '' };
 
+  const maintenance = world.stores.get<Maintenance>('maintenance').get(id);
+  const maintenanceDto: MaintenanceDto | undefined =
+    maintenance === undefined
+      ? undefined
+      : {
+          amount: maintenance.inputs.reduce((total, line) => total + line.quantity, 0),
+          policy: maintenance.chargePolicy,
+        };
+
   return {
     entity_id: entity,
     definition_id:
@@ -84,6 +93,7 @@ export function entityDetail(session: SessionState, entity: number): EntityDetai
     available_commands: [...AVAILABLE_COMMANDS],
     ...(production === undefined ? {} : { production }),
     block_reasons: producer?.blockReasons ?? [],
+    ...(maintenanceDto === undefined ? {} : { maintenance: maintenanceDto }),
     ...(residenceDto === undefined ? {} : { residence: residenceDto }),
   };
 }

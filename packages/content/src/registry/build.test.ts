@@ -140,6 +140,65 @@ describe('[CONT-11.3] reference resolution', () => {
     expect(codes(diagnostics)).toContain('unresolved_reference');
   });
 
+  it('[CONT-6.8][GDD-20.1] a maintenance component validates', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.credits')],
+      entity_definitions: [
+        {
+          id: 'test.entity.maintained',
+          components: {
+            producer: producerEntity('x', []).components.producer,
+            maintenance: {
+              interval_ticks: 60,
+              inputs: [{ resource: 'test.resource.credits', quantity: 30000 }],
+              charge_policy: 'while_enabled',
+              shortage_policy: 'owner_deficit_policy',
+            },
+          },
+        },
+      ],
+    });
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('[GDD-20.1] while_processing without a producer is rejected', () => {
+    const { diagnostics } = buildRegistry({
+      entity_definitions: [
+        {
+          id: 'test.entity.maintained',
+          components: {
+            maintenance: {
+              interval_ticks: 60,
+              inputs: [{ resource: 'test.resource.a', quantity: 1 }],
+              charge_policy: 'while_processing',
+              shortage_policy: 'ignore',
+            },
+          },
+        },
+      ],
+    });
+    expect(codes(diagnostics)).toContain('maintenance_while_processing_requires_producer');
+  });
+
+  it('[GDD-20.1] trigger_transition is rejected until transitions exist', () => {
+    const { diagnostics } = buildRegistry({
+      entity_definitions: [
+        {
+          id: 'test.entity.maintained',
+          components: {
+            maintenance: {
+              interval_ticks: 60,
+              inputs: [{ resource: 'test.resource.a', quantity: 1 }],
+              charge_policy: 'while_enabled',
+              shortage_policy: 'trigger_transition',
+            },
+          },
+        },
+      ],
+    });
+    expect(codes(diagnostics)).toContain('unsupported_shortage_policy');
+  });
+
   it('[CONT-6.10] a resolvable satisfaction_curve is accepted', () => {
     const { diagnostics } = buildRegistry({
       resources: [resource('test.resource.credits')],

@@ -13,7 +13,9 @@ import type {
   ConnectivityNode,
   DefinitionHandle,
   Growth,
+  Location,
   LocationHub,
+  Maintenance,
   NeedSpec,
   PopulationGroup,
   PopulationOutput,
@@ -338,6 +340,13 @@ export function instantiateContentEntities(world: World, registry: ContentRegist
     const components = data === null ? null : asRecord(data['components']);
     if (components === null) continue;
     const entity = allocateEntity(world);
+    const owner =
+      location === null
+        ? null
+        : (world.stores.get<Location>('location').get(ids.entityId(location))?.owner ?? null);
+    if (owner !== null) {
+      world.stores.get<{ owner: number }>('owner').set(entity, { owner });
+    }
     const setDefinition = (): void => {
       world.stores
         .get<{ definition: DefinitionHandle }>('definition')
@@ -384,6 +393,41 @@ export function instantiateContentEntities(world: World, registry: ContentRegist
         world.stores.get<ConnectivityNode>('connectivityNode').set(entity, node);
         setDefinition();
       }
+    }
+    if (components['maintenance'] !== undefined) {
+      const component = asRecord(components['maintenance']);
+      const interval = component?.['interval_ticks'];
+      const inputs = asArray(component?.['inputs'])
+        .map((entry) => {
+          const line = asRecord(entry) ?? {};
+          return {
+            resource: handle(registry, 'resource', line['resource']),
+            quantity: typeof line['quantity'] === 'number' ? line['quantity'] : 0,
+          };
+        })
+        .filter(
+          (line): line is { resource: DefinitionHandle; quantity: number } =>
+            line.resource !== null,
+        );
+      const policy = component?.['charge_policy'];
+      const shortage = component?.['shortage_policy'];
+      world.stores.get<Maintenance>('maintenance').set(entity, {
+        intervalTicks: typeof interval === 'number' ? interval : 1,
+        inputs,
+        chargePolicy:
+          policy === 'while_exists' || policy === 'while_active' || policy === 'while_processing'
+            ? policy
+            : 'while_enabled',
+        shortagePolicy:
+          shortage === 'deactivate_entity' ||
+          shortage === 'scale' ||
+          shortage === 'accumulate_debt' ||
+          shortage === 'ignore' ||
+          shortage === 'trigger_transition'
+            ? shortage
+            : 'owner_deficit_policy',
+        arrears: [],
+      });
     }
   }
 }

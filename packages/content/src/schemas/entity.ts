@@ -1,7 +1,7 @@
 /**
  * The entity-definition schema and its components (CONT-6.8, CONT-6.9):
  * resource source, producer, residence, storage access, construction,
- * placement, and connectivity. Capability, maintenance, and lifecycle
+ * placement, connectivity, and maintenance. Capability and lifecycle
  * components belong to later roadmap rows and are intentionally absent.
  *
  * Source: CONT-6.8, CONT-6.9
@@ -9,6 +9,41 @@
 import { Type } from '@sinclair/typebox';
 
 import { IdSchema, InventoryRefSchema, ItemRefSchema, RateRefSchema } from './common.js';
+
+const ChargePolicySchema = Type.Union([
+  Type.Literal('while_exists'),
+  Type.Literal('while_enabled'),
+  Type.Literal('while_active'),
+  Type.Literal('while_processing'),
+]);
+
+const ShortagePolicySchema = Type.Union([
+  Type.Literal('deactivate_entity'),
+  Type.Literal('scale'),
+  Type.Literal('accumulate_debt'),
+  Type.Literal('ignore'),
+  Type.Literal('trigger_transition'),
+  Type.Literal('owner_deficit_policy'),
+]);
+
+const MaintenanceInputSchema = Type.Object(
+  {
+    resource: IdSchema,
+    quantity: Type.Integer({ minimum: 1 }),
+  },
+  { additionalProperties: false },
+);
+
+/** The entity maintenance component (GDD-20.1, CONT-6.8). */
+export const MaintenanceSchema = Type.Object(
+  {
+    interval_ticks: Type.Integer({ minimum: 1 }),
+    inputs: Type.Array(MaintenanceInputSchema, { minItems: 1 }),
+    charge_policy: ChargePolicySchema,
+    shortage_policy: ShortagePolicySchema,
+  },
+  { additionalProperties: false },
+);
 
 const ResourceSourceSchema = Type.Object(
   {
@@ -118,6 +153,7 @@ const ComponentsSchema = Type.Object(
     construction: Type.Optional(ConstructionSchema),
     placement: Type.Optional(PlacementSchema),
     connectivity: Type.Optional(ConnectivitySchema),
+    maintenance: Type.Optional(MaintenanceSchema),
   },
   { additionalProperties: false },
 );

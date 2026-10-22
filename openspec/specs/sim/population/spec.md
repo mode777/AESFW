@@ -25,9 +25,9 @@ Source: TDS-6.4
 - **THEN** the first tick delivers the whole part and the second delivers the accumulated unit
 
 ### Requirement: Population capability outputs
-Phase 26 SHALL, for each residence in ascending entity ID, publish a `capabilityProvider` from the residence's first output whose resource has recomputed storage, computing `count × rate_per_population_per_tick`, advancing the accumulator for `(residence, population_need, resource)`, and carrying the output's scope and the residence's location for location scope. A residence with zero population SHALL publish nothing. Outputs whose resource has normal storage are owner income and are governed by the owner balance model; they SHALL NOT displace the published capability.
+Phase 26 SHALL, for each residence in ascending entity ID, publish a `capabilityProvider` from the residence's first output whose resource has recomputed storage, computing `count × rate_per_population_per_tick`, advancing the accumulator for `(residence, population_need, resource)`, and carrying the output's scope and the residence's location for location scope. A residence with zero population SHALL publish nothing. Outputs whose resource has normal storage are owner income and are governed by the owner balance model; they SHALL NOT displace the published capability. Phase 26 SHALL additionally apply entity maintenance under the maintenance rules of the owner balance model (sim/economy) after the population outputs.
 
-Source: GDD-11.3, ARCH-13
+Source: GDD-11.3, ARCH-13, GDD-20.1
 
 #### Scenario: A residence produces its capability
 - **WHEN** a residence with count `4`, a capability output of rate `1`, and an income output of the same rate advances phase 26
@@ -44,6 +44,10 @@ Source: GDD-11.3, ARCH-13
 #### Scenario: The second capability output does not displace the first
 - **WHEN** a residence carries two capability outputs with rates `1` and `5`
 - **THEN** the published provider carries rate `count × 1`
+
+#### Scenario: Phase 26 charges maintenance and credits income in one tick
+- **WHEN** a tick advances phase 26 in a world with an income residence and a charging producer
+- **THEN** the owner's account reflects both the income credit and the maintenance debit
 
 ### Requirement: Growth policy state
 A `growth` component SHALL carry the policy handle, its interval in ticks, an optional increase step, and an optional decrease step. A step SHALL carry a non-negative quantity and a condition over satisfaction and available capacity.

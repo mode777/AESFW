@@ -24,6 +24,7 @@
     "yaml": "2.9.1"
   },
   "devDependencies": {
+    "@aesfw/core": "workspace:*",
     "@types/node": "~22.20.5"
   }
 }

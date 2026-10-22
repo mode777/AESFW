@@ -331,6 +331,84 @@
               }
             }
           ]
+        },
+        "maintenance": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["interval_ticks", "inputs", "charge_policy", "shortage_policy"],
+          "properties": {
+            "interval_ticks": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "inputs": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["resource", "quantity"],
+                "properties": {
+                  "resource": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "charge_policy": {
+              "anyOf": [
+                {
+                  "const": "while_exists",
+                  "type": "string"
+                },
+                {
+                  "const": "while_enabled",
+                  "type": "string"
+                },
+                {
+                  "const": "while_active",
+                  "type": "string"
+                },
+                {
+                  "const": "while_processing",
+                  "type": "string"
+                }
+              ]
+            },
+            "shortage_policy": {
+              "anyOf": [
+                {
+                  "const": "deactivate_entity",
+                  "type": "string"
+                },
+                {
+                  "const": "scale",
+                  "type": "string"
+                },
+                {
+                  "const": "accumulate_debt",
+                  "type": "string"
+                },
+                {
+                  "const": "ignore",
+                  "type": "string"
+                },
+                {
+                  "const": "trigger_transition",
+                  "type": "string"
+                },
+                {
+                  "const": "owner_deficit_policy",
+                  "type": "string"
+                }
+              ]
+            }
+          }
         }
       }
     }

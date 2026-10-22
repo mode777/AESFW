@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { instantiateWorld, ids } from '@aesfw/core';
-import type { NeedStates, PopulationGroup, Registry, Residence, Satisfaction } from '@aesfw/core';
+import type {
+  Maintenance,
+  NeedStates,
+  PopulationGroup,
+  Registry,
+  Residence,
+  Satisfaction,
+} from '@aesfw/core';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { createSession } from '../session/session.js';
 import { definitionMetadata } from './metadata.js';
@@ -144,6 +151,22 @@ describe('[PIC-10.1] entityDetail', () => {
 
   it('[PIC-10.1] returns null for an unknown entity', () => {
     expect(entityDetail(session(), 999)).toBeNull();
+  });
+
+  it('[PIC-10.1][GDD-20.1] exposes the maintenance summary', () => {
+    const state = session();
+    state.world.stores.get<Maintenance>('maintenance').set(ids.entityId(3), {
+      intervalTicks: 60,
+      inputs: [
+        { resource: ids.definitionHandle(4), quantity: 300 },
+        { resource: ids.definitionHandle(5), quantity: 200 },
+      ],
+      chargePolicy: 'while_enabled',
+      shortagePolicy: 'owner_deficit_policy',
+      arrears: [],
+    });
+    const detail = entityDetail(state, 3);
+    expect(detail?.maintenance).toEqual({ amount: 500, policy: 'while_enabled' });
   });
 });
 
