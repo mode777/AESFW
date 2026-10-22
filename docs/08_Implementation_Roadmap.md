@@ -454,3 +454,30 @@ At the end of every milestone:
 - Every scenario in 06 §9.3 is produced by a row in the milestone 06 lists. SCN-13 and SCN-18 are produced in two stages (2.5 and 12.7; 4.5 and 11.3).
 - Every acceptance criterion of 01–04 (06 §16) is covered by the exit criteria of some milestone.
 - Each milestone retires at least one risk or delivers a demonstrable playable increment.
+
+---
+
+## 11. Milestone Log
+
+### M2 — Session, Projections, and Thin Browser Client (completed 2026-10-22)
+
+Rows 2.1–2.11 are archived. Exit criteria and their verification:
+
+| Exit criterion | Verification |
+| --- | --- |
+| The R0 loop runs in the browser | Playwright smoke flows 1–2 (`pnpm test:e2e`) on the build/verification box |
+| Disabling a producer visibly lowers satisfaction | `disable-producer` integration test (2.11); smoke flow 4 |
+| Save → reload → continue works | App save-continue determinism test (2.5); smoke flow 6 |
+| Browser and CLI hashes match | Playwright determinism spec (Chromium vs `aesfw run`); L7 empty-world matrix (`pnpm test:browser`) |
+
+**Gap closure (2.11).** Milestone verification found that content instantiation never populated the `definition` component, so entity `definition_id` fell back to `entity.<id>` and the inspector could not show the reference codes. Row 2.11 populates the component and regenerates the `basic_loop` golden (hash-changing; explained in its design, no versioned algorithm tag changed).
+
+**Benchmarks.** `bench.small`: 16 entities, median `0.166 ms`, p95 `0.422 ms` (budget ≤ `0.5 ms` median). `bench.reference` and `bench.large` remain M6 and M12; no regression recorded.
+
+**Playtest note (first look).** The automated first look exercised load → step → inspect → toggle → save/load. Observations: (a) the loop is legible through the top bar (tick, speed, blocked count), the inspector (definition code, recipe, progress, block reasons), and the inventory and population tables; (b) the debug overlay (tick, revision, hash, protocol, checksum) makes the determinism claim inspectable; (c) the shell has no grid or world map yet, so spatial legibility is deferred to M3; (d) no balance or planning views exist until M4, so the "why a chain loses money / how many inhabitants it supports" questions are not yet answerable in the client. Inputs for reference content and client priorities: keep numbers tabular, surface block reasons prominently, and add the planning view early in M4.
+
+**Spec reconciliation.** No normative amendment to 01–07 was required. Clarifications recorded: 05 §19.1 `session.settings` (2.5); additive protocol fields `init.content` (2.6), `control` action `speed` (2.8), and `delta.hash` (2.10).
+
+**Risks.** R-07 (presentation contract unworkable) retired: projections, deltas, and the thin client work end to end. R-08 (legibility/fun) first look delivered. R-10 (save compatibility) has a versioned v1 format with `content_mismatch`. R-06 (browser performance) baseline recorded.
+
+**Next.** M3 (space and construction) is unblocked: 3.1 depends on 1.8 (archived).

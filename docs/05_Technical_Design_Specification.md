@@ -903,9 +903,22 @@ interface SaveDocument {
     state_hash: string;
   };
   state: CanonicalState;          // world, excluding caches
-  session: { revision: number; next_submission_seq: number; command_log_tail: unknown[] };
+  session: {
+    revision: number;
+    next_submission_seq: number;
+    command_log_tail: unknown[];
+    settings: {                   // added in M2 (2.5): lets load(content, doc) restore a session
+      hash_interval: number;
+      journal: boolean;
+      actor: number;
+      actor_id: string;
+      tick_duration_ms: number;
+    };
+  };
 }
 ```
+
+`session.settings` is an additive clarification introduced by `add-save-load` (2.5) so that `load(content, doc)` needs no separate options argument; it stays within `format_version` `1`.
 
 Saves are canonical JSON (Section 19.3). Presentation state is never part of a save (04 §16). On load, the content checksum and package versions are compared. A mismatch triggers migration (03 §13) or a `content_mismatch` diagnostic.
 
