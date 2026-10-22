@@ -160,7 +160,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 
 | # | Change ID | Capability | Scope | Sources | Depends on | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2.1 | `add-protocol-dtos` | app/protocol | DTO types and codecs v1: command envelope and result, snapshot, delta, event, definition metadata, entity detail, location summary, need breakdown, worker messages | PIC-3, PIC-4, PIC-9, PIC-11–13, TDS-22 | 0.2 | M |
+| 2.1 | `add-protocol-dtos` | app/protocol | DTO types and codecs v1: command envelope and result, snapshot, delta, event, definition metadata, entity detail, location summary, need breakdown, worker messages ✓ archived 2026-10-22 | PIC-3, PIC-4, PIC-9, PIC-11–13, TDS-22 | 0.2 | M |
 | 2.2 | `add-session-and-command-gateway` | app/session | `SessionState`, create/submit/advance, revision semantics, phase 01 for `SetEntityEnabled`, `SelectRecipe`, `SetProcessPriority`, `SetCapabilityPriority`; `CommandApplied`/`CommandRejected`; error code registry | ARCH-7, TDS-16, TDS-18.1–18.3 | 1.15, 2.1 | M |
 | 2.3 | `add-projections-and-deltas` | app/projections | per-actor projection, full snapshot, `diffProjection`, resync rules; property P-10 | ARCH-8, PIC-9, PIC-18, TDS-18.4 | 2.2 | M |
 | 2.4 | `add-core-read-models` | app/projections | definition metadata, entity detail, location summary, need breakdown | PIC-4, PIC-10.1–10.3 | 2.3 | M |
