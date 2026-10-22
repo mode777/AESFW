@@ -1,0 +1,8 @@
+formatting:
+  base_scale: 1000
+  number:
+    grouping: true
+    decimals: 0
+  rates:
+    per_minute: true
+    tick_duration_ms: 1000

@@ -1,0 +1,12 @@
+presentation_mapping:
+  target_definition: ref.tier.entity.refiner
+  localization:
+    name_key: ref.tier.entity.refiner
+    description_key: ref.tier.entity.refiner
+  visual:
+    model_key: ref.tier.model.refiner
+    icon_key: ref.tier.icon.refiner
+    fallback_shape: box
+  display:
+    category_key: ref.tier.category.production
+    sort_order: 100

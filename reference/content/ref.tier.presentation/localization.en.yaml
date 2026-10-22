@@ -1,0 +1,15 @@
+localization:
+  locale: en
+  entries:
+    ref.tier.resource.p1: 'P1'
+    ref.tier.resource.p2: 'P2'
+    ref.tier.resource.h1: 'H1'
+    ref.tier.resource.c1: 'C1'
+    ref.tier.capability.s1: 'S1'
+    ref.tier.population.s1: 'S1'
+    ref.tier.location.a: 'A'
+    ref.tier.entity.source_p1: 'P1 source'
+    ref.tier.entity.source_p2: 'P2 source'
+    ref.tier.entity.refiner: 'H1 refiner'
+    ref.tier.entity.combiner: 'C1 combiner'
+    ref.tier.entity.residence: 'S1 residence'
