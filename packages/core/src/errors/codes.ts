@@ -20,6 +20,15 @@ export const ERROR_CODES = {
   unknown_capability: { arguments: ['entity', 'capability'] },
   unknown_command: { arguments: ['type'] },
   not_supported: { arguments: ['type'] },
+  unknown_definition: { arguments: ['type', 'definition'] },
+  unknown_location: { arguments: ['location'] },
+  location_inactive: { arguments: ['location'] },
+  out_of_bounds: { arguments: ['location'] },
+  not_buildable: { arguments: ['location'] },
+  occupied: { arguments: ['location'] },
+  insufficient_capacity: { arguments: ['required', 'available'] },
+  placement_condition_failed: { arguments: ['condition'] },
+  invalid_construction_state: { arguments: ['entity', 'state'] },
 } as const satisfies Readonly<Record<string, ErrorCodeSpec>>;
 
 /** A stable command error code. */

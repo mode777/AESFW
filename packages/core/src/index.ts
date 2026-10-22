@@ -222,6 +222,26 @@ export type {
   Lifecycle,
   LifecycleState,
 } from './sim/construction/index.js';
+export {
+  applyCancelEntityPlan,
+  applyCommitConstruction,
+  applyDeconstructEntity,
+  applyPlaceEntityPlan,
+  constructionPlanOf as placementConstructionPlanOf,
+  evaluatePlacement,
+  evaluatePlacementPredicates,
+  isKnownEntityDefinition,
+  placementSpecOf,
+} from './sim/placement/index.js';
+export type {
+  PlaceEntityOutcome,
+  PlacementConditionEvaluator,
+  PlacementQuery,
+  PlacementReason,
+  PlacementReasonCode,
+  PlacementResult as PlacementEvaluationResult,
+  PlacementSpec,
+} from './sim/placement/index.js';
 export { InvariantViolation, ArithmeticOverflow } from './errors/invariant-violation.js';
 export type { Diagnostic } from './errors/diagnostic.js';
 export { ERROR_CODES } from './errors/codes.js';

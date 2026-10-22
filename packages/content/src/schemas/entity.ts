@@ -1,7 +1,7 @@
 /**
- * The entity-definition schema and its M1 components (CONT-6.8, CONT-6.9):
- * resource source, producer, residence, storage access, and construction.
- * Placement, capability, connectivity, maintenance, and lifecycle components
+ * The entity-definition schema and its components (CONT-6.8, CONT-6.9):
+ * resource source, producer, residence, storage access, construction, and
+ * placement. Capability, connectivity, maintenance, and lifecycle components
  * belong to later roadmap rows and are intentionally absent.
  *
  * Source: CONT-6.8, CONT-6.9
@@ -69,6 +69,17 @@ const ConstructionSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const PlacementSchema = Type.Object(
+  {
+    capacity_cost: Type.Optional(Type.Integer({ minimum: 0 })),
+    footprint: Type.Optional(
+      Type.Tuple([Type.Integer({ minimum: 1 }), Type.Integer({ minimum: 1 })]),
+    ),
+    conditions: Type.Optional(Type.Union([IdSchema, Type.Array(IdSchema)])),
+  },
+  { additionalProperties: false },
+);
+
 const ComponentsSchema = Type.Object(
   {
     resource_source: Type.Optional(ResourceSourceSchema),
@@ -76,6 +87,7 @@ const ComponentsSchema = Type.Object(
     residence: Type.Optional(ResidenceSchema),
     storage_access: Type.Optional(StorageAccessSchema),
     construction: Type.Optional(ConstructionSchema),
+    placement: Type.Optional(PlacementSchema),
   },
   { additionalProperties: false },
 );

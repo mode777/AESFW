@@ -116,6 +116,45 @@ describe('[CONT-11.3] reference resolution', () => {
     expect(codes(diagnostics)).toEqual(['unresolved_reference']);
     expect(diagnostics[0]?.args['reference']).toBe('test.resource.absent');
   });
+
+  it('[CONT-11.3] a placement condition must resolve', () => {
+    const { diagnostics } = buildRegistry({
+      entity_definitions: [
+        {
+          id: 'test.entity.builder',
+          components: { placement: { conditions: ['test.condition.absent'] } },
+        },
+      ],
+    });
+    expect(codes(diagnostics)).toEqual(['unresolved_reference']);
+    expect(diagnostics[0]?.args['reference']).toBe('test.condition.absent');
+  });
+
+  it('[CONT-11.3] a placement condition naming a resource is reported', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.build')],
+      entity_definitions: [
+        {
+          id: 'test.entity.builder',
+          components: { placement: { conditions: ['test.resource.build'] } },
+        },
+      ],
+    });
+    expect(codes(diagnostics)).toEqual(['reference_type_mismatch']);
+  });
+
+  it('[CONT-11.3] a resolvable placement condition is accepted', () => {
+    const { diagnostics } = buildRegistry({
+      conditions: [{ id: 'test.condition.place_ok', expression: true }],
+      entity_definitions: [
+        {
+          id: 'test.entity.builder',
+          components: { placement: { conditions: ['test.condition.place_ok'] } },
+        },
+      ],
+    });
+    expect(diagnostics).toEqual([]);
+  });
 });
 
 describe('[TDS-20.2] indexes', () => {
@@ -175,5 +214,16 @@ describe('[TDS-7] frozen registry', () => {
     expect(() => {
       (compiled?.data as { mutated?: boolean }).mutated = true;
     }).toThrow();
+  });
+
+  it('[TDS-10.1] definitionDataOf returns the raw definition data', () => {
+    const definition = resource('test.resource.a');
+    const { registry } = buildRegistry({ resources: [definition] });
+    const handle = registry.handleOf('resource', ids.stringId('test.resource.a'));
+    expect(handle).not.toBeNull();
+    if (handle !== null) {
+      expect(registry.definitionDataOf?.('resource', handle)).toEqual(definition);
+    }
+    expect(registry.definitionDataOf?.('resource', ids.definitionHandle(99))).toBeNull();
   });
 });

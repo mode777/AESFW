@@ -25,6 +25,13 @@ export type {
 } from './commands.js';
 
 export type {
+  PlacementQueryDto,
+  PlacementReasonDto,
+  PlacementResultDto,
+  PlacementTransformDto,
+} from './placement.js';
+
+export type {
   EntityDto,
   EntityUpdateDto,
   InventoryDto,

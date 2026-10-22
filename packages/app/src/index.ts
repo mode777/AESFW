@@ -7,7 +7,14 @@
  */
 export const APP_PACKAGE_ID = '@aesfw/app' as const;
 
-export { advance, createSession, submitCommand } from './session/index.js';
+export {
+  advance,
+  buildConditionEvaluator,
+  createSession,
+  placementQuery,
+  placementTransformOf,
+  submitCommand,
+} from './session/index.js';
 export type {
   AcceptedCommandRecord,
   AdvanceResult,

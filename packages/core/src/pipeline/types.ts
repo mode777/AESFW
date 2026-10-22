@@ -13,6 +13,7 @@ import type { Registry } from '../registry/types.js';
 import type { AtomicBuilder, Transaction, TransactionWriter, TxError } from '../tx/index.js';
 import type { StateHash } from '../world/codec.js';
 import type { ComponentKind, ComponentStores } from '../world/component-store.js';
+import type { PlacementConditionEvaluator } from '../sim/placement/types.js';
 import type { ScheduledCommand, World } from '../world/types.js';
 
 /** The system phases 01–31 of TDS-11.1. */
@@ -84,6 +85,8 @@ export interface TickContext {
   readonly events: EventWriter;
   readonly scratch: TickScratch;
   readonly policies: PolicySet;
+  /** Evaluates placement content conditions (design D4). */
+  readonly conditionEvaluator: PlacementConditionEvaluator;
 }
 
 /** A registered system (TDS-11.2). */
@@ -109,6 +112,8 @@ export type TickMetrics = { readonly [key: string]: JsonValue };
 export interface TickInput {
   readonly commands: readonly ScheduledCommand[];
   readonly options: { readonly journal: boolean; readonly hash: boolean };
+  /** Optional placement-condition evaluator (design D4). Defaults to `true`. */
+  readonly conditionEvaluator?: PlacementConditionEvaluator;
 }
 
 /** Output of one tick (TDS-10.1). */

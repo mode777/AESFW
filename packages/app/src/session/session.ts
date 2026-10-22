@@ -12,6 +12,8 @@ import type {
   CommandOutcome,
   Diagnostic,
   EntityId,
+  LogicalTransform,
+  Orientation,
   Result,
   ScheduledCommand,
   TickOutput,
@@ -20,6 +22,7 @@ import type {
 import { decodeCommandEnvelope } from '@aesfw/protocol';
 import type { CommandEnvelopeDto } from '@aesfw/protocol';
 import type { CompiledContent } from '@aesfw/content';
+import { buildConditionEvaluator } from './placement.js';
 import type {
   AdvanceResult,
   AcceptedCommandRecord,
@@ -68,11 +71,57 @@ const mapCommand = (
   type: string,
   payload: Record<string, unknown>,
 ): Result<Command, CommandError> => {
+  if (type === 'PlaceEntityPlan') {
+    const definitionId = payload['definition_id'];
+    const locationId = payload['location_id'];
+    const rawTransform = payload['logical_transform'];
+    const transform =
+      typeof rawTransform === 'object' && rawTransform !== null && !Array.isArray(rawTransform)
+        ? (rawTransform as Record<string, unknown>)
+        : null;
+    const position = transform?.['position'];
+    if (
+      typeof definitionId !== 'string' ||
+      typeof locationId !== 'number' ||
+      !Number.isSafeInteger(locationId) ||
+      locationId < 0 ||
+      !Array.isArray(position) ||
+      typeof position[0] !== 'number' ||
+      typeof position[1] !== 'number'
+    ) {
+      return { ok: false, error: { code: 'unknown_command', arguments: { type } } };
+    }
+    const definition = content.registry.handleOf('entity', ids.stringId(definitionId));
+    if (definition === null) {
+      return {
+        ok: false,
+        error: {
+          code: 'unknown_definition',
+          arguments: { type: 'entity', definition: definitionId },
+        },
+      };
+    }
+    const location = ids.entityId(locationId);
+    const orientation =
+      typeof transform?.['orientation'] === 'number' ? transform['orientation'] : 0;
+    const logicalTransform: LogicalTransform = {
+      location,
+      position: { x: position[0], y: position[1] },
+      orientation: orientation as Orientation,
+    };
+    return ok({ type: 'PlaceEntityPlan', definition, location, transform: logicalTransform });
+  }
   const entity = entityOf(payload);
   if (entity === null) {
     return { ok: false, error: { code: 'unknown_entity', arguments: { entity: -1 } } };
   }
   switch (type) {
+    case 'CancelEntityPlan':
+      return ok({ type: 'CancelEntityPlan', entity });
+    case 'CommitConstruction':
+      return ok({ type: 'CommitConstruction', entity });
+    case 'DeconstructEntity':
+      return ok({ type: 'DeconstructEntity', entity });
     case 'SetEntityEnabled': {
       const enabled = payload['enabled'];
       if (typeof enabled !== 'boolean') {
@@ -130,7 +179,8 @@ const mapCommand = (
   }
 };
 
-const referencedEntities = (command: Command): readonly EntityId[] => [command.entity];
+const referencedEntities = (command: Command): readonly EntityId[] =>
+  command.type === 'PlaceEntityPlan' ? [command.location] : [command.entity];
 
 /**
  * Creates a session from compiled content (TDS-18.1).
@@ -249,6 +299,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
   const outputs: TickOutput[] = [];
   const hashLog = [...session.hashLog];
   const hashing = session.settings.hashInterval > 0;
+  const conditionEvaluator = buildConditionEvaluator(session.content);
   let revision = session.revision;
   for (let index = 0; index < ticks; index += 1) {
     const due = session.world.commandQueue.filter(
@@ -257,6 +308,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
     const output = step(session.world, session.content.registry, {
       commands: due,
       options: { journal: session.settings.journal, hash: hashing },
+      conditionEvaluator,
     });
     revision += 1;
     if (

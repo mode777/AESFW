@@ -70,6 +70,11 @@ export function buildRegistry(
       const id = spaces.get(type)?.byHandle[handle];
       return id === undefined ? null : (indexes.byId.get(id) ?? null);
     },
+    definitionDataOf: (type, handle) => {
+      const id = spaces.get(type)?.byHandle[handle];
+      if (id === undefined) return null;
+      return indexes.byId.get(id)?.data ?? null;
+    },
     definitionsOf: (type) => definitionsByType.get(type) ?? [],
     tagsOf: (id) => indexes.tagsByResource.get(id) ?? [],
   };

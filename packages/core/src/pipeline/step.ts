@@ -30,7 +30,10 @@ import type {
   Transaction,
   TransactionWriter,
 } from './types.js';
+import type { PlacementConditionEvaluator } from '../sim/placement/types.js';
 import { guardStores } from './write-set.js';
+
+const ALWAYS_TRUE_CONDITION: PlacementConditionEvaluator = () => true;
 
 interface RunnerState {
   readonly registry: Registry;
@@ -40,6 +43,7 @@ interface RunnerState {
   readonly events: EventWriter;
   readonly scratch: TickScratch;
   readonly policies: PolicySet;
+  readonly conditionEvaluator: PlacementConditionEvaluator;
 }
 
 const mergeScheduledCommands = (world: World, commands: readonly ScheduledCommand[]): void => {
@@ -62,6 +66,7 @@ const runOne = (descriptor: SystemDescriptor, state: RunnerState): void => {
       events: state.events,
       scratch: state.scratch,
       policies: state.policies,
+      conditionEvaluator: state.conditionEvaluator,
     };
     descriptor.run(context);
   } finally {
@@ -86,6 +91,7 @@ const execute = (
     events,
     scratch: createTickScratch(),
     policies: EMPTY_POLICY_SET,
+    conditionEvaluator: input.conditionEvaluator ?? ALWAYS_TRUE_CONDITION,
   };
 
   mergeScheduledCommands(world, input.commands);

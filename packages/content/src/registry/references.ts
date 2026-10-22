@@ -163,6 +163,21 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             `/entity_definitions/${id}/components/construction/deconstruction/returns/${index}/resource`,
           ),
         );
+        const placement = asRecord(components?.['placement']);
+        const placementConditions = placement?.['conditions'];
+        const conditionList = Array.isArray(placementConditions)
+          ? placementConditions
+          : placementConditions === undefined
+            ? []
+            : [placementConditions];
+        conditionList.forEach((entry, index) =>
+          check(
+            id,
+            entry,
+            'condition',
+            `/entity_definitions/${id}/components/placement/conditions/${index}`,
+          ),
+        );
       } else if (collection === 'population_tiers') {
         asArray(definition['need_categories']).forEach((entry, index) =>
           check(id, entry, 'needCategory', `/population_tiers/${id}/need_categories/${index}`),

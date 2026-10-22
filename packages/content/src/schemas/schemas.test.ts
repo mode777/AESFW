@@ -170,6 +170,44 @@ describe('[CONT-6.8][CONT-6.9] entity definition schema', () => {
       }),
     ).toBe(false);
   });
+
+  it('[CONT-6.8] a placement component validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.builder',
+        components: {
+          placement: {
+            capacity_cost: 10,
+            footprint: [2, 2],
+            conditions: 'test.condition.place_ok',
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] a placement with a condition list validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.builder',
+        components: {
+          placement: {
+            footprint: [1, 1],
+            conditions: ['test.condition.place_ok'],
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] a negative capacity cost is rejected', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.builder',
+        components: { placement: { capacity_cost: -1 } },
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('[CONT-6.10] population tier schema', () => {

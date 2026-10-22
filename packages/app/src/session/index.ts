@@ -4,6 +4,7 @@
  * Source: TDS-18
  */
 export { advance, createSession, submitCommand } from './session.js';
+export { buildConditionEvaluator, placementQuery, placementTransformOf } from './placement.js';
 export type {
   AcceptedCommandRecord,
   AdvanceResult,

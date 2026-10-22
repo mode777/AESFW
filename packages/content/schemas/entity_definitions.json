@@ -198,6 +198,47 @@
               }
             }
           }
+        },
+        "placement": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "capacity_cost": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "footprint": {
+              "type": "array",
+              "items": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              ],
+              "additionalItems": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "conditions": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          }
         }
       }
     }

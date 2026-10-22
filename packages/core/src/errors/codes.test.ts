@@ -16,4 +16,22 @@ describe('[TDS-16.3] command error-code registry', () => {
       expect(spec.arguments.length).toBeGreaterThan(0);
     }
   });
+
+  it('[TDS-16.3] registers the placement error codes', () => {
+    const placement = [
+      'unknown_definition',
+      'unknown_location',
+      'location_inactive',
+      'out_of_bounds',
+      'not_buildable',
+      'occupied',
+      'insufficient_capacity',
+      'placement_condition_failed',
+      'invalid_construction_state',
+    ] as const;
+    for (const code of placement) {
+      expect(ERROR_CODES[code]).toBeDefined();
+    }
+    expect(ERROR_CODES.insufficient_capacity.arguments).toEqual(['required', 'available']);
+  });
 });

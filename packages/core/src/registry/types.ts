@@ -6,6 +6,7 @@
  *
  * Source: TDS-7, TDS-8.5, TDS-10.1
  */
+import type { JsonValue } from '../det/index.js';
 import type { DefinitionHandle, StringId } from '../ids/index.js';
 
 /** Definition types that own a dense handle space (TDS-7). */
@@ -39,6 +40,12 @@ export interface Registry {
   readonly stringIdOf: (type: DefinitionType, handle: DefinitionHandle) => StringId | null;
   /** The handle of a definition string ID within a type, or `null` if unknown. */
   readonly handleOf: (type: DefinitionType, id: StringId) => DefinitionHandle | null;
+  /**
+   * The raw compiled definition data behind a handle, or `null` when unknown
+   * (TDS-7, TDS-10.1). Optional: the compiled content registry implements it;
+   * core functions that need definition data treat its absence as "not found".
+   */
+  readonly definitionDataOf?: (type: DefinitionType, handle: DefinitionHandle) => JsonValue | null;
 }
 
 /** A registry with no definitions; used before content compilation exists. */

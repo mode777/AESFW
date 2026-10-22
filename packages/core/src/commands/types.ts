@@ -1,16 +1,36 @@
 /**
- * The internal command union (TDS-16.2) and command outcomes. Only the four
- * command types owned by roadmap row 2.2 are defined here; later rows extend
+ * The internal command union (TDS-16.2) and command outcomes. The four
+ * lifecycle commands owned by roadmap row 2.2 and the four placement and
+ * construction commands owned by row 3.3 are defined here; later rows extend
  * the union. `ScheduledCommand.command` is narrowed from `JsonValue` to
  * `Command`.
  *
- * Source: TDS-16.1, TDS-16.2, TDS-18.1
+ * Source: TDS-16.1, TDS-16.2, TDS-18.1, ARCH-7.3
  */
 import type { Int } from '../fx/index.js';
 import type { DefinitionHandle, EntityId, Tick } from '../ids/index.js';
+import type { LogicalTransform } from '../sim/spatial.js';
 
 /** A scheduled command the kernel can apply (TDS-16.2). */
 export type Command =
+  | {
+      readonly type: 'PlaceEntityPlan';
+      readonly definition: DefinitionHandle;
+      readonly location: EntityId;
+      readonly transform: LogicalTransform;
+    }
+  | {
+      readonly type: 'CancelEntityPlan';
+      readonly entity: EntityId;
+    }
+  | {
+      readonly type: 'CommitConstruction';
+      readonly entity: EntityId;
+    }
+  | {
+      readonly type: 'DeconstructEntity';
+      readonly entity: EntityId;
+    }
   | {
       readonly type: 'SetEntityEnabled';
       readonly entity: EntityId;

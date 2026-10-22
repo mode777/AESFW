@@ -8,7 +8,6 @@
 import type { DefinitionType, Registry, ids } from '@aesfw/core';
 
 import type { JsonValue } from '../types.js';
-
 /** A compiled definition with its assigned handle (TDS-7). */
 export interface CompiledDefinition {
   readonly id: string;
@@ -24,6 +23,11 @@ export interface ContentRegistry extends Registry {
     type: DefinitionType,
     handle: ids.DefinitionHandle,
   ) => CompiledDefinition | null;
+  /** The raw definition data for a handle, or `null` when unknown (TDS-10.1). */
+  readonly definitionDataOf?: (
+    type: DefinitionType,
+    handle: ids.DefinitionHandle,
+  ) => JsonValue | null;
   /** The compiled definitions of a type, ordered by ascending ID. */
   readonly definitionsOf: (type: DefinitionType) => readonly CompiledDefinition[];
   /** The tags of a resource ID, or an empty array when unknown. */
