@@ -20,3 +20,9 @@ export type {
   SubmitResult,
 } from './session/index.js';
 export { diffProjection, project } from './projections/index.js';
+export {
+  definitionMetadata,
+  entityDetail,
+  locationSummary,
+  needBreakdown,
+} from './readmodels/index.js';
