@@ -33,7 +33,7 @@ Source: GDD-9.4, GDD-10.1
 - **THEN** its state is `idle`, its progress is `0`, and its block reasons are empty
 
 ### Requirement: Production preconditions
-Phase 07 SHALL set a producer's static block reasons in ascending entity-ID order: `entity_disabled` when disabled, `paused_by_deficit` when deficit-paused, `invalid_recipe` when the selected recipe is absent, `condition_false` when the recipe has a condition, `missing_inventory_access` when an input or output inventory is absent, and `location_inactive` when its location is inactive. A producer with any static reason SHALL be `blocked`; otherwise a previously blocked producer SHALL become `idle`.
+Phase 07 SHALL set a producer's static block reasons in ascending entity-ID order: `entity_disabled` when disabled, `paused_by_deficit` when deficit-paused, `invalid_recipe` when the selected recipe is absent, `condition_false` when the recipe has a condition, `missing_inventory_access` when an input or output inventory is absent or when the producer carries a connectivity requirement but is not connected, and `location_inactive` when its location is inactive. A producer with any static reason SHALL be `blocked`; otherwise a previously blocked producer SHALL become `idle`.
 
 Source: GDD-10.3, GDD-10.2
 
@@ -44,6 +44,10 @@ Source: GDD-10.3, GDD-10.2
 #### Scenario: A producer at an inactive location is blocked
 - **WHEN** a producer at an inactive location is evaluated
 - **THEN** its block reasons include `location_inactive`
+
+#### Scenario: A disconnected requiring producer is blocked
+- **WHEN** a producer carries a connectivity requirement and its location has no connectivity provider
+- **THEN** its block reasons include `missing_inventory_access`
 
 ### Requirement: All-or-nothing process start
 Phase 11 SHALL attempt to start each idle producer whose static reasons are empty, in ascending entity-ID order. It SHALL block with `missing_capability` when the granted capability is below the recipe requirement, `missing_inventory_access` when an inventory is missing, and `missing_input` or `missing_output_capacity` when the atomic reservation fails. On success it SHALL set the state to `processing`, clear the block reasons, set progress to `0`, and record the input and capacity reservations. A partial start SHALL NOT occur (GDD-4.3, ARCH-6.2).

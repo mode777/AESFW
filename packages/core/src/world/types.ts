@@ -18,6 +18,7 @@ import type {
   Tick,
 } from '../ids/index.js';
 import type { ComponentStores } from './component-store.js';
+import type { ConnectivityCache } from '../sim/connectivity.js';
 import type { SpatialCache } from '../sim/spatial.js';
 
 /** Current world format version (TDS-8.1). */
@@ -180,7 +181,7 @@ export interface MetricWindows {
  */
 export interface DerivedCaches {
   spatial: SpatialCache | undefined;
-  connectivity: unknown;
+  connectivity: ConnectivityCache | undefined;
   tags: unknown;
   routes: unknown;
   dirty: boolean;

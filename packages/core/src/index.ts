@@ -130,6 +130,21 @@ export type {
   Orientation,
   SpatialCache,
 } from './sim/spatial.js';
+export {
+  buildConnectivityCache,
+  connectedEntities,
+  connectivityNodeOf,
+  ensureConnectivityCache,
+  hasConnectivityRequirement,
+  isConnected,
+  rebuildConnectivityCaches,
+} from './sim/connectivity.js';
+export type {
+  ConnectivityCache,
+  ConnectivityGroup,
+  ConnectivityNode,
+  ConnectivityRole,
+} from './sim/connectivity.js';
 export { instantiateWorld } from './sim/instantiate.js';
 export type {
   InventoryPlan,

@@ -7,6 +7,7 @@
 import type { EntityId } from '../../ids/index.js';
 import type { TransactionWriter } from '../../tx/index.js';
 import type { World } from '../../world/types.js';
+import { hasConnectivityRequirement, isConnected } from '../connectivity.js';
 import { locationOf } from '../location.js';
 import { isProducer, recipeOf } from './plan.js';
 import type { BlockReason, Producer } from './types.js';
@@ -38,7 +39,11 @@ export function staticBlockReasons(
   const recipe = recipeOf(producer);
   if (recipe === null) reasons.push('invalid_recipe');
   else if (recipe.condition !== null) reasons.push('condition_false');
-  if (producer.inputInventory === null || producer.outputInventory === null) {
+  if (
+    producer.inputInventory === null ||
+    producer.outputInventory === null ||
+    (hasConnectivityRequirement(world, entity) && !isConnected(world, entity))
+  ) {
     reasons.push('missing_inventory_access');
   }
   if (isInactive(world, producer)) reasons.push('location_inactive');

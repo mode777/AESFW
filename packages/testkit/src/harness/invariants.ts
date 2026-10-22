@@ -8,6 +8,7 @@
  */
 import {
   InvariantViolation,
+  buildConnectivityCache,
   buildSpatialCache,
   decodeWorld,
   det,
@@ -72,6 +73,17 @@ const checkSpatialCache = (world: World, findings: InvariantFinding[]): void => 
     findings.push({
       id: 'INV-20',
       message: 'a full spatial-cache rebuild differs from the maintained cache',
+    });
+  }
+};
+
+const checkConnectivityCache = (world: World, findings: InvariantFinding[]): void => {
+  if (world.caches.connectivity === undefined || world.caches.dirty) return;
+  const rebuilt = buildConnectivityCache(world);
+  if (det.canonicalStringify(rebuilt) !== det.canonicalStringify(world.caches.connectivity)) {
+    findings.push({
+      id: 'INV-20',
+      message: 'a full connectivity-cache rebuild differs from the maintained cache',
     });
   }
 };
@@ -320,6 +332,7 @@ export function checkInvariants(
   checkAscending(output.world, findings);
   checkPersistence(output.world, registry, findings);
   checkSpatialCache(output.world, findings);
+  checkConnectivityCache(output.world, findings);
   if (output.tick !== before.tick + 1) {
     findings.push({
       id: 'INV-21',

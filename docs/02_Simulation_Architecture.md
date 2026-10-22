@@ -115,6 +115,8 @@ LocationProperties
 
 `GridGeometry` is the grid width, height, and buildable mask of a grid-policy location (GDD-6.1). TDS-8.3 carries it as an optional field of the `location` component rather than a new store kind, so the component catalogue is unchanged.
 
+`ConnectionNode` is carried by the `connectivityNode` store kind (TDS-8.3) and holds a role of provider or requirement and a connectivity network (GDD-9.2, GDD-9.9). A location hub is the connectivity root of its location, and binary hub access requires a connectivity provider.
+
 #### Location and knowledge
 
 ```text

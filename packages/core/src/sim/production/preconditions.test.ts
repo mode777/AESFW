@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { definitionHandle, entityId, ownerHandle } from '../../ids/index.js';
+import { definitionHandle, entityId, ownerHandle, stringId } from '../../ids/index.js';
 import { createEmptyRegistry } from '../../registry/types.js';
 import { stores } from '../../testing.js';
 import { createWorld } from '../../world/create.js';
 import type { World } from '../../world/types.js';
+import type { Location, LocationHub } from '../location.js';
+import type { LogicalTransform } from '../spatial.js';
 import { staticBlockReasons } from './preconditions.js';
 import type { Producer, RecipeSpec } from './types.js';
 
@@ -59,6 +61,37 @@ const makeWorld = (): World => {
   return world;
 };
 
+const setLocation = (world: World, id: number): void => {
+  stores(world)
+    .get<Location>('location')
+    .set(entityId(id), {
+      template: definitionHandle(0),
+      spatialPolicy: 'framework.spatial.abstract_capacity',
+      capacity: 100,
+      used: 0,
+      properties: [],
+      region: null,
+      active: true,
+      owner: ownerHandle(0),
+    });
+  stores(world).get<LocationHub>('locationHub').set(entityId(id), { inventories: [] });
+};
+
+const placeAt = (world: World, entity: number, location: number): void => {
+  const transform: LogicalTransform = {
+    location: entityId(location),
+    position: { x: 0, y: 0 },
+    orientation: 0,
+  };
+  stores(world).get<LogicalTransform>('transform').set(entityId(entity), transform);
+};
+
+const setNode = (world: World, entity: number, role: 'provider' | 'requirement'): void => {
+  stores(world)
+    .get('connectivityNode')
+    .set(entityId(entity), { role, network: stringId('test.connectivity.hub') });
+};
+
 describe('[GDD-10.3] production preconditions', () => {
   it('[GDD-10.3] a disabled producer reports entity_disabled', () => {
     const world = makeWorld();
@@ -94,5 +127,39 @@ describe('[GDD-10.3] production preconditions', () => {
       ],
     };
     expect(staticBlockReasons(world, entityId(4), producer())).toContain('paused_by_deficit');
+  });
+
+  it('[GDD-10.2] a disconnected requiring producer reports missing_inventory_access', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    setNode(world, 4, 'requirement');
+    placeAt(world, 4, 1);
+    expect(staticBlockReasons(world, entityId(4), producer())).toContain(
+      'missing_inventory_access',
+    );
+  });
+
+  it('[GDD-10.2] a connected requiring producer has inventory access', () => {
+    const world = makeWorld();
+    setLocation(world, 1);
+    setNode(world, 3, 'provider');
+    placeAt(world, 3, 1);
+    setNode(world, 4, 'requirement');
+    placeAt(world, 4, 1);
+    expect(staticBlockReasons(world, entityId(4), producer())).not.toContain(
+      'missing_inventory_access',
+    );
+  });
+
+  it('[GDD-10.3] a disabled disconnected requiring producer reports both reasons in order', () => {
+    const world = makeWorld();
+    stores(world).get('enabled').set(entityId(4), { enabled: false });
+    setLocation(world, 1);
+    setNode(world, 4, 'requirement');
+    placeAt(world, 4, 1);
+    expect(staticBlockReasons(world, entityId(4), producer())).toEqual([
+      'entity_disabled',
+      'missing_inventory_access',
+    ]);
   });
 });
