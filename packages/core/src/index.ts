@@ -80,10 +80,19 @@ export type {
 } from './tx/index.js';
 export {
   ABSTRACT_CAPACITY_POLICY_ID,
+  GRID_POLICY_ID,
   abstractCapacityPolicy,
+  gridPolicy,
+  resolveGridSpatialPolicy,
   resolveSpatialPolicy,
 } from './policies/spatial/index.js';
-export type { CapacitySummary, PlacementResult, SpatialPolicy } from './policies/spatial/index.js';
+export type {
+  CapacitySummary,
+  GridPlacementResult,
+  GridSpatialPolicy,
+  PlacementResult,
+  SpatialPolicy,
+} from './policies/spatial/index.js';
 export {
   SHARED_LOCATION_POLICY_ID,
   resolveInventoryAccessPolicy,
@@ -92,8 +101,42 @@ export {
 export type { InventoryAccessPolicy } from './policies/inventory-access/index.js';
 export { locationOf, locationHubOf } from './sim/location.js';
 export type { Location, LocationHub, LocationProperty } from './sim/location.js';
+export {
+  addOccupancy,
+  buildableCount,
+  buildableMask,
+  buildSpatialCache,
+  cellIndex,
+  cellPosition,
+  distanceBetween,
+  ensureSpatialCache,
+  footprintCells,
+  footprintOf,
+  isBuildable,
+  locationGridOf,
+  rebuildSpatialCaches,
+  removeOccupancy,
+  transformOf,
+  withinRadius,
+} from './sim/spatial.js';
+export type {
+  DistanceMetric,
+  Footprint,
+  GridPosition,
+  LocationGrid,
+  LocationOccupancy,
+  LogicalTransform,
+  OccupiedCell,
+  Orientation,
+  SpatialCache,
+} from './sim/spatial.js';
 export { instantiateWorld } from './sim/instantiate.js';
-export type { InventoryPlan, LocationPlan, WorldPlan } from './sim/instantiate.js';
+export type {
+  InventoryPlan,
+  LocationGridPlan,
+  LocationPlan,
+  WorldPlan,
+} from './sim/instantiate.js';
 export {
   allocateCapabilities,
   allocateModel,

@@ -5,11 +5,8 @@ import { stores } from '../../testing.js';
 import { createWorld } from '../../world/create.js';
 import type { World } from '../../world/types.js';
 import type { Location } from '../../sim/location.js';
-import {
-  ABSTRACT_CAPACITY_POLICY_ID,
-  abstractCapacityPolicy,
-  resolveSpatialPolicy,
-} from './abstract-capacity.js';
+import { ABSTRACT_CAPACITY_POLICY_ID, abstractCapacityPolicy } from './abstract-capacity.js';
+import { resolveSpatialPolicy } from './registry.js';
 
 const makeWorld = (): World => {
   const result = createWorld(createEmptyRegistry(), {

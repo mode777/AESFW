@@ -1,14 +1,16 @@
 /**
  * The `checkInvariants` framework (VER-6). It evaluates INV-01 to INV-05, INV-07, and INV-08,
- * INV-10, INV-18, INV-21, and INV-24; INV-17 is checked by the clone-run
+ * INV-10, INV-18, INV-20, INV-21, and INV-24; INV-17 is checked by the clone-run
  * harness. Each later system row extends the catalogue without changing the
  * runner.
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-21, INV-22, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-20, INV-21, INV-22, INV-24
  */
 import {
   InvariantViolation,
+  buildSpatialCache,
   decodeWorld,
+  det,
   encodeWorld,
   hashWorld,
   ids,
@@ -60,6 +62,17 @@ const checkPersistence = (world: World, registry: Registry, findings: InvariantF
   }
   if (hashWorld(decoded.value, registry) !== hashWorld(world, registry)) {
     findings.push({ id: 'INV-18', message: 'round-trip state hash mismatch' });
+  }
+};
+
+const checkSpatialCache = (world: World, findings: InvariantFinding[]): void => {
+  if (world.caches.spatial === undefined || world.caches.dirty) return;
+  const rebuilt = buildSpatialCache(world);
+  if (det.canonicalStringify(rebuilt) !== det.canonicalStringify(world.caches.spatial)) {
+    findings.push({
+      id: 'INV-20',
+      message: 'a full spatial-cache rebuild differs from the maintained cache',
+    });
   }
 };
 
@@ -287,7 +300,7 @@ const checkConservation = (
 /**
  * Evaluates the invariant catalogue over a completed tick (VER-6).
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-21, INV-22, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-20, INV-21, INV-22, INV-24
  */
 export function checkInvariants(
   before: World,
@@ -306,6 +319,7 @@ export function checkInvariants(
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);
   checkPersistence(output.world, registry, findings);
+  checkSpatialCache(output.world, findings);
   if (output.tick !== before.tick + 1) {
     findings.push({
       id: 'INV-21',

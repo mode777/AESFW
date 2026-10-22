@@ -89,4 +89,44 @@ describe('[CONT-6.4][CONT-6.6] default world plan', () => {
     );
     expect(codes(result.diagnostics)).toContain('unsupported_spatial_parameter');
   });
+
+  const gridTemplate = (overrides: Record<string, unknown> = {}): RawDefinition => ({
+    id: 'test.location.grid',
+    spatial_policy: 'framework.spatial.grid',
+    spatial_parameters: { width: 4, height: 4, buildable_ratio: { min: 400, max: 700 } },
+    activation: { initial: true },
+    ...overrides,
+  });
+
+  it('[CONT-6.4] grid spatial parameters map to a grid plan', () => {
+    const result = defaultWorldPlan(registryFor([gridTemplate()]));
+    expect(result.diagnostics).toEqual([]);
+    expect(result.plan.locations[0]?.grid).toEqual({
+      width: 4,
+      height: 4,
+      blocked: null,
+      buildableRatio: { min: 400, max: 700 },
+    });
+  });
+
+  it('[CONT-6.4] a fixed blocked-cell list maps to a fixed mask', () => {
+    const result = defaultWorldPlan(
+      registryFor([
+        gridTemplate({ spatial_parameters: { width: 4, height: 4, blocked_cells: [0, 1, 4] } }),
+      ]),
+    );
+    expect(result.plan.locations[0]?.grid).toEqual({
+      width: 4,
+      height: 4,
+      blocked: [0, 1, 4],
+      buildableRatio: null,
+    });
+  });
+
+  it('[CONT-6.4] a grid template without dimensions is reported', () => {
+    const result = defaultWorldPlan(
+      registryFor([gridTemplate({ spatial_parameters: { buildable_ratio: { min: 1, max: 2 } } })]),
+    );
+    expect(codes(result.diagnostics)).toContain('unsupported_spatial_parameter');
+  });
 });

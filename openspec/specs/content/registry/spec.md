@@ -97,7 +97,7 @@ Source: TDS-20.1, TDS-20.2
 - **THEN** `loadContent` returns `null` content and an error-severity diagnostic
 
 ### Requirement: Default world plan
-`defaultWorldPlan(registry)` SHALL derive a `WorldPlan` from compiled location templates with `activation.initial: true`, in ascending template-ID order, for a single default owner `0`, carrying each template's policy, total capacity, properties, and inventories, and SHALL report diagnostics for unresolved templates or an unsupported `total_capacity`.
+`defaultWorldPlan(registry)` SHALL derive a `WorldPlan` from compiled location templates with `activation.initial: true`, in ascending template-ID order, for a single default owner `0`, carrying each template's policy, its capacity (a total capacity for an abstract-capacity template, or width, height, and a fixed or seeded buildable mask for a grid template), properties, and inventories, and SHALL report diagnostics for unresolved templates or unsupported spatial parameters.
 
 Source: CONT-6.4, CONT-6.6
 
@@ -116,3 +116,7 @@ Source: CONT-6.4, CONT-6.6
 #### Scenario: A missing total capacity is reported
 - **WHEN** an abstract-capacity template declares no `total_capacity`
 - **THEN** `defaultWorldPlan` reports `unsupported_spatial_parameter`
+
+#### Scenario: Grid spatial parameters map to a grid plan
+- **WHEN** a `framework.spatial.grid` template declares width `4`, height `4`, and `buildable_ratio` of `min: 400, max: 700`
+- **THEN** the plan location carries width `4`, height `4`, and a seeded buildable ratio of `400` to `700`

@@ -105,12 +105,15 @@ Revision
 Position
 Orientation
 Footprint
+GridGeometry
 WorkingArea
 SpatialTags
 ConnectionNode
 RegionMembership
 LocationProperties
 ```
+
+`GridGeometry` is the grid width, height, and buildable mask of a grid-policy location (GDD-6.1). TDS-8.3 carries it as an optional field of the `location` component rather than a new store kind, so the component catalogue is unchanged.
 
 #### Location and knowledge
 

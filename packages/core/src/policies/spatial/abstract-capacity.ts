@@ -59,12 +59,3 @@ export const abstractCapacityPolicy: SpatialPolicy = {
   add,
   remove,
 };
-
-const POLICIES: Readonly<Record<string, SpatialPolicy>> = {
-  [ABSTRACT_CAPACITY_POLICY_ID]: abstractCapacityPolicy,
-};
-
-/** Resolves a spatial policy by id, or `null` when unknown. */
-export function resolveSpatialPolicy(id: string): SpatialPolicy | null {
-  return POLICIES[id] ?? null;
-}

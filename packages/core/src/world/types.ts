@@ -18,6 +18,7 @@ import type {
   Tick,
 } from '../ids/index.js';
 import type { ComponentStores } from './component-store.js';
+import type { SpatialCache } from '../sim/spatial.js';
 
 /** Current world format version (TDS-8.1). */
 export const WORLD_FORMAT_VERSION = 1 as const;
@@ -178,7 +179,7 @@ export interface MetricWindows {
  * every cache dirty.
  */
 export interface DerivedCaches {
-  spatial: unknown;
+  spatial: SpatialCache | undefined;
   connectivity: unknown;
   tags: unknown;
   routes: unknown;

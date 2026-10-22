@@ -73,4 +73,55 @@ describe('[CONT-6.4][CONT-6.6][ARCH-3.1] default world instantiation', () => {
     instantiateWorld(world, plan);
     expect(world.nextEntityId).toBe(3);
   });
+
+  it('[CONT-6.4] a fixed grid plan sets the geometry and buildable capacity', () => {
+    const world = makeWorld();
+    instantiateWorld(world, {
+      owner: ownerHandle(0),
+      locations: [
+        {
+          template: definitionHandle(0),
+          spatialPolicy: 'framework.spatial.grid',
+          capacity: 16,
+          properties: [],
+          region: null,
+          active: true,
+          inventories: [],
+          grid: { width: 4, height: 4, blocked: [0, 1, 4, 5], buildableRatio: null },
+        },
+      ],
+    });
+    expect(locationOf(world, entityId(1))?.grid).toEqual({
+      width: 4,
+      height: 4,
+      blocked: [0, 1, 4, 5],
+    });
+    expect(locationOf(world, entityId(1))?.capacity).toBe(12);
+  });
+
+  it('[CONT-6.4] a seeded grid plan is deterministic', () => {
+    const grid = { width: 4, height: 4, blocked: null, buildableRatio: { min: 500, max: 500 } };
+    const makePlan = (): WorldPlan => ({
+      owner: ownerHandle(0),
+      locations: [
+        {
+          template: definitionHandle(0),
+          spatialPolicy: 'framework.spatial.grid',
+          capacity: 16,
+          properties: [],
+          region: null,
+          active: true,
+          inventories: [],
+          grid,
+        },
+      ],
+    });
+    const first = makeWorld();
+    const second = makeWorld();
+    instantiateWorld(first, makePlan());
+    instantiateWorld(second, makePlan());
+    expect(locationOf(first, entityId(1))?.grid?.blocked).toHaveLength(8);
+    expect(locationOf(first, entityId(1))?.capacity).toBe(8);
+    expect(hashWorld(first, createEmptyRegistry())).toBe(hashWorld(second, createEmptyRegistry()));
+  });
 });

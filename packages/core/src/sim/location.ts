@@ -8,6 +8,7 @@
 import type { Int } from '../fx/index.js';
 import type { DefinitionHandle, EntityId, OwnerHandle, StringId } from '../ids/index.js';
 import type { World } from '../world/types.js';
+import type { LocationGrid } from './spatial.js';
 
 /** A named numeric property of a location, ordered by ascending name. */
 export type LocationProperty = {
@@ -25,6 +26,8 @@ export type Location = {
   readonly region: DefinitionHandle | null;
   readonly active: boolean;
   readonly owner: OwnerHandle | null;
+  /** Grid geometry, present only for a grid-policy location (GDD-6.1). */
+  readonly grid?: LocationGrid;
 };
 
 /** The inventories of a location, in ascending entity-ID order. */

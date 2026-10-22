@@ -5,10 +5,11 @@
  *
  * Source: CONT-6.4, CONT-6.6
  */
-import { det, ids } from '@aesfw/core';
+import { GRID_POLICY_ID, det, ids } from '@aesfw/core';
 import type {
   Diagnostic,
   InventoryPlan,
+  LocationGridPlan,
   LocationPlan,
   LocationProperty,
   WorldPlan,
@@ -59,6 +60,28 @@ const mapInventories = (value: JsonValue | undefined): InventoryPlan[] => {
   return result;
 };
 
+const isPositiveInt = (value: JsonValue | undefined): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0;
+
+const mapGrid = (params: Record<string, JsonValue> | null): LocationGridPlan | null => {
+  const width = params?.['width'];
+  const height = params?.['height'];
+  if (!isPositiveInt(width) || !isPositiveInt(height)) return null;
+  const blockedCells = params?.['blocked_cells'];
+  if (Array.isArray(blockedCells)) {
+    const blocked = blockedCells
+      .filter((cell): cell is number => typeof cell === 'number' && Number.isInteger(cell))
+      .sort((a, b) => a - b);
+    return { width, height, blocked, buildableRatio: null };
+  }
+  const ratio = asRecord(params?.['buildable_ratio']);
+  const min = ratio?.['min'];
+  const max = ratio?.['max'];
+  if (typeof min !== 'number' || !Number.isInteger(min)) return null;
+  if (typeof max !== 'number' || !Number.isInteger(max)) return null;
+  return { width, height, blocked: null, buildableRatio: { min, max } };
+};
+
 /**
  * Derives the default world plan from compiled location templates (CONT-6.6).
  *
@@ -78,6 +101,29 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
     if (activation?.['initial'] !== true) continue;
     const spatialPolicy = typeof data['spatial_policy'] === 'string' ? data['spatial_policy'] : '';
     const params = asRecord(data['spatial_parameters']);
+    if (spatialPolicy === GRID_POLICY_ID) {
+      const grid = mapGrid(params);
+      if (grid === null) {
+        diagnostics.push(
+          diag('unsupported_spatial_parameter', {
+            definition: definition.id,
+            args: { policy: spatialPolicy, parameter: 'width_height' },
+          }),
+        );
+        continue;
+      }
+      locations.push({
+        template: definition.handle,
+        spatialPolicy,
+        capacity: grid.width * grid.height,
+        properties: mapProperties(data['properties']),
+        region: null,
+        active: true,
+        inventories: mapInventories(data['inventories']),
+        grid,
+      });
+      continue;
+    }
     const totalCapacity = params?.['total_capacity'];
     if (
       typeof totalCapacity !== 'number' ||
