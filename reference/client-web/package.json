@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pages": "VITE_BASE=/AESFW/ vite build",
     "preview": "vite preview"
   },
   "files": [
