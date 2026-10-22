@@ -164,7 +164,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 2.2 | `add-session-and-command-gateway` | app/session | `SessionState`, create/submit/advance, revision semantics, phase 01 for `SetEntityEnabled`, `SelectRecipe`, `SetProcessPriority`, `SetCapabilityPriority`; `CommandApplied`/`CommandRejected`; error code registry ✓ archived 2026-10-22 | ARCH-7, TDS-16, TDS-18.1–18.3 | 1.15, 2.1 | M |
 | 2.3 | `add-projections-and-deltas` | app/projections | per-actor projection, full snapshot, `diffProjection`, resync rules; property P-10 ✓ archived 2026-10-22 | ARCH-8, PIC-9, PIC-18, TDS-18.4 | 2.2 | M |
 | 2.4 | `add-core-read-models` | app/projections | definition metadata, entity detail, location summary, need breakdown ✓ archived 2026-10-22 | PIC-4, PIC-10.1–10.3 | 2.3 | M |
-| 2.5 | `add-save-load` | app/persistence | `SaveDocument`, save/load, content-mismatch diagnostics; SCN-13 (basic content) | ARCH-15.1–15.3, TDS-19.1, TDS-19.3 | 2.2 | M |
+| 2.5 | `add-save-load` | app/persistence | `SaveDocument`, save/load, content-mismatch diagnostics; SCN-13 (basic content) ✓ archived 2026-10-22 | ARCH-15.1–15.3, TDS-19.1, TDS-19.3 | 2.2 | M |
 | 2.6 | `add-web-worker-host` | host/web | worker entry, `SessionClient`, message protocol, clock and speed, catch-up limit, coalescing, IndexedDB saves, error boundary | TDS-21.1 | 2.3, 2.5 | M |
 | 2.7 | `add-reference-content-seed` | reference/content | R0 content and presentation package skeleton | REF-3–6 | 1.15 | S |
 | 2.8 | `add-client-shell` | reference/client | Vite app, tokens, layout, signals, mirror, view state, i18n with fallback, top bar controls, debug overlay | REF-9–11, REF-12.5, REF-14 | 2.6, 2.7 | M |

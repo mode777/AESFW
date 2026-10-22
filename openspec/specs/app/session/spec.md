@@ -79,3 +79,12 @@ Source: TDS-16.3
 #### Scenario: The registry declares the revision-mismatch arguments
 - **WHEN** the registry entry for `state_revision_mismatch` is read
 - **THEN** its argument names are `expected` and `actual`
+
+### Requirement: Session tick duration
+`SessionSettings` SHALL carry the tick duration in milliseconds, set from `SessionOptions.tickDurationMs` when the session is created, and the session SHALL expose it unchanged for the lifetime of the session.
+
+Source: TDS-19.1, ARCH-15.1
+
+#### Scenario: The settings carry the tick duration
+- **WHEN** a session is created with `tickDurationMs` `100`
+- **THEN** `session.settings.tickDurationMs` is `100`

@@ -161,6 +161,7 @@ export function createSession(
       journal: options.journal,
       actor: options.actor,
       actorId: options.actorId,
+      tickDurationMs: options.tickDurationMs,
     },
   });
 }

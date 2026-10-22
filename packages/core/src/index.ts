@@ -20,6 +20,7 @@ export type {
   Tick,
 } from './ids/index.js';
 export * as world from './world/index.js';
+export { WORLD_FORMAT_VERSION } from './world/index.js';
 export * as tx from './tx/index.js';
 export {
   createWorld,

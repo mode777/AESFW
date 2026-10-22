@@ -24,6 +24,7 @@ export interface SessionSettings {
   readonly journal: boolean;
   readonly actor: OwnerHandle;
   readonly actorId: string;
+  readonly tickDurationMs: number;
 }
 
 /** One accepted command, kept for replay (TDS-18.2, 02 §16.2). */
