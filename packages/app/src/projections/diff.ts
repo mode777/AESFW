@@ -19,6 +19,7 @@ const ENTITY_FIELDS = [
   'revision',
   'lifecycle',
   'spatial',
+  'connectivity',
   'production',
 ] as const;
 

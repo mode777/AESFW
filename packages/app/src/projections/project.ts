@@ -4,11 +4,14 @@
  *
  * Source: TDS-18.4, PIC-9.1, ARCH-8.2
  */
-import { readWorld } from '@aesfw/core';
+import { isConnected, readWorld } from '@aesfw/core';
 import type {
+  ConnectivityNode,
   DefinitionHandle,
   DefinitionType,
   EntityId,
+  Footprint,
+  LogicalTransform,
   OwnerHandle,
   Registry,
   Residence,
@@ -16,6 +19,7 @@ import type {
   WorldReader,
 } from '@aesfw/core';
 import type {
+  ConnectivityDto,
   EntityDto,
   InventoryDto,
   InventoryEntryDto,
@@ -23,6 +27,7 @@ import type {
   OwnerDto,
   ProductionDto,
   SnapshotDto,
+  SpatialDto,
 } from '@aesfw/protocol';
 import type { SessionState } from '../session/types.js';
 
@@ -93,6 +98,15 @@ const locationDto = (
           location.properties.map((property) => [property.property, property.value]),
         ),
       },
+      ...(location.grid === undefined
+        ? {}
+        : {
+            grid: {
+              width: location.grid.width,
+              height: location.grid.height,
+              blocked: [...location.grid.blocked],
+            },
+          }),
     };
   }
   return dto;
@@ -127,6 +141,25 @@ const locationOfEntity = (
   return residence?.location ?? undefined;
 };
 
+const spatialDto = (world: World, entity: EntityId): SpatialDto | null => {
+  const transform = world.stores.get<LogicalTransform>('transform').get(entity);
+  if (transform === undefined) return null;
+  const footprint = world.stores.get<Footprint>('footprint').get(entity);
+  return {
+    logical_position: [transform.position.x, transform.position.y],
+    orientation: transform.orientation,
+    ...(footprint === undefined
+      ? {}
+      : { footprint: { width: footprint.width, height: footprint.height } }),
+  };
+};
+
+const connectivityDto = (world: World, entity: EntityId): ConnectivityDto | null => {
+  const node = world.stores.get<ConnectivityNode>('connectivityNode').get(entity);
+  if (node === undefined) return null;
+  return { role: node.role, network: node.network, connected: isConnected(world, entity) };
+};
+
 const entityDto = (
   reader: WorldReader,
   world: World,
@@ -137,6 +170,8 @@ const entityDto = (
   const location = locationOfEntity(reader, world, id);
   const production = productionDto(reader, registry, id);
   const lifecycle = reader.lifecycle(id);
+  const spatial = spatialDto(world, id);
+  const connectivity = connectivityDto(world, id);
   const definitionString =
     definition === undefined ? null : definitionId(registry, 'entity', definition);
   return {
@@ -145,6 +180,8 @@ const entityDto = (
     ...(location === undefined ? {} : { location_id: location }),
     revision: reader.revision(id),
     ...(lifecycle === undefined ? {} : { lifecycle }),
+    ...(spatial === null ? {} : { spatial }),
+    ...(connectivity === null ? {} : { connectivity }),
     ...(production === null ? {} : { production }),
   };
 };

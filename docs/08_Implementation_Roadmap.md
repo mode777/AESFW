@@ -190,7 +190,8 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 3.4b | `add-connectivity-content-component` | content/schemas | entity-definition `connectivity` component (`requires`/`provides`), instantiation of `connectivityNode`; gap closure for 3.4 ✓ archived 2026-10-22 | GDD-9.2, GDD-9.9, CONT-6.8 | 3.4 | S |
 | 3.5 | `add-slot-and-area-sources` | sim/production | source slots, working-area claims, property-vector scaling, regenerating and condition-dependent sources ✓ archived 2026-10-22 | GDD-6.5, GDD-9.5, CONT-6.8 | 3.1, 1.10 | M |
 | 3.6 | `add-reference-content-builder-stage` | reference/content | R1 part 1: grid location, BM1, extractors, refiner, connector ✓ archived 2026-10-22 | REF-5, REF-7 | 3.3, 3.4, 3.5, 3.4b | S |
-| 3.7 | `add-client-location-grid` | reference/client | SVG grid view, shape grammar, state encoding, connectivity and suitability overlays | REF-10, REF-12.2, REF-14.3 | 2.9, 3.6 | L |
+| 3.6b | `add-spatial-projection-data` | app/projections | expose location grid geometry, entity logical transform/footprint, and connectivity in the per-actor snapshot/read models; gap closure enabling the client grid ✓ archived 2026-10-22 | PIC-9.1, PIC-10.2, TDS-18.4 | 3.1, 3.3, 3.4 | M |
+| 3.7 | `add-client-location-grid` | reference/client | SVG grid view, shape grammar, state encoding, connectivity and suitability overlays | REF-10, REF-12.2, REF-14.3 | 2.9, 3.6, 3.6b | L |
 | 3.8 | `add-client-placement-mode` | reference/client | build palette, ghost with authoritative preview, keyboard placement, construction commands | REF-13.1–13.3 | 3.7 | M |
 
 **Exit criteria:** a placement scenario (valid, invalid, cancelled, deconstructed) passes; INV-20 holds; a player can build the R1 chain from scratch in the browser.

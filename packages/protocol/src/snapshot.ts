@@ -51,6 +51,14 @@ export interface InventoryDto {
   readonly entries: readonly InventoryEntryDto[];
 }
 
+/** Grid geometry of a grid-policy location (PIC-9.1, CONT-6.4). */
+export interface LocationGridDto {
+  readonly width: WireInt;
+  readonly height: WireInt;
+  /** Packed cell indices (`y * width + x`) that are not buildable, ascending. */
+  readonly blocked: readonly WireInt[];
+}
+
 /** A location entry in a snapshot (PIC-9.1). */
 export interface LocationDto {
   readonly entity_id: WireInt;
@@ -62,12 +70,27 @@ export interface LocationDto {
   readonly throughput?: ThroughputDto;
   readonly inventories?: readonly InventoryDto[];
   readonly connections?: readonly string[];
+  readonly grid?: LocationGridDto;
+}
+
+/** A rectangular footprint in cells, before orientation (PIC-9.1). */
+export interface FootprintDto {
+  readonly width: WireInt;
+  readonly height: WireInt;
 }
 
 /** Logical placement of an entity (PIC-9.1). */
 export interface SpatialDto {
   readonly logical_position: readonly [WireInt, WireInt];
   readonly orientation: WireInt;
+  readonly footprint?: FootprintDto;
+}
+
+/** Connectivity node state of an entity (PIC-9.1, PIC-10.2). */
+export interface ConnectivityDto {
+  readonly role: string;
+  readonly network: WireId;
+  readonly connected: boolean;
 }
 
 /** Production state of an entity (PIC-9.1, PIC-10.1). */
@@ -87,6 +110,7 @@ export interface EntityDto {
   readonly revision?: WireInt;
   readonly lifecycle?: string;
   readonly spatial?: SpatialDto;
+  readonly connectivity?: ConnectivityDto;
   readonly production?: ProductionDto;
 }
 

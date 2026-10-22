@@ -6,19 +6,24 @@
 import type { ProtocolError } from '../errors.js';
 import { err, ok, type DecodeResult } from '../result.js';
 import type {
+  ConnectivityDto,
   EntityDto,
   EntityUpdateDto,
+  FootprintDto,
   InventoryDto,
   InventoryEntryDto,
   InventoryUpdateDto,
   LocationDto,
+  LocationGridDto,
   OwnerDto,
   SnapshotDeltaDto,
   SnapshotDto,
+  SpatialDto,
 } from '../snapshot.js';
 import {
   invalidField,
   isBoolean,
+  isIntegerArray,
   isJsonObject,
   isNonNegativeInteger,
   isObject,
@@ -86,6 +91,97 @@ function decodeInventory(
   return { inventory_id: inventoryId, entries };
 }
 
+function decodeLocationGrid(
+  value: unknown,
+  path: string,
+  errors: ProtocolError[],
+): LocationGridDto | null {
+  if (!isObject(value)) {
+    errors.push(invalidField(path));
+    return null;
+  }
+  const width = value['width'];
+  const height = value['height'];
+  const rawBlocked = value['blocked'];
+  const blocked =
+    isIntegerArray(rawBlocked) && rawBlocked.every((cell) => cell >= 0) ? rawBlocked : null;
+  if (!isNonNegativeInteger(width)) errors.push(invalidField(`${path}.width`));
+  if (!isNonNegativeInteger(height)) errors.push(invalidField(`${path}.height`));
+  if (blocked === null) errors.push(invalidField(`${path}.blocked`));
+  if (!isNonNegativeInteger(width) || !isNonNegativeInteger(height) || blocked === null) {
+    return null;
+  }
+  return { width, height, blocked: [...blocked] };
+}
+
+function decodeFootprint(
+  value: unknown,
+  path: string,
+  errors: ProtocolError[],
+): FootprintDto | null {
+  if (!isObject(value)) {
+    errors.push(invalidField(path));
+    return null;
+  }
+  const width = value['width'];
+  const height = value['height'];
+  if (!isNonNegativeInteger(width)) errors.push(invalidField(`${path}.width`));
+  if (!isNonNegativeInteger(height)) errors.push(invalidField(`${path}.height`));
+  if (!isNonNegativeInteger(width) || !isNonNegativeInteger(height)) return null;
+  return { width, height };
+}
+
+function decodeSpatial(value: unknown, path: string, errors: ProtocolError[]): SpatialDto | null {
+  if (!isObject(value)) {
+    errors.push(invalidField(path));
+    return null;
+  }
+  const rawPosition = value['logical_position'];
+  const position =
+    Array.isArray(rawPosition) &&
+    rawPosition.length === 2 &&
+    isNonNegativeInteger(rawPosition[0]) &&
+    isNonNegativeInteger(rawPosition[1])
+      ? ([rawPosition[0], rawPosition[1]] as const)
+      : null;
+  const rawOrientation = value['orientation'];
+  const orientation =
+    isNonNegativeInteger(rawOrientation) && rawOrientation <= 3 ? rawOrientation : null;
+  if (position === null) errors.push(invalidField(`${path}.logical_position`));
+  if (orientation === null) errors.push(invalidField(`${path}.orientation`));
+  const rawFootprint = value['footprint'];
+  let footprint: FootprintDto | undefined;
+  if (rawFootprint !== undefined) {
+    const decoded = decodeFootprint(rawFootprint, `${path}.footprint`, errors);
+    if (decoded !== null) footprint = decoded;
+  }
+  if (position === null || orientation === null) return null;
+  return {
+    logical_position: position,
+    orientation,
+    ...(footprint === undefined ? {} : { footprint }),
+  };
+}
+
+function decodeConnectivity(
+  value: unknown,
+  path: string,
+  errors: ProtocolError[],
+): ConnectivityDto | null {
+  if (!isObject(value)) {
+    errors.push(invalidField(path));
+    return null;
+  }
+  const role = value['role'];
+  const network = value['network'];
+  const connected = value['connected'];
+  if (!isString(role)) errors.push(invalidField(`${path}.role`));
+  if (!isString(network)) errors.push(invalidField(`${path}.network`));
+  if (!isBoolean(connected)) errors.push(invalidField(`${path}.connected`));
+  if (!isString(role) || !isString(network) || !isBoolean(connected)) return null;
+  return { role, network, connected };
+}
+
 function decodeLocation(value: unknown, path: string, errors: ProtocolError[]): LocationDto | null {
   if (!isObject(value)) {
     errors.push(invalidField(path));
@@ -130,6 +226,11 @@ function decodeLocation(value: unknown, path: string, errors: ProtocolError[]): 
     if (isStringArray(connections)) location['connections'] = connections;
     else errors.push(invalidField(`${path}.connections`));
   }
+  const rawGrid = value['grid'];
+  if (rawGrid !== undefined) {
+    const decoded = decodeLocationGrid(rawGrid, `${path}.grid`, errors);
+    if (decoded !== null) location['grid'] = decoded;
+  }
   return location;
 }
 
@@ -153,6 +254,16 @@ function decodeEntity(value: unknown, path: string, errors: ProtocolError[]): En
   if (locationId !== undefined) {
     if (isNonNegativeInteger(locationId)) entity['location_id'] = locationId;
     else errors.push(invalidField(`${path}.location_id`));
+  }
+  const rawSpatial = value['spatial'];
+  if (rawSpatial !== undefined) {
+    const decoded = decodeSpatial(rawSpatial, `${path}.spatial`, errors);
+    if (decoded !== null) entity['spatial'] = decoded;
+  }
+  const rawConnectivity = value['connectivity'];
+  if (rawConnectivity !== undefined) {
+    const decoded = decodeConnectivity(rawConnectivity, `${path}.connectivity`, errors);
+    if (decoded !== null) entity['connectivity'] = decoded;
   }
   return entity;
 }

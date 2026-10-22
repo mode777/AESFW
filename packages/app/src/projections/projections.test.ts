@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { instantiateWorld, ids } from '@aesfw/core';
-import type { Producer, Registry } from '@aesfw/core';
+import type {
+  ConnectivityNode,
+  Footprint,
+  LogicalTransform,
+  Producer,
+  Registry,
+} from '@aesfw/core';
 import { applyDelta } from '@aesfw/protocol';
 import type { CompiledContent } from '@aesfw/content';
 import { createSession } from '../session/session.js';
@@ -58,7 +64,7 @@ const producer = (): Producer => ({
   capacityReservations: [],
 });
 
-const session = () => {
+const session = (options: { grid?: boolean } = {}) => {
   const created = createSession(content, {
     sessionId: 'session.1',
     seed: [1, 2],
@@ -77,8 +83,8 @@ const session = () => {
     locations: [
       {
         template: ids.definitionHandle(1),
-        spatialPolicy: 'abstract_capacity',
-        capacity: 100,
+        spatialPolicy: options.grid === true ? 'grid' : 'abstract_capacity',
+        capacity: options.grid === true ? 0 : 100,
         properties: [],
         region: null,
         active: true,
@@ -89,6 +95,9 @@ const session = () => {
             policy: 'shared_location',
           },
         ],
+        ...(options.grid === true
+          ? { grid: { width: 4, height: 3, blocked: [1, 6], buildableRatio: null } }
+          : {}),
       },
     ],
   });
@@ -97,6 +106,34 @@ const session = () => {
     .get<{ definition: ReturnType<typeof ids.definitionHandle> }>('definition')
     .set(ids.entityId(3), { definition: ids.definitionHandle(9) });
   return state;
+};
+
+const place = (
+  state: ReturnType<typeof session>,
+  entity: number,
+  position: { x: number; y: number },
+  orientation: 0 | 1 | 2 | 3,
+  footprint?: { width: number; height: number },
+): void => {
+  state.world.stores.get<LogicalTransform>('transform').set(ids.entityId(entity), {
+    location: ids.entityId(1),
+    position,
+    orientation,
+  });
+  if (footprint !== undefined) {
+    state.world.stores.get<Footprint>('footprint').set(ids.entityId(entity), footprint);
+  }
+};
+
+const connect = (
+  state: ReturnType<typeof session>,
+  entity: number,
+  role: 'provider' | 'requirement',
+  network: string,
+): void => {
+  state.world.stores
+    .get<ConnectivityNode>('connectivityNode')
+    .set(ids.entityId(entity), { role, network: ids.stringId(network) });
 };
 
 describe('[PIC-9.1] project', () => {
@@ -153,5 +190,109 @@ describe('[PIC-18] P-10 round-trip', () => {
     const after = project(state, ids.ownerHandle(0));
     const applied = applyDelta(before, diffProjection(before, after));
     expect(applied).toEqual(after);
+  });
+});
+
+describe('[PIC-9.1] spatial projection', () => {
+  it('[PIC-9.1] a grid location exposes its geometry [CONT-6.4]', () => {
+    const snapshot = project(session({ grid: true }), ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.grid).toEqual({ width: 4, height: 3, blocked: [1, 6] });
+  });
+
+  it('[PIC-9.1] an abstract location omits the grid [CONT-6.4]', () => {
+    const snapshot = project(session(), ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.grid).toBeUndefined();
+  });
+
+  it('[PIC-9.3] the grid is projected per actor', () => {
+    const state = session({ grid: true });
+    instantiateWorld(state.world, { owner: ids.ownerHandle(1), locations: [] });
+    const first = project(state, ids.ownerHandle(0));
+    const second = project(state, ids.ownerHandle(1));
+    expect(second.locations[0]?.grid).toBeDefined();
+    expect(first.locations[0]?.grid).toEqual(second.locations[0]?.grid);
+  });
+
+  it('[PIC-9.1] a placed entity exposes its transform and footprint [TDS-18.4]', () => {
+    const state = session();
+    place(state, 3, { x: 10, y: 12 }, 1, { width: 2, height: 3 });
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.entities[0]?.spatial).toEqual({
+      logical_position: [10, 12],
+      orientation: 1,
+      footprint: { width: 2, height: 3 },
+    });
+  });
+
+  it('[PIC-9.1] a placed entity without a footprint still exposes its position', () => {
+    const state = session();
+    place(state, 3, { x: 10, y: 12 }, 0);
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.entities[0]?.spatial?.logical_position).toEqual([10, 12]);
+    expect(snapshot.entities[0]?.spatial?.footprint).toBeUndefined();
+  });
+
+  it('[PIC-9.1] an unplaced entity omits spatial', () => {
+    const snapshot = project(session(), ids.ownerHandle(0));
+    expect(snapshot.entities[0]?.spatial).toBeUndefined();
+  });
+});
+
+describe('[PIC-9.1] connectivity projection', () => {
+  it('[PIC-9.1] a connected requirement is exposed [GDD-9.2]', () => {
+    const state = session();
+    place(state, 3, { x: 1, y: 1 }, 0);
+    connect(state, 3, 'requirement', 'test.connectivity.hub');
+    state.world.stores.get<Producer>('producer').set(ids.entityId(4), producer());
+    place(state, 4, { x: 2, y: 2 }, 0);
+    connect(state, 4, 'provider', 'test.connectivity.hub');
+    const snapshot = project(state, ids.ownerHandle(0));
+    const entity = snapshot.entities.find((entry) => entry.entity_id === 3);
+    expect(entity?.connectivity).toEqual({
+      role: 'requirement',
+      network: 'test.connectivity.hub',
+      connected: true,
+    });
+  });
+
+  it('[PIC-9.1] an unconnected requirement is exposed [GDD-9.9]', () => {
+    const state = session();
+    place(state, 3, { x: 1, y: 1 }, 0);
+    connect(state, 3, 'requirement', 'test.connectivity.hub');
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.entities[0]?.connectivity).toEqual({
+      role: 'requirement',
+      network: 'test.connectivity.hub',
+      connected: false,
+    });
+  });
+
+  it('[PIC-9.1] a provider is exposed [GDD-9.2]', () => {
+    const state = session();
+    place(state, 3, { x: 1, y: 1 }, 0);
+    connect(state, 3, 'provider', 'test.connectivity.hub');
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.entities[0]?.connectivity?.role).toBe('provider');
+  });
+
+  it('[PIC-9.1] an entity without a node omits connectivity', () => {
+    const snapshot = project(session(), ids.ownerHandle(0));
+    expect(snapshot.entities[0]?.connectivity).toBeUndefined();
+  });
+});
+
+describe('[PIC-9.2] connectivity delta', () => {
+  it('[PIC-9.2] a connectivity change appears in the delta', () => {
+    const state = session();
+    place(state, 3, { x: 1, y: 1 }, 0);
+    connect(state, 3, 'requirement', 'test.connectivity.hub');
+    const before = project(state, ids.ownerHandle(0));
+    state.world.stores.get<Producer>('producer').set(ids.entityId(4), producer());
+    place(state, 4, { x: 2, y: 2 }, 0);
+    connect(state, 4, 'provider', 'test.connectivity.hub');
+    state.revision = 1;
+    const after = project(state, ids.ownerHandle(0));
+    const delta = diffProjection(before, after);
+    expect(delta.entity_updates.some((update) => update.component === 'connectivity')).toBe(true);
   });
 });

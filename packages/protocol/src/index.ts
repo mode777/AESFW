@@ -32,12 +32,15 @@ export type {
 } from './placement.js';
 
 export type {
+  ConnectivityDto,
   EntityDto,
   EntityUpdateDto,
+  FootprintDto,
   InventoryDto,
   InventoryEntryDto,
   InventoryUpdateDto,
   LocationDto,
+  LocationGridDto,
   LocationPropertiesDto,
   OwnerBalanceDto,
   OwnerDto,
