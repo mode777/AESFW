@@ -170,6 +170,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 2.8 | `add-client-shell` | reference/client | Vite app, tokens, layout, signals, mirror, view state, i18n with fallback, top bar controls, debug overlay ✓ archived 2026-10-22 | REF-9–11, REF-12.5, REF-14 | 2.6, 2.7 | M |
 | 2.9 | `add-client-inspector-and-tables` | reference/client | entity and residence inspector; inventory and population tables; table mode; enable and recipe commands ✓ archived 2026-10-22 | REF-12.3, REF-12.4, REF-15 | 2.8, 2.4 | M |
 | 2.10 | `add-client-smoke-e2e` | reference/client | Playwright smoke flows 1, 2, 4, 6; browser hash equals CLI hash for the same command log ✓ archived 2026-10-22 | VER-13.2, VER-8.2 | 2.9 | S |
+| 2.11 | `add-entity-definition-references` | kernel/world-state | populate the `definition` component at instantiation; expose `definition_id` in projections and read models; disable-lowers-satisfaction integration test ✓ archived 2026-10-22 | TDS-8.3, PIC-9.1, PIC-10.1 | 2.4 | S |
 
 **Exit criteria:** the R0 loop runs in the browser; disabling a producer visibly lowers satisfaction; save → reload → continue works; browser and CLI hashes match. **Demo:** first playtest of the closed loop.
 

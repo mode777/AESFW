@@ -10,6 +10,7 @@ import { allocateEntity, ids } from '@aesfw/core';
 import type {
   CapabilityConsumer,
   CategorySpec,
+  DefinitionHandle,
   Growth,
   LocationHub,
   NeedSpec,
@@ -281,15 +282,22 @@ export function instantiateContentEntities(world: World, registry: ContentRegist
     const components = data === null ? null : asRecord(data['components']);
     if (components === null) continue;
     const entity = allocateEntity(world);
+    const setDefinition = (): void => {
+      world.stores
+        .get<{ definition: DefinitionHandle }>('definition')
+        .set(entity, { definition: definition.handle });
+    };
     if (components['resource_source'] !== undefined) {
       const component = asRecord(components['resource_source']) ?? {};
       world.stores
         .get<ResourceSource>('resourceSource')
         .set(entity, sourceFrom(registry, component, location, inventory));
+      setDefinition();
     } else if (components['producer'] !== undefined) {
       const component = asRecord(components['producer']) ?? {};
       const producer = producerFrom(registry, component, location, inventory);
       world.stores.get<Producer>('producer').set(entity, producer);
+      setDefinition();
       const requirement = producer.recipes[0]?.capabilities[0];
       if (requirement !== undefined) {
         world.stores.get<CapabilityConsumer>('capabilityConsumer').set(entity, {
@@ -309,6 +317,7 @@ export function instantiateContentEntities(world: World, registry: ContentRegist
       if (built === null) continue;
       world.stores.get<Residence>('residence').set(entity, built.residence);
       world.stores.get<PopulationGroup>('populationGroup').set(entity, built.group);
+      setDefinition();
       const growth = growthFrom(registry, component['growth_policy']);
       if (growth !== null) world.stores.get<Growth>('growth').set(entity, growth);
     }
