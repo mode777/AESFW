@@ -192,7 +192,8 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 3.6 | `add-reference-content-builder-stage` | reference/content | R1 part 1: grid location, BM1, extractors, refiner, connector ✓ archived 2026-10-22 | REF-5, REF-7 | 3.3, 3.4, 3.5, 3.4b | S |
 | 3.6b | `add-spatial-projection-data` | app/projections | expose location grid geometry, entity logical transform/footprint, and connectivity in the per-actor snapshot/read models; gap closure enabling the client grid ✓ archived 2026-10-22 | PIC-9.1, PIC-10.2, TDS-18.4 | 3.1, 3.3, 3.4 | M |
 | 3.7 | `add-client-location-grid` | reference/client | SVG grid view, shape grammar, state encoding, connectivity and suitability overlays ✓ archived 2026-10-22 | REF-10, REF-12.2, REF-14.3 | 2.9, 3.6, 3.6b | L |
-| 3.8 | `add-client-placement-mode` | reference/client | build palette, ghost with authoritative preview, keyboard placement, construction commands | REF-13.1–13.3 | 3.7 | M |
+| 3.7b | `add-placement-query-host` | host/web | wire the read-only `placement_query` through the web-worker host; gap closure enabling the authoritative client ghost preview ✓ archived 2026-10-22 | PIC-12.1, TDS-21.1 | 3.3 | S |
+| 3.8 | `add-client-placement-mode` | reference/client | build palette, ghost with authoritative preview, keyboard placement, construction commands | REF-13.1–13.3 | 3.7, 3.7b | M |
 
 **Exit criteria:** a placement scenario (valid, invalid, cancelled, deconstructed) passes; INV-20 holds; a player can build the R1 chain from scratch in the browser.
 

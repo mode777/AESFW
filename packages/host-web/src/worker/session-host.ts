@@ -16,6 +16,7 @@ import {
   load,
   locationSummary,
   needBreakdown,
+  placementQuery,
   project,
   save,
   submitCommand,
@@ -31,6 +32,7 @@ import type {
   EventDto,
   JsonObject,
   JsonValue,
+  PlacementQueryDto,
   SnapshotDto,
   WorkerResponseDto,
 } from '@aesfw/protocol';
@@ -91,6 +93,33 @@ const toEventDto = (sessionId: string, event: DomainEvent): EventDto => ({
   payload: (event.payload ?? {}) as JsonObject,
 });
 
+const parsePlacementQuery = (query: JsonObject): PlacementQueryDto | null => {
+  const definitionId = query['definition_id'];
+  const locationId = query['location_id'];
+  const transform = query['logical_transform'];
+  if (typeof definitionId !== 'string' || !Number.isSafeInteger(locationId)) return null;
+  if (transform === null || typeof transform !== 'object' || Array.isArray(transform)) return null;
+  const position = (transform as JsonObject)['position'];
+  const orientation = (transform as JsonObject)['orientation'];
+  if (
+    !Array.isArray(position) ||
+    position.length !== 2 ||
+    !Number.isSafeInteger(position[0]) ||
+    !Number.isSafeInteger(position[1]) ||
+    !Number.isSafeInteger(orientation)
+  ) {
+    return null;
+  }
+  return {
+    definition_id: definitionId,
+    location_id: locationId as number,
+    logical_transform: {
+      position: [position[0] as number, position[1] as number],
+      orientation: orientation as number,
+    },
+  };
+};
+
 const answerQuery = (
   session: SessionState | null,
   content: CompiledContent | null,
@@ -119,6 +148,18 @@ const answerQuery = (
       definition_metadata: definitionMetadata(
         content,
         query['definition_type'] as DefinitionType,
+      ) as unknown as JsonValue,
+    };
+  }
+  if (kind === 'placement_query') {
+    const dto = parsePlacementQuery(query);
+    if (dto === null) return {};
+    return {
+      placement_result: placementQuery(
+        content,
+        session.world,
+        session.revision,
+        dto,
       ) as unknown as JsonValue,
     };
   }

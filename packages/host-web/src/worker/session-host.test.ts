@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyRegistry, ids } from '@aesfw/core';
-import type { SaveDocument } from '@aesfw/app';
-import type { ContentRegistry, CompiledContent } from '@aesfw/content';
+import { GRID_POLICY_ID, createEmptyRegistry, ids } from '@aesfw/core';
+import type { Inventory, Location, LocationHub } from '@aesfw/core';
+import type { SaveDocument, SessionState } from '@aesfw/app';
+import type { CompiledContent, CompiledDefinition, ContentRegistry } from '@aesfw/content';
 import type { WorkerResponseDto } from '@aesfw/protocol';
 import { PROTOCOL_VERSION } from '@aesfw/protocol';
 import { createSessionHost } from './session-host.js';
@@ -19,6 +20,117 @@ const content: CompiledContent = {
   checksum: 'test',
   packages: [],
   presentation: null,
+};
+
+const PLACEMENT_ENTITY = 'test.entity.builder';
+const PLACEMENT_CONDITION = 'test.condition.place_ok';
+
+const placementDefinitions = new Map<string, CompiledDefinition>([
+  [
+    PLACEMENT_ENTITY,
+    {
+      id: PLACEMENT_ENTITY,
+      handle: ids.definitionHandle(10),
+      type: 'entity',
+      data: {
+        components: {
+          placement: { footprint: [1, 1], conditions: [PLACEMENT_CONDITION] },
+        },
+      },
+    },
+  ],
+  [
+    PLACEMENT_CONDITION,
+    {
+      id: PLACEMENT_CONDITION,
+      handle: ids.definitionHandle(7),
+      type: 'condition',
+      data: {
+        id: PLACEMENT_CONDITION,
+        expression: {
+          greater: {
+            left: { location_property: { property: 'test.property.suitability' } },
+            right: 500,
+          },
+        },
+      },
+    },
+  ],
+]);
+
+const placementRegistry: ContentRegistry = {
+  stringIdOf: (type, handle) => {
+    for (const definition of placementDefinitions.values()) {
+      if (definition.type === type && definition.handle === handle)
+        return ids.stringId(definition.id);
+    }
+    return null;
+  },
+  handleOf: (type, id) => {
+    const definition = placementDefinitions.get(id);
+    return definition !== undefined && definition.type === type ? definition.handle : null;
+  },
+  definitionOf: (type, handle) => {
+    for (const definition of placementDefinitions.values()) {
+      if (definition.type === type && definition.handle === handle) return definition;
+    }
+    return null;
+  },
+  definitionDataOf: (type, handle) => {
+    for (const definition of placementDefinitions.values()) {
+      if (definition.type === type && definition.handle === handle) return definition.data;
+    }
+    return null;
+  },
+  definitionsOf: (type) =>
+    [...placementDefinitions.values()].filter((definition) => definition.type === type),
+  tagsOf: () => [],
+};
+
+const placementContent: CompiledContent = {
+  registry: placementRegistry,
+  checksum: 'test',
+  packages: [],
+  presentation: null,
+};
+
+const addPlacementGridLocation = (session: SessionState): void => {
+  const world = session.world;
+  world.nextEntityId = ids.entityId(100);
+  world.owners = {
+    owners: [
+      {
+        handle: ids.ownerHandle(0),
+        knowledge: [],
+        accounts: [],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      },
+    ],
+  };
+  world.stores.get<Location>('location').set(ids.entityId(1), {
+    template: ids.definitionHandle(0),
+    spatialPolicy: GRID_POLICY_ID,
+    capacity: 16,
+    used: 0,
+    properties: [{ property: ids.stringId('test.property.suitability'), value: 800 }],
+    region: null,
+    active: true,
+    owner: ids.ownerHandle(0),
+    grid: { width: 4, height: 4, blocked: [0] },
+  });
+  world.stores
+    .get<LocationHub>('locationHub')
+    .set(ids.entityId(1), { inventories: [ids.entityId(2)] });
+  world.stores.get<Inventory>('inventory').set(ids.entityId(2), {
+    owner: ids.ownerHandle(0),
+    policy: 'framework.inventory.shared_location',
+    revision: 0,
+    entries: [],
+    capacity: { total: null, perResource: null },
+    acceptance: { accepts: [] },
+  });
 };
 
 class FakePort implements SessionHostPort {
@@ -66,7 +178,10 @@ class FakeStorage implements SaveStorage {
   }
 }
 
-const setup = (prepare?: (session: import('@aesfw/app').SessionState) => void) => {
+const setup = (
+  prepare?: (session: import('@aesfw/app').SessionState) => void,
+  hostContent: CompiledContent = content,
+) => {
   const port = new FakePort();
   const clock = new FakeClock();
   const storage = new FakeStorage();
@@ -76,7 +191,7 @@ const setup = (prepare?: (session: import('@aesfw/app').SessionState) => void) =
     tickDurationMs: 100,
     actor: ids.ownerHandle(0),
     actorId: 'test.owner.1',
-    content,
+    content: hostContent,
     maxCatchUpTicks: 8,
     setTimer: (fn) => clock.setTimer(fn),
     clearTimer: (id) => clock.clearTimer(id),
@@ -195,6 +310,69 @@ describe('[TDS-21.1] session host', () => {
     expect(results).toHaveLength(1);
     if (results[0]?.kind === 'query_result') {
       expect(results[0].result['entity_detail']).toMatchObject({ entity_id: 3 });
+    }
+  });
+
+  it('[PIC-12.1] a placement query yields a valid result', () => {
+    const { port } = setup(addPlacementGridLocation, placementContent);
+    init(port);
+    port.send({
+      kind: 'query',
+      protocol_version: PROTOCOL_VERSION,
+      actor_id: 'test.owner.1',
+      query: {
+        kind: 'placement_query',
+        definition_id: PLACEMENT_ENTITY,
+        location_id: 1,
+        logical_transform: { position: [1, 1], orientation: 0 },
+      },
+    });
+    const results = port.of('query_result');
+    expect(results).toHaveLength(1);
+    if (results[0]?.kind === 'query_result') {
+      expect(results[0].result['placement_result']).toMatchObject({ valid: true, reasons: [] });
+    }
+  });
+
+  it('[PIC-12.1] a rejected placement query yields its reasons', () => {
+    const { port } = setup(addPlacementGridLocation, placementContent);
+    init(port);
+    port.send({
+      kind: 'query',
+      protocol_version: PROTOCOL_VERSION,
+      actor_id: 'test.owner.1',
+      query: {
+        kind: 'placement_query',
+        definition_id: PLACEMENT_ENTITY,
+        location_id: 1,
+        logical_transform: { position: [0, 0], orientation: 0 },
+      },
+    });
+    const results = port.of('query_result');
+    expect(results).toHaveLength(1);
+    if (results[0]?.kind === 'query_result') {
+      const placement = results[0].result['placement_result'] as {
+        readonly valid: boolean;
+        readonly reasons: readonly { readonly code: string }[];
+      };
+      expect(placement.valid).toBe(false);
+      expect(placement.reasons[0]?.code).toBe('not_buildable');
+    }
+  });
+
+  it('[PIC-12.1] a malformed placement query yields an empty result', () => {
+    const { port } = setup(addPlacementGridLocation, placementContent);
+    init(port);
+    port.send({
+      kind: 'query',
+      protocol_version: PROTOCOL_VERSION,
+      actor_id: 'test.owner.1',
+      query: { kind: 'placement_query', location_id: 1 },
+    });
+    const results = port.of('query_result');
+    expect(results).toHaveLength(1);
+    if (results[0]?.kind === 'query_result') {
+      expect(results[0].result).toEqual({});
     }
   });
 });
