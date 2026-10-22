@@ -10,7 +10,7 @@ import { decodeSnapshot, decodeSnapshotDelta } from './snapshot.js';
 import type { EventDto } from '../events.js';
 import type { ProtocolError } from '../errors.js';
 import { err, ok, type DecodeResult } from '../result.js';
-import type { WorkerRequestDto, WorkerResponseDto } from '../worker.js';
+import type { ContentSourceDto, WorkerRequestDto, WorkerResponseDto } from '../worker.js';
 import { PROTOCOL_VERSION } from '../version.js';
 import {
   invalidField,
@@ -69,11 +69,37 @@ export function decodeWorkerRequest(value: unknown): DecodeResult<WorkerRequestD
     case 'init': {
       const saveSlot = value['save_slot'];
       if (saveSlot !== undefined && !isString(saveSlot)) return err([invalidField('save_slot')]);
-      return ok(
-        saveSlot === undefined
-          ? { kind: 'init', protocol_version: version }
-          : { kind: 'init', protocol_version: version, save_slot: saveSlot },
-      );
+      const rawContent = value['content'];
+      let content: ContentSourceDto[] | undefined;
+      if (rawContent !== undefined) {
+        if (!Array.isArray(rawContent)) return err([invalidField('content')]);
+        const sources = rawContent as readonly unknown[];
+        content = [];
+        for (let index = 0; index < sources.length; index += 1) {
+          const source = sources[index];
+          if (!isObject(source) || !isString(source['root'])) {
+            return err([invalidField(`content[${index}]`)]);
+          }
+          const rawFiles = source['files'];
+          if (!Array.isArray(rawFiles)) return err([invalidField(`content[${index}].files`)]);
+          const fileList = rawFiles as readonly unknown[];
+          const files: { path: string; text: string }[] = [];
+          for (let fileIndex = 0; fileIndex < fileList.length; fileIndex += 1) {
+            const file = fileList[fileIndex];
+            if (!isObject(file) || !isString(file['path']) || !isString(file['text'])) {
+              return err([invalidField(`content[${index}].files[${fileIndex}]`)]);
+            }
+            files.push({ path: file['path'], text: file['text'] });
+          }
+          content.push({ root: source['root'], files });
+        }
+      }
+      return ok({
+        kind: 'init',
+        protocol_version: version,
+        ...(saveSlot === undefined ? {} : { save_slot: saveSlot }),
+        ...(content === undefined ? {} : { content }),
+      });
     }
     case 'subscribe': {
       const actorId = value['actor_id'];

@@ -7,5 +7,10 @@
     "lib": ["ES2022", "DOM"]
   },
   "include": ["src"],
-  "references": [{ "path": "../app" }, { "path": "../content" }, { "path": "../protocol" }]
+  "references": [
+    { "path": "../app" },
+    { "path": "../content" },
+    { "path": "../core" },
+    { "path": "../protocol" }
+  ]
 }

@@ -9,7 +9,7 @@ import type { DomainEvent, TickInput } from '@aesfw/core';
 import { defaultWorldPlan } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { checkInvariants } from '../harness/invariants.js';
-import { instantiateContentEntities } from './instantiate.js';
+import { instantiateContentEntities } from '@aesfw/app';
 import type { Scenario, ScenarioCheckpoint, ScenarioFinding, ScenarioReport } from './types.js';
 
 const input = (hash: boolean): TickInput => ({

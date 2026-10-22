@@ -109,6 +109,9 @@ importers:
       '@aesfw/content':
         specifier: workspace:*
         version: link:../content
+      '@aesfw/core':
+        specifier: workspace:*
+        version: link:../core
       '@aesfw/protocol':
         specifier: workspace:*
         version: link:../protocol

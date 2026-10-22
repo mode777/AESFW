@@ -69,6 +69,8 @@ export type {
   WorkerSaveRequestDto,
   WorkerSnapshotResponseDto,
   WorkerSubscribeRequestDto,
+  ContentFileDto,
+  ContentSourceDto,
 } from './worker.js';
 
 export { decodeCommandEnvelope, decodeCommandResult } from './codecs/commands.js';

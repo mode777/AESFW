@@ -13,11 +13,24 @@ import type { ProtocolVersion } from './version.js';
 /** The clock/control actions the client may send (TDS-21.1). */
 export type WorkerControlAction = 'run' | 'pause' | 'step';
 
+/** A single content file passed to the worker (TDS-21.1). */
+export interface ContentFileDto {
+  readonly path: string;
+  readonly text: string;
+}
+
+/** A content package source passed to the worker (TDS-21.1). */
+export interface ContentSourceDto {
+  readonly root: string;
+  readonly files: readonly ContentFileDto[];
+}
+
 /** Starts or loads a session in the worker (TDS-21.1). */
 export interface WorkerInitRequestDto {
   readonly kind: 'init';
   readonly protocol_version: ProtocolVersion;
   readonly save_slot?: string;
+  readonly content?: readonly ContentSourceDto[];
 }
 
 /** Subscribes the client to one actor's projections (TDS-21.1). */

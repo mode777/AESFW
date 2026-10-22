@@ -20,6 +20,7 @@
   "dependencies": {
     "@aesfw/app": "workspace:*",
     "@aesfw/content": "workspace:*",
+    "@aesfw/core": "workspace:*",
     "@aesfw/protocol": "workspace:*"
   }
 }

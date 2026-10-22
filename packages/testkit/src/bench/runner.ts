@@ -8,7 +8,7 @@ import { InvariantViolation, createWorld, instantiateWorld, step } from '@aesfw/
 import type { TickInput } from '@aesfw/core';
 import { defaultWorldPlan } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
-import { instantiateContentEntities } from '../scenario/instantiate.js';
+import { instantiateContentEntities } from '@aesfw/app';
 import type { Scenario } from '../scenario/types.js';
 import type { BenchmarkOptions, BenchmarkResult } from './types.js';
 
