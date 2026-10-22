@@ -1,5 +1,5 @@
 formatting:
-  base_scale: 1000
+  base_scale: 6000
   number:
     grouping: true
     decimals: 0

@@ -1,25 +1,32 @@
 resources:
   - id: ref.tier.resource.p1
-    tags: [storable]
-    quantity: { precision: fixed, scale: 1000 }
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
     storage: { policy: normal, scope: inventory }
     transportable: true
 
   - id: ref.tier.resource.p2
-    tags: [storable]
-    quantity: { precision: fixed, scale: 1000 }
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
     storage: { policy: normal, scope: inventory }
     transportable: true
 
   - id: ref.tier.resource.h1
-    tags: [storable]
-    quantity: { precision: fixed, scale: 1000 }
+    tags: [storable, ref.tier.role.intermediate]
+    quantity: { precision: fixed, scale: 6000 }
     storage: { policy: normal, scope: inventory }
     transportable: true
 
   - id: ref.tier.resource.c1
-    tags: [storable]
-    quantity: { precision: fixed, scale: 1000 }
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 1
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  - id: ref.tier.resource.bm1
+    tags: [storable, ref.tier.role.construction]
+    quantity: { precision: fixed, scale: 6000 }
     storage: { policy: normal, scope: inventory }
     transportable: true
 
@@ -31,33 +38,40 @@ resources:
 
 location_templates:
   - id: ref.tier.location.a
-    spatial_policy: framework.spatial.abstract_capacity
-    spatial_parameters: { total_capacity: 100 }
+    spatial_policy: framework.spatial.grid
+    spatial_parameters:
+      width: 40
+      height: 40
+      buildable_ratio: { min: 400, max: 700 }
+    properties:
+      ref.tier.property.suitability_p1: 1000
+    source_slots:
+      - { type: ref.tier.slot.v_a, count: 2 }
     inventories:
       - id: shared
-        capacity: { mode: total, quantity: 1000000 }
+        capacity: { mode: per_resource, quantity: 3000000 }
         access_policy: framework.inventory.shared_location
     activation: { initial: true }
 
 recipes:
   - id: ref.tier.recipe.refine
     mode: batch
-    duration_ticks: 20
+    duration_ticks: 30
     inputs:
-      - { resource: ref.tier.resource.p1, quantity: 1000 }
-      - { resource: ref.tier.resource.p2, quantity: 1000 }
+      - { resource: ref.tier.resource.p1, quantity: 6000 }
+      - { resource: ref.tier.resource.p2, quantity: 6000 }
     outputs:
-      - { resource: ref.tier.resource.h1, quantity: 1000 }
+      - { resource: ref.tier.resource.h1, quantity: 6000 }
     capability_requirements:
       - { resource: ref.tier.capability.s1, quantity: 1 }
 
   - id: ref.tier.recipe.combine
     mode: batch
-    duration_ticks: 20
+    duration_ticks: 30
     inputs:
-      - { resource: ref.tier.resource.h1, quantity: 1000 }
+      - { resource: ref.tier.resource.h1, quantity: 12000 }
     outputs:
-      - { resource: ref.tier.resource.c1, quantity: 1000 }
+      - { resource: ref.tier.resource.c1, quantity: 6000 }
     capability_requirements:
       - { resource: ref.tier.capability.s1, quantity: 1 }
 
@@ -103,38 +117,67 @@ conditions:
         right: 800
 
 entity_definitions:
-  - id: ref.tier.entity.source_p1
+  - id: ref.tier.entity.slot_extractor_p2
     components:
+      placement:
+        footprint: [3, 3]
+        requires_slot: ref.tier.slot.v_a
       resource_source:
-        policy: infinite_rate
+        policy: slot_dependent
+        depletion: none
         outputs:
-          - { resource: ref.tier.resource.p1, quantity_per_tick: 1000 }
+          - { resource: ref.tier.resource.p2, quantity_per_tick: 400 }
+      connectivity:
+        requires: ref.tier.connectivity.hub_network
 
-  - id: ref.tier.entity.source_p2
+  - id: ref.tier.entity.area_extractor_p1
     components:
+      placement:
+        footprint: [3, 3]
+        working_area: { cells: 12, exclusive: true }
       resource_source:
-        policy: infinite_rate
+        policy: area_dependent
         outputs:
-          - { resource: ref.tier.resource.p2, quantity_per_tick: 1000 }
+          - { resource: ref.tier.resource.p1, quantity_per_tick: 400 }
+        scale_by_property: ref.tier.property.suitability_p1
+      connectivity:
+        requires: ref.tier.connectivity.hub_network
 
   - id: ref.tier.entity.refiner
     components:
+      placement:
+        footprint: [3, 3]
       producer:
         recipes: [ref.tier.recipe.refine]
         process_slots: 1
         input_inventory: location.shared
         output_inventory: location.shared
+      connectivity:
+        requires: ref.tier.connectivity.hub_network
 
   - id: ref.tier.entity.combiner
     components:
+      placement:
+        footprint: [4, 4]
       producer:
         recipes: [ref.tier.recipe.combine]
         process_slots: 1
         input_inventory: location.shared
         output_inventory: location.shared
+      connectivity:
+        requires: ref.tier.connectivity.hub_network
+
+  - id: ref.tier.entity.connector
+    components:
+      placement:
+        footprint: [1, 1]
+      connectivity:
+        provides: ref.tier.connectivity.hub_network
 
   - id: ref.tier.entity.residence
     components:
+      placement:
+        footprint: [3, 3]
       residence:
         population_tier: ref.tier.population.s1
         capacity: 10

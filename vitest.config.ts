@@ -47,6 +47,27 @@ export default defineConfig({
       packageProject('host-web', 'packages/host-web'),
       packageProject('host-node', 'packages/host-node'),
       packageProject('client-web', 'reference/client-web'),
+      {
+        resolve: {
+          alias: {
+            '@aesfw/core/testing': pkgDir('packages/core/src/testing.ts'),
+            '@aesfw/core': pkgDir('packages/core/src/index.ts'),
+            '@aesfw/content': pkgDir('packages/content/src/index.ts'),
+            '@aesfw/protocol': pkgDir('packages/protocol/src/index.ts'),
+            '@aesfw/app': pkgDir('packages/app/src/index.ts'),
+            '@aesfw/testkit/scenario': pkgDir('packages/testkit/src/scenario/index.ts'),
+            '@aesfw/testkit': pkgDir('packages/testkit/src/index.ts'),
+          },
+        },
+        test: {
+          name: 'reference-content',
+          root: pkgDir('reference/content'),
+          environment: 'node' as const,
+          include: ['test/**/*.test.ts'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          passWithNoTests: true,
+        },
+      },
     ],
     coverage: {
       provider: 'v8',

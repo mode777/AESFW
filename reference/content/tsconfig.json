@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "types": ["node"],
+    "typeRoots": ["../../packages/host-node/node_modules/@types"],
+    "paths": {
+      "@aesfw/content": ["../../packages/content/src/index.ts"],
+      "@aesfw/testkit/scenario": ["../../packages/testkit/src/scenario/index.ts"]
+    }
+  },
+  "include": ["test"]
+}
