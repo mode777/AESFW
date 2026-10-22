@@ -19,6 +19,7 @@ test('[VER-13.2] smoke flow 4: toggle an entity', async ({ page }) => {
   const toggle = page.getByTestId('inspector-toggle-enabled');
   await expect(toggle).toContainText('disable');
   await toggle.click();
+  await page.getByTestId('topbar-step').click();
   await expect(toggle).toContainText('enable');
 });
 

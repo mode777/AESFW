@@ -70,6 +70,11 @@ export function mount(root: HTMLElement): void {
     for (const location of projection?.locations ?? []) {
       client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
     }
+    const selected = view.selection();
+    if (selected !== null) {
+      client.query(ACTOR_ID, { kind: 'entity_detail', entity_id: selected });
+      client.query(ACTOR_ID, { kind: 'need_breakdown', entity_id: selected });
+    }
   };
 
   client.onMessage((response) => {
@@ -82,8 +87,8 @@ export function mount(root: HTMLElement): void {
         refreshLists();
         break;
       case 'delta':
-        mirror.applyDelta(response.delta, response.events);
         if (response.hash !== undefined) metadata.lastHash = response.hash;
+        mirror.applyDelta(response.delta, response.events);
         refreshLists();
         break;
       case 'query_result': {
