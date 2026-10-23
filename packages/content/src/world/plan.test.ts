@@ -185,6 +185,7 @@ describe('[CONT-6.6] world definition plan', () => {
         initial_resources: [{ resource: 'test.resource.credits', quantity: 1000 }],
         established_locations: ['test.loc.a'],
         known_locations: ['test.loc.b'],
+        initial_entities: [{ definition: 'test.entity.transport', location: 'test.loc.a' }],
       },
       { id: 'owner.b', established_locations: ['test.loc.b'] },
     ],
@@ -200,6 +201,7 @@ describe('[CONT-6.6] world definition plan', () => {
           transportable: false,
         },
       ],
+      entity_definitions: [{ id: 'test.entity.transport', components: {} }],
       connections: [connection],
       worlds: [world],
     }).registry;
@@ -225,6 +227,9 @@ describe('[CONT-6.6] world definition plan', () => {
     expect(result.plan.owners?.[0]?.knowledge).toEqual([
       { locationIndex: 0, level: 'established' },
       { locationIndex: 1, level: 'discovered' },
+    ]);
+    expect(result.plan.initialEntities).toEqual([
+      { definition: ids.definitionHandle(0), locationIndex: 0, owner: ids.ownerHandle(0) },
     ]);
     expect(result.plan.connections).toEqual([
       {

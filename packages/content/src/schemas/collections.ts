@@ -20,6 +20,7 @@ import { NeedCategorySchema, NeedSchema } from './need.js';
 import { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 import { RecipeSchema } from './recipe.js';
 import { ResourceSchema } from './resource.js';
+import { TransportUnitSchema } from './transport.js';
 import { WorldDefinitionSchema } from './world.js';
 
 /** Maps a top-level document key to its core definition type (TDS-7). */
@@ -37,6 +38,7 @@ export const DEFINITION_COLLECTIONS = {
   deficit_policies: 'deficitPolicy',
   connections: 'connection',
   worlds: 'world',
+  transport_units: 'transportType',
 } as const satisfies Readonly<Record<string, DefinitionType>>;
 
 /** A top-level document key of the M1 content set. */
@@ -62,6 +64,7 @@ export const DEFINITION_SCHEMAS = {
   deficit_policies: DeficitPolicySchema,
   connections: ConnectionDefinitionSchema,
   worlds: WorldDefinitionSchema,
+  transport_units: TransportUnitSchema,
 } as const satisfies Readonly<Record<DefinitionCollection, TSchema>>;
 
 /** True when `key` names a known definition collection. */

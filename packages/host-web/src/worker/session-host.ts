@@ -12,20 +12,20 @@ import {
   definitionMetadata,
   diffProjection,
   entityDetail,
-  instantiateContentEntities,
   load,
   locationSummary,
   needBreakdown,
   placementQuery,
   planningMetrics,
+  instantiateWorldContent,
   project,
   save,
   submitCommand,
 } from '@aesfw/app';
 import type { SaveDocument, SessionState } from '@aesfw/app';
-import { createMemorySource, loadContent, worldPlan } from '@aesfw/content';
+import { createMemorySource, loadContent } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
-import { InvariantViolation, instantiateWorld } from '@aesfw/core';
+import { InvariantViolation } from '@aesfw/core';
 import type { DefinitionType, DomainEvent, OwnerHandle } from '@aesfw/core';
 import { PROTOCOL_VERSION, decodeWorkerRequest } from '@aesfw/protocol';
 import type {
@@ -330,9 +330,7 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
       }
       session = created.value;
       const registry = content.registry as ContentRegistry;
-      const plan = worldPlan(registry, null);
-      instantiateWorld(session.world, plan.plan);
-      instantiateContentEntities(session.world, registry);
+      instantiateWorldContent(session.world, registry, null);
       options.prepare?.(session);
     }
     post({

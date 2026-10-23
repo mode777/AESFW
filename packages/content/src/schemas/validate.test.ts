@@ -230,6 +230,7 @@ describe('[TDS-7] definition collection catalogue', () => {
       'deficit_policies',
       'connections',
       'worlds',
+      'transport_units',
     ]);
     expect(DEFINITION_COLLECTIONS.resources).toBe('resource');
     expect(DEFINITION_COLLECTIONS.location_templates).toBe('location');
@@ -242,5 +243,6 @@ describe('[TDS-7] definition collection catalogue', () => {
     expect(DEFINITION_COLLECTIONS.deficit_policies).toBe('deficitPolicy');
     expect(DEFINITION_COLLECTIONS.connections).toBe('connection');
     expect(DEFINITION_COLLECTIONS.worlds).toBe('world');
+    expect(DEFINITION_COLLECTIONS.transport_units).toBe('transportType');
   });
 });

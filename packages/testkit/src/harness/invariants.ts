@@ -22,6 +22,8 @@ import {
 import type { Inventory, Registry, TickOutput } from '@aesfw/core';
 import type { CapabilityConsumer, CapabilityProvider } from '@aesfw/core';
 import type { Location } from '@aesfw/core';
+import { cargoSlotsValid } from '@aesfw/core';
+import type { Cargo } from '@aesfw/core';
 import type {
   Producer,
   ResourceSource,
@@ -317,6 +319,20 @@ const checkSourceConsistency = (world: World, findings: InvariantFinding[]): voi
   }
 };
 
+const checkCargoSlots = (world: World, findings: InvariantFinding[]): void => {
+  const store = world.stores.get<Cargo>('cargo');
+  for (const id of store.ids()) {
+    const cargo = store.get(id) as Cargo | null | undefined;
+    if (cargo == null) continue;
+    if (!cargoSlotsValid(cargo)) {
+      findings.push({
+        id: 'INV-16',
+        message: `transport ${id} has an invalid typed cargo slot`,
+      });
+    }
+  }
+};
+
 const checkConservation = (
   before: World,
   output: TickOutput,
@@ -488,6 +504,7 @@ export function checkInvariants(
   checkThroughputAllocation(output.world, findings);
   checkProducerConsistency(output.world, findings);
   checkSourceConsistency(output.world, findings);
+  checkCargoSlots(output.world, findings);
   checkPopulationBounds(output.world, findings);
   checkSatisfactionRange(output.world, findings);
   checkConservation(before, output, findings);

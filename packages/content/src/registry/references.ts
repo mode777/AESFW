@@ -364,6 +364,22 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             }
           });
         });
+      } else if (collection === 'transport_units') {
+        check(
+          id,
+          definition['entity_definition'],
+          'entity',
+          `/transport_units/${id}/entity_definition`,
+        );
+        const maintenance = asRecord(definition['maintenance']);
+        asArray(maintenance?.['inputs']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/transport_units/${id}/maintenance/inputs/${index}/resource`,
+          ),
+        );
       } else if (collection === 'need_categories') {
         asArray(definition['members']).forEach((entry, index) =>
           check(

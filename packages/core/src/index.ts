@@ -159,6 +159,7 @@ export type {
 export { instantiateWorld } from './sim/instantiate.js';
 export type {
   ConnectionPlan,
+  InitialEntityPlan,
   InternalLogisticsPlan,
   InventoryPlan,
   LocationGridPlan,
@@ -233,6 +234,25 @@ export type {
   SourceSlotBinding,
   WorkingAreaClaim,
 } from './sim/production/index.js';
+export {
+  cargoAccepts,
+  cargoFreeCapacity,
+  cargoQuantity,
+  cargoSlotsValid,
+  cargoTotal,
+  loadCargo,
+  unloadCargo,
+  TRANSPORT_ARRIVALS_KEY,
+} from './sim/transport/index.js';
+export type {
+  Cargo,
+  CargoCompartmentPolicy,
+  CargoEntry,
+  CargoSlot,
+  TransportArrival,
+  TransportHandling,
+  TransportMovement,
+} from './sim/transport/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
 export {
   applyMaintenance,

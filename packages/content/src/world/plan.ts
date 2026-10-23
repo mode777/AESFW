@@ -10,6 +10,7 @@ import type {
   ConnectionPlan,
   DefinitionHandle,
   Diagnostic,
+  InitialEntityPlan,
   InternalLogisticsPlan,
   InventoryPlan,
   LocationGridPlan,
@@ -346,6 +347,24 @@ export function worldPlan(
     });
   }
 
+  const initialEntities: InitialEntityPlan[] = [];
+  ownerEntries.forEach((entry, ownerIndex) => {
+    for (const raw of asArray(entry['initial_entities'])) {
+      const record = asRecord(raw);
+      const definitionId = asString(record?.['definition']);
+      const locationId = asString(record?.['location']);
+      if (definitionId === null || locationId === null) continue;
+      const definition = registry.handleOf('entity', ids.stringId(definitionId));
+      const locationIndex = locationIndexById.get(locationId);
+      if (definition === null || locationIndex === undefined) continue;
+      initialEntities.push({
+        definition,
+        locationIndex,
+        owner: ids.ownerHandle(ownerIndex),
+      });
+    }
+  });
+
   const owners: OwnerPlan[] = ownerEntries.map((entry, index) => {
     const accounts = asArray(entry['initial_resources'])
       .map((resource) => {
@@ -384,6 +403,7 @@ export function worldPlan(
       ...(owners.length === 0 ? {} : { owners }),
       locations,
       ...(connections.length === 0 ? {} : { connections }),
+      ...(initialEntities.length === 0 ? {} : { initialEntities }),
     },
     diagnostics,
   };

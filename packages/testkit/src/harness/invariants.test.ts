@@ -662,3 +662,39 @@ describe('[VER-6][INV-03] storage-provider capacity', () => {
     ).toContain('INV-03');
   });
 });
+
+describe('[INV-16] cargo-slot invariant', () => {
+  it('[INV-16] an over-capacity typed slot is reported', () => {
+    const working = world()
+      .store('cargo', ids.entityId(1), {
+        policy: 'typed_slots',
+        slotCapacity: 100,
+        slots: [{ resource: ids.definitionHandle(0), quantity: 150 }],
+        entries: [],
+        accepts: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const output = step(working, registry, input);
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).toContain(
+      'INV-16',
+    );
+  });
+
+  it('[INV-16] a valid typed cargo has no finding', () => {
+    const working = world()
+      .store('cargo', ids.entityId(1), {
+        policy: 'typed_slots',
+        slotCapacity: 100,
+        slots: [{ resource: ids.definitionHandle(0), quantity: 100 }],
+        entries: [],
+        accepts: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const output = step(working, registry, input);
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).not.toContain(
+      'INV-16',
+    );
+  });
+});

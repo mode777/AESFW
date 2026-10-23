@@ -6,12 +6,14 @@
  *
  * Source: CONT-6.6, CONT-6.8, GDD-9.4, GDD-9.5, GDD-11, GDD-12
  */
-import { allocateEntity, applyStorageProvider, ids } from '@aesfw/core';
+import { allocateEntity, applyStorageProvider, ids, instantiateWorld } from '@aesfw/core';
 import type {
   CapabilityConsumer,
+  Cargo,
   CategorySpec,
   ConnectivityNode,
   DefinitionHandle,
+  Diagnostic,
   Growth,
   Location,
   LocationHub,
@@ -24,8 +26,11 @@ import type {
   Residence,
   ResourceSource,
   SourcePolicy,
+  TransportHandling,
+  TransportMovement,
   World,
 } from '@aesfw/core';
+import { worldPlan } from '@aesfw/content';
 import type { CompiledDefinition, ContentRegistry } from '@aesfw/content';
 
 type Data = Record<string, unknown>;
@@ -324,111 +329,239 @@ const growthFrom = (registry: ContentRegistry, id: unknown): Growth | null => {
   };
 };
 
-/**
- * Instantiates the content's entity definitions at the default location
- * (CONT-6.6, CONT-6.8).
- *
- * Source: CONT-6.6, CONT-6.8
- */
-export function instantiateContentEntities(world: World, registry: ContentRegistry): void {
-  const location = firstLocation(world);
-  if (location === null) return;
+const maintenanceFrom = (registry: ContentRegistry, component: Data | null): Maintenance | null => {
+  if (component === null) return null;
+  const interval = component['interval_ticks'];
+  const inputs = asArray(component['inputs'])
+    .map((entry) => {
+      const line = asRecord(entry) ?? {};
+      return {
+        resource: handle(registry, 'resource', line['resource']),
+        quantity: typeof line['quantity'] === 'number' ? line['quantity'] : 0,
+      };
+    })
+    .filter(
+      (line): line is { resource: DefinitionHandle; quantity: number } => line.resource !== null,
+    );
+  const policy = component['charge_policy'];
+  const shortage = component['shortage_policy'];
+  return {
+    intervalTicks: typeof interval === 'number' ? interval : 1,
+    inputs,
+    chargePolicy:
+      policy === 'while_exists' || policy === 'while_active' || policy === 'while_processing'
+        ? policy
+        : 'while_enabled',
+    shortagePolicy:
+      shortage === 'deactivate_entity' ||
+      shortage === 'scale' ||
+      shortage === 'accumulate_debt' ||
+      shortage === 'ignore' ||
+      shortage === 'trigger_transition'
+        ? shortage
+        : 'owner_deficit_policy',
+    arrears: [],
+  };
+};
+
+const transportDefinitionFor = (
+  registry: ContentRegistry,
+  entityDefinition: DefinitionHandle,
+): Data | null => {
+  const entityId = registry.stringIdOf('entity', entityDefinition);
+  if (entityId === null) return null;
+  for (const definition of registry.definitionsOf('transportType')) {
+    const data = asRecord(definition.data);
+    if (data !== null && data['entity_definition'] === entityId) return data;
+  }
+  return null;
+};
+
+const transportableResources = (registry: ContentRegistry): readonly DefinitionHandle[] => {
+  const handles: DefinitionHandle[] = [];
+  for (const definition of registry.definitionsOf('resource')) {
+    const data = asRecord(definition.data);
+    if (data?.['transportable'] === true) handles.push(definition.handle);
+  }
+  return handles.sort((a, b) => a - b);
+};
+
+const instantiateTransport = (
+  world: World,
+  registry: ContentRegistry,
+  entityDefinition: DefinitionHandle,
+  entity: number,
+): void => {
+  const data = transportDefinitionFor(registry, entityDefinition);
+  if (data === null) return;
+  const cargoData = asRecord(data['cargo']) ?? {};
+  const policy =
+    cargoData['compartment_policy'] === 'typed_slots'
+      ? 'typed_slots'
+      : cargoData['compartment_policy'] === 'per_resource'
+        ? 'per_resource'
+        : 'unrestricted';
+  const slotCapacity =
+    typeof cargoData['slot_capacity'] === 'number' ? cargoData['slot_capacity'] : 0;
+  const slotCount = typeof cargoData['slots'] === 'number' ? cargoData['slots'] : 1;
+  const accepts =
+    cargoData['acceptance'] === 'transportable_resources' ? transportableResources(registry) : [];
+  const cargo: Cargo = {
+    policy,
+    slotCapacity,
+    slots:
+      policy === 'typed_slots'
+        ? Array.from({ length: slotCount }, () => ({ resource: null, quantity: 0 }))
+        : [],
+    entries: [],
+    accepts,
+  };
+  const movementData = asRecord(data['movement']) ?? {};
+  const movement: TransportMovement = {
+    speedPermille:
+      typeof movementData['speed_permille'] === 'number' ? movementData['speed_permille'] : 1000,
+    mode: movementData['mode'] === 'abstract' ? 'abstract' : 'physical',
+    allowedConnectionTags: asArray(movementData['allowed_connection_tags'])
+      .filter((tag): tag is string => typeof tag === 'string')
+      .map((tag) => ids.stringId(tag)),
+  };
+  const handlingData = asRecord(data['handling']) ?? {};
+  const handling: TransportHandling = {
+    loadingRatePerTick:
+      typeof handlingData['loading_rate_per_tick'] === 'number'
+        ? handlingData['loading_rate_per_tick']
+        : 0,
+    unloadingRatePerTick:
+      typeof handlingData['unloading_rate_per_tick'] === 'number'
+        ? handlingData['unloading_rate_per_tick']
+        : 0,
+  };
+  world.stores.get<Cargo>('cargo').set(ids.entityId(entity), cargo);
+  world.stores.get<TransportMovement>('movement').set(ids.entityId(entity), movement);
+  world.stores.get<TransportHandling>('handling').set(ids.entityId(entity), handling);
+  const maintenance = maintenanceFrom(registry, asRecord(data['maintenance']));
+  if (maintenance !== null) {
+    world.stores.get<Maintenance>('maintenance').set(ids.entityId(entity), maintenance);
+  }
+};
+
+const instantiateDefinition = (
+  world: World,
+  registry: ContentRegistry,
+  definition: CompiledDefinition,
+  location: number,
+  owner: number | null,
+): number => {
+  const data = asRecord(definition.data);
+  const components = data === null ? null : asRecord(data['components']);
+  const entity = allocateEntity(world);
   const hub = world.stores.get<LocationHub>('locationHub').get(ids.entityId(location));
   const inventory = hub?.inventories[0] ?? null;
-  for (const definition of registry.definitionsOf('entity')) {
-    const data = asRecord(definition.data);
-    const components = data === null ? null : asRecord(data['components']);
-    if (components === null) continue;
-    const entity = allocateEntity(world);
-    const owner =
-      location === null
-        ? null
-        : (world.stores.get<Location>('location').get(ids.entityId(location))?.owner ?? null);
-    if (owner !== null) {
-      world.stores.get<{ owner: number }>('owner').set(entity, { owner });
+  if (owner !== null) {
+    world.stores.get<{ owner: number }>('owner').set(entity, { owner });
+  }
+  if (components === null) {
+    instantiateTransport(world, registry, definition.handle, entity);
+    return entity;
+  }
+  const setDefinition = (): void => {
+    world.stores.get<{ definition: DefinitionHandle }>('definition').set(entity, {
+      definition: definition.handle,
+    });
+  };
+  if (components['resource_source'] !== undefined) {
+    const component = asRecord(components['resource_source']) ?? {};
+    const placement = asRecord(components['placement']) ?? {};
+    world.stores
+      .get<ResourceSource>('resourceSource')
+      .set(entity, sourceFrom(registry, component, placement, location, inventory));
+    setDefinition();
+  } else if (components['producer'] !== undefined) {
+    const component = asRecord(components['producer']) ?? {};
+    const producer = producerFrom(registry, component, location, inventory);
+    world.stores.get<Producer>('producer').set(entity, producer);
+    setDefinition();
+    const requirement = producer.recipes[0]?.capabilities[0];
+    if (requirement !== undefined) {
+      world.stores.get<CapabilityConsumer>('capabilityConsumer').set(entity, {
+        capability: requirement.resource,
+        substitutes: [],
+        scope: 'location',
+        location: ids.entityId(location),
+        model: 'proportional',
+        priority: 0,
+        weight: 1000,
+        request: requirement.quantity,
+      });
     }
-    const setDefinition = (): void => {
-      world.stores
-        .get<{ definition: DefinitionHandle }>('definition')
-        .set(entity, { definition: definition.handle });
-    };
-    if (components['resource_source'] !== undefined) {
-      const component = asRecord(components['resource_source']) ?? {};
-      const placement = asRecord(components['placement']) ?? {};
-      world.stores
-        .get<ResourceSource>('resourceSource')
-        .set(entity, sourceFrom(registry, component, placement, location, inventory));
-      setDefinition();
-    } else if (components['producer'] !== undefined) {
-      const component = asRecord(components['producer']) ?? {};
-      const producer = producerFrom(registry, component, location, inventory);
-      world.stores.get<Producer>('producer').set(entity, producer);
-      setDefinition();
-      const requirement = producer.recipes[0]?.capabilities[0];
-      if (requirement !== undefined) {
-        world.stores.get<CapabilityConsumer>('capabilityConsumer').set(entity, {
-          capability: requirement.resource,
-          substitutes: [],
-          scope: 'location',
-          location: ids.entityId(location),
-          model: 'proportional',
-          priority: 0,
-          weight: 1000,
-          request: requirement.quantity,
-        });
-      }
-    } else if (components['residence'] !== undefined) {
-      const component = asRecord(components['residence']) ?? {};
-      const built = residenceFrom(registry, component, location);
-      if (built === null) continue;
+  } else if (components['residence'] !== undefined) {
+    const component = asRecord(components['residence']) ?? {};
+    const built = residenceFrom(registry, component, location);
+    if (built !== null) {
       world.stores.get<Residence>('residence').set(entity, built.residence);
       world.stores.get<PopulationGroup>('populationGroup').set(entity, built.group);
       setDefinition();
       const growth = growthFrom(registry, component['growth_policy']);
       if (growth !== null) world.stores.get<Growth>('growth').set(entity, growth);
     }
-    applyStorageProvider(world, registry, definition.handle, entity, ids.entityId(location));
-    if (components['connectivity'] !== undefined) {
-      const node = connectivityNodeFrom(components['connectivity']);
-      if (node !== null) {
-        world.stores.get<ConnectivityNode>('connectivityNode').set(entity, node);
-        setDefinition();
-      }
-    }
-    if (components['maintenance'] !== undefined) {
-      const component = asRecord(components['maintenance']);
-      const interval = component?.['interval_ticks'];
-      const inputs = asArray(component?.['inputs'])
-        .map((entry) => {
-          const line = asRecord(entry) ?? {};
-          return {
-            resource: handle(registry, 'resource', line['resource']),
-            quantity: typeof line['quantity'] === 'number' ? line['quantity'] : 0,
-          };
-        })
-        .filter(
-          (line): line is { resource: DefinitionHandle; quantity: number } =>
-            line.resource !== null,
-        );
-      const policy = component?.['charge_policy'];
-      const shortage = component?.['shortage_policy'];
-      world.stores.get<Maintenance>('maintenance').set(entity, {
-        intervalTicks: typeof interval === 'number' ? interval : 1,
-        inputs,
-        chargePolicy:
-          policy === 'while_exists' || policy === 'while_active' || policy === 'while_processing'
-            ? policy
-            : 'while_enabled',
-        shortagePolicy:
-          shortage === 'deactivate_entity' ||
-          shortage === 'scale' ||
-          shortage === 'accumulate_debt' ||
-          shortage === 'ignore' ||
-          shortage === 'trigger_transition'
-            ? shortage
-            : 'owner_deficit_policy',
-        arrears: [],
-      });
+  }
+  applyStorageProvider(world, registry, definition.handle, entity, ids.entityId(location));
+  if (components['connectivity'] !== undefined) {
+    const node = connectivityNodeFrom(components['connectivity']);
+    if (node !== null) {
+      world.stores.get<ConnectivityNode>('connectivityNode').set(entity, node);
+      setDefinition();
     }
   }
+  const maintenance = maintenanceFrom(registry, asRecord(components['maintenance']));
+  if (maintenance !== null) {
+    world.stores.get<Maintenance>('maintenance').set(entity, maintenance);
+  }
+  instantiateTransport(world, registry, definition.handle, entity);
+  return entity;
+};
+
+/**
+ * Instantiates the content's entity definitions at the default location
+ * (CONT-6.6, CONT-6.8). Used when content has no world definition.
+ *
+ * Source: CONT-6.6, CONT-6.8
+ */
+export function instantiateContentEntities(world: World, registry: ContentRegistry): void {
+  const location = firstLocation(world);
+  if (location === null) return;
+  const owner = world.stores.get<Location>('location').get(ids.entityId(location))?.owner ?? null;
+  for (const definition of registry.definitionsOf('entity')) {
+    instantiateDefinition(world, registry, definition, location, owner);
+  }
+}
+
+/**
+ * Instantiates a world plan and its declared initial entities (CONT-6.6). A
+ * world without initial entities falls back to instantiating every entity
+ * definition at the first location, preserving the pre-world behaviour.
+ *
+ * Source: CONT-6.6
+ */
+export function instantiateWorldContent(
+  world: World,
+  registry: ContentRegistry,
+  worldId: string | null = null,
+): readonly Diagnostic[] {
+  const plan = worldPlan(registry, worldId);
+  const defaultPlan = plan.plan;
+  instantiateWorld(world, defaultPlan);
+  const locationEntities = world.stores.get('location').ids();
+  const initial = defaultPlan.initialEntities;
+  if (initial === undefined || initial.length === 0) {
+    instantiateContentEntities(world, registry);
+    return plan.diagnostics;
+  }
+  for (const entry of initial) {
+    const definition = registry.definitionOf('entity', entry.definition);
+    const location = locationEntities[entry.locationIndex];
+    if (definition === null || location === undefined) continue;
+    instantiateDefinition(world, registry, definition, location, entry.owner);
+  }
+  return plan.diagnostics;
 }

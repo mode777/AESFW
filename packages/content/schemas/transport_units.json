@@ -1,0 +1,211 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "entity_definition", "cargo", "movement", "handling"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "entity_definition": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "cargo": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["compartment_policy", "slots", "slot_capacity", "acceptance"],
+      "properties": {
+        "compartment_policy": {
+          "anyOf": [
+            {
+              "const": "unrestricted",
+              "type": "string"
+            },
+            {
+              "const": "typed_slots",
+              "type": "string"
+            },
+            {
+              "const": "per_resource",
+              "type": "string"
+            }
+          ]
+        },
+        "slots": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "slot_capacity": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "acceptance": {
+          "anyOf": [
+            {
+              "const": "transportable_resources",
+              "type": "string"
+            },
+            {
+              "const": "all",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "movement": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["speed_permille"],
+      "properties": {
+        "speed_permille": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "const": "physical",
+              "type": "string"
+            },
+            {
+              "const": "abstract",
+              "type": "string"
+            }
+          ]
+        },
+        "allowed_connection_tags": {
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "handling": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["loading_rate_per_tick", "unloading_rate_per_tick"],
+      "properties": {
+        "loading_rate_per_tick": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unloading_rate_per_tick": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      }
+    },
+    "order_modes": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "const": "route",
+            "type": "string"
+          },
+          {
+            "const": "explore",
+            "type": "string"
+          },
+          {
+            "const": "establish",
+            "type": "string"
+          },
+          {
+            "const": "trade",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "maintenance": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["interval_ticks", "inputs", "charge_policy", "shortage_policy"],
+      "properties": {
+        "interval_ticks": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "inputs": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": ["resource", "quantity"],
+            "properties": {
+              "resource": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "quantity": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "charge_policy": {
+          "anyOf": [
+            {
+              "const": "while_exists",
+              "type": "string"
+            },
+            {
+              "const": "while_enabled",
+              "type": "string"
+            },
+            {
+              "const": "while_active",
+              "type": "string"
+            },
+            {
+              "const": "while_processing",
+              "type": "string"
+            }
+          ]
+        },
+        "shortage_policy": {
+          "anyOf": [
+            {
+              "const": "deactivate_entity",
+              "type": "string"
+            },
+            {
+              "const": "scale",
+              "type": "string"
+            },
+            {
+              "const": "accumulate_debt",
+              "type": "string"
+            },
+            {
+              "const": "ignore",
+              "type": "string"
+            },
+            {
+              "const": "trigger_transition",
+              "type": "string"
+            },
+            {
+              "const": "owner_deficit_policy",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

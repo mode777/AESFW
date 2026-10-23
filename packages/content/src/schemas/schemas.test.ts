@@ -8,6 +8,7 @@ import { NeedCategorySchema, NeedSchema } from './need.js';
 import { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 import { RecipeSchema } from './recipe.js';
 import { ResourceSchema } from './resource.js';
+import { TransportUnitSchema } from './transport.js';
 import { WorldDefinitionSchema } from './world.js';
 
 const valid = (schema: Parameters<typeof Value.Check>[0], value: unknown) =>
@@ -540,5 +541,34 @@ describe('[CONT-6.6] world definition schema', () => {
 
   it('[CONT-6.6] a world definition with no locations is rejected', () => {
     expect(valid(WorldDefinitionSchema, { ...world, locations: [] })).toBe(false);
+  });
+});
+
+describe('[CONT-6.16] transport unit schema', () => {
+  const unit = {
+    id: 'test.transport.basic',
+    entity_definition: 'test.entity.transport',
+    cargo: {
+      compartment_policy: 'typed_slots',
+      slots: 2,
+      slot_capacity: 50000,
+      acceptance: 'transportable_resources',
+    },
+    movement: { speed_permille: 1000, allowed_connection_tags: ['test.transport.standard'] },
+    handling: { loading_rate_per_tick: 10000, unloading_rate_per_tick: 10000 },
+    order_modes: ['route'],
+  };
+
+  it('[CONT-6.16] a transport unit validates', () => {
+    expect(valid(TransportUnitSchema, unit)).toBe(true);
+  });
+
+  it('[CONT-6.16] a transport unit with an unknown compartment policy is rejected', () => {
+    expect(
+      valid(TransportUnitSchema, {
+        ...unit,
+        cargo: { ...unit.cargo, compartment_policy: 'containers' },
+      }),
+    ).toBe(false);
   });
 });

@@ -66,6 +66,13 @@ export type OwnerPlan = {
   readonly knowledge: readonly OwnerKnowledgePlan[];
 };
 
+/** A planned initial entity, indexing the world plan's location list. */
+export type InitialEntityPlan = {
+  readonly definition: DefinitionHandle;
+  readonly locationIndex: Int;
+  readonly owner: OwnerHandle;
+};
+
 /** A planned connection instance, indexing the world plan's location list. */
 export type ConnectionPlan = {
   readonly id: StringId;
@@ -102,6 +109,7 @@ export type WorldPlan = {
   readonly owners?: readonly OwnerPlan[];
   readonly locations: readonly LocationPlan[];
   readonly connections?: readonly ConnectionPlan[];
+  readonly initialEntities?: readonly InitialEntityPlan[];
 };
 
 const emptyOwner = (handle: OwnerHandle): OwnerState => ({

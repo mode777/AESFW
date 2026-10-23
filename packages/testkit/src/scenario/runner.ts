@@ -4,12 +4,11 @@
  *
  * Source: VER-9.2, VER-6
  */
-import { cloneWorld, createWorld, instantiateWorld, step } from '@aesfw/core';
+import { cloneWorld, createWorld, step } from '@aesfw/core';
 import type { DomainEvent, TickInput } from '@aesfw/core';
-import { worldPlan } from '@aesfw/content';
-import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { checkInvariants } from '../harness/invariants.js';
-import { instantiateContentEntities } from '@aesfw/app';
+import type { CompiledContent, ContentRegistry } from '@aesfw/content';
+import { instantiateWorldContent } from '@aesfw/app';
 import type { Scenario, ScenarioCheckpoint, ScenarioFinding, ScenarioReport } from './types.js';
 
 const input = (hash: boolean): TickInput => ({
@@ -40,12 +39,13 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
     return { id: scenario.id, checkpoints, events, findings };
   }
   const world = created.value;
-  const plan = worldPlan(registry as ContentRegistry, scenario.setup.world);
-  for (const diagnostic of plan.diagnostics) {
+  for (const diagnostic of instantiateWorldContent(
+    world,
+    registry as ContentRegistry,
+    scenario.setup.world,
+  )) {
     findings.push({ tick: 0, id: 'content_diagnostic', message: diagnostic.code });
   }
-  instantiateWorld(world, plan.plan);
-  instantiateContentEntities(world, registry as ContentRegistry);
 
   const hashing = scenario.run.hashInterval > 0;
   for (let tick = 1; tick <= scenario.run.ticks; tick += 1) {
