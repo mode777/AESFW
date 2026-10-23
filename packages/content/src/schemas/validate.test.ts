@@ -225,6 +225,7 @@ describe('[TDS-7] definition collection catalogue', () => {
       'needs',
       'need_categories',
       'services',
+      'satisfaction_bands',
       'growth_policies',
       'conditions',
       'curves',

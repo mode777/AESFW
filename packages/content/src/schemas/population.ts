@@ -23,6 +23,17 @@ export const PopulationTierSchema = Type.Object(
     id: IdSchema,
     consumption_factor: Type.Optional(Type.Integer({ minimum: 1 })),
     need_categories: Type.Array(IdSchema),
+    satisfaction: Type.Optional(
+      Type.Object(
+        {
+          aggregation: Type.Optional(
+            Type.Union([Type.Literal('average'), Type.Literal('minimum')]),
+          ),
+          bands: Type.Optional(IdSchema),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     outputs: Type.Array(TierOutputSchema),
   },
   { additionalProperties: false },

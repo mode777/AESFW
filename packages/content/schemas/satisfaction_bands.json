@@ -1,0 +1,98 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "bands"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "bands": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["min", "effects"],
+        "properties": {
+          "min": {
+            "minimum": 0,
+            "maximum": 1000,
+            "type": "integer"
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["type", "policy"],
+                  "properties": {
+                    "type": {
+                      "const": "growth",
+                      "type": "string"
+                    },
+                    "policy": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["type", "resource", "value"],
+                  "properties": {
+                    "type": {
+                      "const": "output_multiplier",
+                      "type": "string"
+                    },
+                    "resource": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "value": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["type"],
+                  "properties": {
+                    "type": {
+                      "const": "enable_advancement",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["type", "grace_ticks"],
+                  "properties": {
+                    "type": {
+                      "const": "trigger_decline",
+                      "type": "string"
+                    },
+                    "transition": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "grace_ticks": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

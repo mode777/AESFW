@@ -319,6 +319,8 @@ export type {
 export { isPopulationGroup, isResidence, updatePopulation } from './sim/population/index.js';
 export type { PopulationGroup, PopulationOutput, Residence } from './sim/population/index.js';
 export type { Growth, GrowthCondition, GrowthStep } from './sim/population/index.js';
+export { updateBands } from './sim/population/index.js';
+export type { BandEffects, BandMultiplier, BandState, BandTable } from './sim/population/index.js';
 export {
   applyServiceProvider,
   calculatePopulationDemand,

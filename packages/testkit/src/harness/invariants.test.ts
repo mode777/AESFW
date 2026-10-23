@@ -437,6 +437,49 @@ describe('[VER-6] satisfaction invariants', () => {
     );
   });
 
+  it('[INV-09] a residence with a band table and satisfaction needs band state', () => {
+    const bands = content()
+      .define('resources', {
+        id: 'test.r.a',
+        quantity: { precision: 'fixed', scale: 1000 },
+        storage: { policy: 'normal', scope: 'inventory' },
+        transportable: true,
+      })
+      .define('satisfaction_bands', {
+        id: 'test.bands.default',
+        bands: [{ min: 0, effects: [] }],
+      })
+      .build();
+    const built = expectContentOk(bands);
+    const bandHandle = built.registry.handleOf('band', ids.stringId('test.bands.default'));
+    if (bandHandle === null) throw new Error('band handle missing');
+    const working = world(built.registry)
+      .store('satisfaction', ids.entityId(1), { z: 500, categories: [] })
+      .store('residence', ids.entityId(1), {
+        tier: ids.definitionHandle(9),
+        capacity: 10,
+        location: null,
+        growthPolicy: null,
+        consumptionFactor: 1000,
+        outputs: [],
+        bands: bandHandle,
+      })
+      .build();
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: {},
+    };
+    expect(checkInvariants(before, output, built.registry).map((finding) => finding.id)).toContain(
+      'INV-09',
+    );
+  });
+
   it('[INV-08] a bounded satisfaction passes', () => {
     const working = buildWorld(500);
     const before = cloneWorld(working);

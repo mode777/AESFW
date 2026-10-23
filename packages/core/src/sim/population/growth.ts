@@ -8,6 +8,7 @@
 import type { EventWriter } from '../../events/event-writer.js';
 import type { Int } from '../../fx/index.js';
 import type { DefinitionHandle } from '../../ids/index.js';
+import type { Registry } from '../../registry/types.js';
 import type { World } from '../../world/types.js';
 import { readCarry, writeCarry } from './accumulators.js';
 import { isPopulationGroup } from './types.js';
@@ -34,6 +35,41 @@ export type Growth = {
   readonly decrease: GrowthStep | null;
 };
 
+/** Parses a growth policy from its raw definition data (CONT-6.14). */
+export function resolveGrowthPolicy(registry: Registry, policy: DefinitionHandle): Growth | null {
+  const data = registry.definitionDataOf?.('growthPolicy', policy);
+  if (data === null || data === undefined || typeof data !== 'object' || Array.isArray(data)) {
+    return null;
+  }
+  const record = data as { readonly [key: string]: unknown };
+  const asRecord = (value: unknown): { readonly [key: string]: unknown } | null =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? (value as { readonly [key: string]: unknown })
+      : null;
+  const asInt = (value: unknown, fallback: number): Int =>
+    typeof value === 'number' ? value : fallback;
+  const increase = asRecord(record['increase']);
+  const decrease = asRecord(record['decrease']);
+  return {
+    policy,
+    intervalTicks: asInt(record['interval_ticks'], 1),
+    increase:
+      increase === null
+        ? null
+        : {
+            quantity: asInt(increase['quantity'], 0),
+            condition: { minSatisfaction: 800, maxSatisfaction: null, requireCapacity: true },
+          },
+    decrease:
+      decrease === null
+        ? null
+        : {
+            quantity: asInt(decrease['quantity'], 0),
+            condition: { minSatisfaction: null, maxSatisfaction: 250, requireCapacity: false },
+          },
+  };
+}
+
 const conditionMet = (
   condition: GrowthCondition | null,
   z: Int,
@@ -55,9 +91,13 @@ export function updatePopulation(world: World, events: EventWriter): void {
   const growthStore = world.stores.get<Growth>('growth');
   const groupStore = world.stores.get<PopulationGroup>('populationGroup');
   const satisfactionStore = world.stores.get('satisfaction');
+  const bandStore = world.stores.get<{ readonly growthOverride: Growth | null }>('bandState');
   for (const entity of growthStore.ids()) {
-    const growth = growthStore.get(entity);
-    if (growth === undefined) continue;
+    const baseGrowth = growthStore.get(entity);
+    if (baseGrowth === undefined) continue;
+    // A satisfaction band's growth effect replaces the tier policy while the
+    // residence is in that band (GDD-12.6).
+    const growth = bandStore.get(entity)?.growthOverride ?? baseGrowth;
     const group = groupStore.get(entity);
     if (!isPopulationGroup(group)) continue;
     const z = (satisfactionStore.get(entity) as { readonly z?: number } | undefined)?.z ?? 1000;

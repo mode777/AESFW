@@ -8,7 +8,9 @@
  * Source: GDD-11.3, GDD-20.2, ARCH-13, TDS-6.4
  */
 import type { EventWriter } from '../../events/event-writer.js';
-import { accumulate } from '../../fx/index.js';
+import { accumulate, mulDiv } from '../../fx/index.js';
+import type { Int } from '../../fx/index.js';
+import type { DefinitionHandle } from '../../ids/index.js';
 import { InvariantViolation } from '../../errors/invariant-violation.js';
 import type { Registry } from '../../registry/types.js';
 import type { TransactionWriter } from '../../tx/index.js';
@@ -44,6 +46,12 @@ export function applyPopulationOutputs(
   const groupStore = world.stores.get<PopulationGroup>('populationGroup');
   const providerStore = world.stores.get<CapabilityProvider>('capabilityProvider');
   const satisfactionStore = world.stores.get<Satisfaction>('satisfaction');
+  const bandStore = world.stores.get<{
+    readonly outputMultipliers: readonly {
+      readonly resource: DefinitionHandle;
+      readonly value: Int;
+    }[];
+  }>('bandState');
   for (const entity of residenceStore.ids()) {
     const residence = residenceStore.get(entity);
     if (!isResidence(residence)) continue;
@@ -83,10 +91,14 @@ export function applyPopulationOutputs(
       if (residence.location === null) continue;
       const owner = locationOf(world, residence.location)?.owner ?? null;
       if (owner === null) continue;
-      const multiplier =
+      const curveMultiplierValue =
         output.satisfactionCurve === null
           ? FULL_RATE
           : curveMultiplier(registry, output.satisfactionCurve, z);
+      const bandMultiplier =
+        bandStore.get(entity)?.outputMultipliers.find((entry) => entry.resource === output.resource)
+          ?.value ?? FULL_RATE;
+      const multiplier = mulDiv(curveMultiplierValue, bandMultiplier, FULL_RATE, 'floor');
       const baseRate = group.count * output.ratePerPopulationPerTick;
       const carry = readCarry(world, entity, 'population_need', output.resource);
       const result = accumulate(baseRate, multiplier, carry);

@@ -251,6 +251,59 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             `/population_tiers/${id}/outputs/${index}/satisfaction_curve`,
           ),
         );
+        check(
+          id,
+          asRecord(definition['satisfaction'])?.['bands'],
+          'band',
+          `/population_tiers/${id}/satisfaction/bands`,
+        );
+      } else if (collection === 'satisfaction_bands') {
+        const bands = asArray(definition['bands']);
+        let previousMin = -1;
+        bands.forEach((entry, index) => {
+          const band = asRecord(entry);
+          const min = band?.['min'];
+          if (typeof min !== 'number' || !Number.isSafeInteger(min)) return;
+          if (index === 0 && min !== 0) {
+            diagnostics.push(
+              diag('invalid_satisfaction_bands', {
+                definition: id,
+                path: `/satisfaction_bands/${id}/bands/0/min`,
+                args: { reason: 'must_start_at_zero' },
+              }),
+            );
+          }
+          if (min <= previousMin) {
+            diagnostics.push(
+              diag('invalid_satisfaction_bands', {
+                definition: id,
+                path: `/satisfaction_bands/${id}/bands/${index}/min`,
+                args: { reason: 'overlap_or_unsorted' },
+              }),
+            );
+          }
+          previousMin = min;
+          asArray(band?.['effects']).forEach((effect, effectIndex) => {
+            const record = asRecord(effect);
+            if (record?.['type'] === 'growth') {
+              check(
+                id,
+                record['policy'],
+                'growthPolicy',
+                `/satisfaction_bands/${id}/bands/${index}/effects/${effectIndex}/policy`,
+              );
+            } else if (record?.['type'] === 'output_multiplier') {
+              check(
+                id,
+                record['resource'],
+                'resource',
+                `/satisfaction_bands/${id}/bands/${index}/effects/${effectIndex}/resource`,
+              );
+            }
+            // A `trigger_decline` transition reference is validated by 7.3,
+            // which owns the transition definitions.
+          });
+        });
       } else if (collection === 'needs') {
         check(id, definition['category'], 'needCategory', `/needs/${id}/category`);
         asArray(definition['applies_to']).forEach((entry, index) =>

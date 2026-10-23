@@ -29,6 +29,8 @@ export type Residence = {
   readonly needs?: readonly NeedSpec[];
   readonly categories?: readonly CategorySpec[];
   readonly satisfactionAggregation?: SatisfactionAggregation;
+  /** The satisfaction-band table of the residence's tier (CONT-6.19). */
+  readonly bands?: DefinitionHandle;
 };
 
 /** A population group component. */

@@ -18,6 +18,28 @@
         "type": "string"
       }
     },
+    "satisfaction": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "aggregation": {
+          "anyOf": [
+            {
+              "const": "average",
+              "type": "string"
+            },
+            {
+              "const": "minimum",
+              "type": "string"
+            }
+          ]
+        },
+        "bands": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
     "outputs": {
       "type": "array",
       "items": {

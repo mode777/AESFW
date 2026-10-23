@@ -289,6 +289,9 @@ const residenceFrom = (
   const categories = asArray(tierData['need_categories'])
     .map((id) => categorySpec(registry, id))
     .filter((category): category is CategorySpec => category !== null);
+  const satisfaction = asRecord(tierData['satisfaction']) ?? {};
+  const bands = handle(registry, 'band', satisfaction['bands']);
+  const aggregation = satisfaction['aggregation'] === 'minimum' ? 'minimum' : 'average';
   const capacity = typeof component['capacity'] === 'number' ? component['capacity'] : 0;
   const count =
     typeof component['initial_population'] === 'number' ? component['initial_population'] : 0;
@@ -303,7 +306,8 @@ const residenceFrom = (
       outputs,
       needs: needsForTier(registry, tierId),
       categories,
-      satisfactionAggregation: 'average',
+      satisfactionAggregation: aggregation,
+      ...(bands !== null ? { bands } : {}),
     },
     group: { tier: tierHandle, count, capacity },
   };

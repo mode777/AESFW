@@ -10,3 +10,7 @@ export { updatePopulation } from './growth.js';
 export type { Growth, GrowthCondition, GrowthStep } from './growth.js';
 export { isPopulationGroup, isResidence } from './types.js';
 export type { PopulationGroup, PopulationOutput, Residence } from './types.js';
+
+export { bandIndexFor, bandTableOf, updateBands } from './bands.js';
+export type { BandEffects, BandMultiplier, BandState, BandTable } from './bands.js';
+export { resolveGrowthPolicy } from './growth.js';

@@ -275,6 +275,71 @@ const checkSatisfactionRange = (world: World, findings: InvariantFinding[]): voi
   }
 };
 
+const checkBandCoverage = (
+  world: World,
+  registry: Registry,
+  findings: InvariantFinding[],
+): void => {
+  const residenceStore = world.stores.get('residence');
+  const satisfactionStore = world.stores.get('satisfaction');
+  const bandStore = world.stores.get('bandState');
+  for (const id of residenceStore.ids()) {
+    const residence = residenceStore.get(id) as
+      { readonly bands?: number; readonly needs?: readonly unknown[] } | null | undefined;
+    if (residence == null) continue;
+    const z = (satisfactionStore.get(id) as { readonly z?: number } | undefined)?.z;
+    const state = bandStore.get(id) as
+      { readonly band?: number; readonly bandIndex?: number } | undefined;
+    if (residence.bands !== undefined && z !== undefined) {
+      if (state === undefined) {
+        findings.push({ id: 'INV-09', message: `residence ${id} has no satisfaction band state` });
+        continue;
+      }
+      const table = bandTableFor(registry, residence.bands);
+      if (table === null) continue;
+      const index = bandIndexFor(table, z);
+      if (index === null || index !== state.bandIndex) {
+        findings.push({
+          id: 'INV-09',
+          message: `residence ${id} band ${String(state.bandIndex)} does not contain z ${z}`,
+        });
+      }
+    }
+  }
+};
+
+const bandTableFor = (
+  registry: Registry,
+  handle: number,
+): { readonly bands: readonly { readonly min: number }[] } | null => {
+  const data = registry.definitionDataOf?.('band', handle as never);
+  if (data === null || data === undefined || typeof data !== 'object' || Array.isArray(data)) {
+    return null;
+  }
+  const record = data as { readonly [key: string]: unknown };
+  const bands = Array.isArray(record['bands']) ? record['bands'] : [];
+  const parsed = bands
+    .map((entry) => {
+      if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return null;
+      const min = (entry as { readonly [key: string]: unknown })['min'];
+      return typeof min === 'number' ? { min } : null;
+    })
+    .filter((entry): entry is { readonly min: number } => entry !== null);
+  return parsed.length > 0 ? { bands: parsed.map((entry) => ({ min: entry.min })) } : null;
+};
+
+const bandIndexFor = (
+  table: { readonly bands: readonly { readonly min: number }[] },
+  z: number,
+): number | null => {
+  let selected: number | null = null;
+  for (let index = 0; index < table.bands.length; index += 1) {
+    const band = table.bands[index];
+    if (band !== undefined && z >= band.min) selected = index;
+  }
+  return selected;
+};
+
 const checkProducerConsistency = (world: World, findings: InvariantFinding[]): void => {
   const store = world.stores.get<Producer>('producer');
   for (const id of store.ids()) {
@@ -507,6 +572,7 @@ export function checkInvariants(
   checkCargoSlots(output.world, findings);
   checkPopulationBounds(output.world, findings);
   checkSatisfactionRange(output.world, findings);
+  checkBandCoverage(output.world, registry, findings);
   checkConservation(before, output, findings);
   checkOwnerBalanceConservation(before, output, findings);
   checkEntityIds(output.world, findings);
