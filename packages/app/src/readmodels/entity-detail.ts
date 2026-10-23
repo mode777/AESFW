@@ -8,6 +8,7 @@ import { readWorld } from '@aesfw/core';
 import type { Maintenance, PopulationGroup, Registry, Residence, Satisfaction } from '@aesfw/core';
 import type { EntityDetailDto, MaintenanceDto, ProductionDto, ResidenceDto } from '@aesfw/protocol';
 import type { SessionState } from '../session/types.js';
+import { transitionEligibility } from './transition-eligibility.js';
 
 const AVAILABLE_COMMANDS = [
   'SetEntityEnabled',
@@ -67,7 +68,12 @@ export function entityDetail(session: SessionState, entity: number): EntityDetai
   const residenceDto: ResidenceDto | undefined =
     residence === undefined || group === undefined
       ? undefined
-      : { population: group.count, satisfaction: satisfaction?.z ?? 0, band: '' };
+      : {
+          population: group.count,
+          satisfaction: satisfaction?.z ?? 0,
+          band: '',
+          transition_eligibility: transitionEligibility(session, entity),
+        };
 
   const maintenance = world.stores.get<Maintenance>('maintenance').get(id);
   const maintenanceDto: MaintenanceDto | undefined =

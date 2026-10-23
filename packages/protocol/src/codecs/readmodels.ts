@@ -70,6 +70,11 @@ export function decodeEntityDetail(value: unknown): DecodeResult<EntityDetailDto
     if (isString(ownerId)) detail['owner_id'] = ownerId;
     else errors.push(invalidField('owner_id'));
   }
+  const residence = value['residence'];
+  if (residence !== undefined) {
+    if (isObject(residence)) detail['residence'] = residence;
+    else errors.push(invalidField('residence'));
+  }
   if (errors.length > 0) return err(errors);
   return ok(detail as unknown as EntityDetailDto);
 }

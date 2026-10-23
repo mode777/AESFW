@@ -13,11 +13,31 @@ export interface MaintenanceDto {
   readonly policy: string;
 }
 
+/** One condition of a transition's eligibility checklist (PIC-10.1). */
+export interface TransitionConditionDto {
+  readonly kind: 'sustained' | 'condition';
+  readonly condition_id: WireId;
+  readonly met: boolean;
+  /** Required consecutive ticks of a `sustained` condition. */
+  readonly ticks?: WireInt;
+  /** Current consecutive ticks of a `sustained` condition. */
+  readonly progress?: WireInt;
+}
+
+/** A transition's eligibility for a residence (PIC-10.1, GDD-13.1). */
+export interface TransitionEligibilityDto {
+  readonly transition_id: WireId;
+  readonly eligible: boolean;
+  readonly advancement_enabled: boolean;
+  readonly conditions: readonly TransitionConditionDto[];
+}
+
 /** Residence summary for an entity (PIC-10.1). */
 export interface ResidenceDto {
   readonly population: WireInt;
   readonly satisfaction: WireInt;
   readonly band: string;
+  readonly transition_eligibility?: readonly TransitionEligibilityDto[];
 }
 
 /** Entity detail read model (PIC-10.1). */

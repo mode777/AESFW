@@ -29,6 +29,7 @@ export type {
 export { diffProjection, project } from './projections/index.js';
 export {
   definitionMetadata,
+  transitionEligibility,
   entityDetail,
   locationSummary,
   needBreakdown,

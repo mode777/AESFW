@@ -55,6 +55,7 @@ export type {
 
 export type { EventDto } from './events.js';
 export type { DefinitionMetadataDto } from './metadata.js';
+export type { TransitionConditionDto, TransitionEligibilityDto } from './readmodels.js';
 export type {
   EntityDetailDto,
   LocationSummaryDto,
