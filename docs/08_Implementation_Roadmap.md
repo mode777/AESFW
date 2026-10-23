@@ -238,7 +238,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | --- | --- | --- | --- | --- | --- | --- |
 | 6.1 | `add-world-definition-and-connections` | sim/world | world definition, multiple locations, connection instances, initial owners, location activation, `ActivateLocation`/`DeactivateLocation` ✓ archived 2026-10-23 | GDD-6.2, GDD-6.3, CONT-6.5, CONT-6.6 | 1.8 | M |
 | 6.2 | `add-transport-units-and-cargo` | sim/transport | transport entities, cargo compartment policies, endpoints, maintenance; INV-16 ✓ archived 2026-10-23 | GDD-9.8, GDD-15.4, CONT-6.16 | 6.1, 4.2 | M |
-| 6.3 | `add-route-planning-and-movement` | sim/transport | `shortest_stable` planner, traversal time, movement (phase 16), abstract transfer variant | ARCH-14.1–14.3 | 6.2 | M |
+| 6.3 | `add-route-planning-and-movement` | sim/transport | `shortest_stable` planner, traversal time, movement (phase 16), abstract transfer variant ✓ archived 2026-10-23 | ARCH-14.1–14.3 | 6.2 | M |
 | 6.4 | `add-transport-orders-and-stations` | sim/transport | route mode, station cursor, load/unload, handling rates, failure policies, order templates (phases 14–16, 19); transport commands | GDD-15.2, GDD-15.5–15.7, ARCH-14.4, CONT-9 | 6.3, 2.2 | L |
 | 6.5 | `add-transport-quantity-rules` | sim/transport | all quantity rules of GDD-15.3 | GDD-15.3 | 6.4 | M |
 | 6.6 | `add-transport-read-model` | app/projections | transport detail and events | PIC-10.4 | 6.4, 2.4 | S |

@@ -391,6 +391,7 @@ const instantiateTransport = (
   registry: ContentRegistry,
   entityDefinition: DefinitionHandle,
   entity: number,
+  location: number,
 ): void => {
   const data = transportDefinitionFor(registry, entityDefinition);
   if (data === null) return;
@@ -424,6 +425,7 @@ const instantiateTransport = (
     allowedConnectionTags: asArray(movementData['allowed_connection_tags'])
       .filter((tag): tag is string => typeof tag === 'string')
       .map((tag) => ids.stringId(tag)),
+    location: ids.entityId(location),
   };
   const handlingData = asRecord(data['handling']) ?? {};
   const handling: TransportHandling = {
@@ -461,7 +463,7 @@ const instantiateDefinition = (
     world.stores.get<{ owner: number }>('owner').set(entity, { owner });
   }
   if (components === null) {
-    instantiateTransport(world, registry, definition.handle, entity);
+    instantiateTransport(world, registry, definition.handle, entity, location);
     return entity;
   }
   const setDefinition = (): void => {
@@ -517,7 +519,7 @@ const instantiateDefinition = (
   if (maintenance !== null) {
     world.stores.get<Maintenance>('maintenance').set(entity, maintenance);
   }
-  instantiateTransport(world, registry, definition.handle, entity);
+  instantiateTransport(world, registry, definition.handle, entity, location);
   return entity;
 };
 

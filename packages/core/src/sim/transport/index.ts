@@ -13,6 +13,15 @@ export {
   loadCargo,
   unloadCargo,
 } from './cargo.js';
+export {
+  advanceMovement,
+  advanceTransport,
+  planRoute,
+  readTransportArrivals,
+  startMovement,
+  traversalTicks,
+} from './route.js';
+export type { RoutePath } from './route.js';
 export { TRANSPORT_ARRIVALS_KEY } from './types.js';
 export type {
   Cargo,

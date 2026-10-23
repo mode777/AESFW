@@ -239,8 +239,14 @@ export {
   cargoFreeCapacity,
   cargoQuantity,
   cargoSlotsValid,
+  advanceMovement,
+  advanceTransport,
   cargoTotal,
   loadCargo,
+  planRoute,
+  readTransportArrivals,
+  startMovement,
+  traversalTicks,
   unloadCargo,
   TRANSPORT_ARRIVALS_KEY,
 } from './sim/transport/index.js';
@@ -252,6 +258,7 @@ export type {
   TransportArrival,
   TransportHandling,
   TransportMovement,
+  RoutePath,
 } from './sim/transport/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
 export {

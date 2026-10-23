@@ -38,6 +38,16 @@ export type TransportMovement = {
   readonly speedPermille: Int;
   readonly mode: 'physical' | 'abstract';
   readonly allowedConnectionTags: readonly StringId[];
+  /** The current location; set at instantiation and updated on arrival. */
+  readonly location?: EntityId;
+  /** The planned location path, when moving. */
+  readonly path?: readonly EntityId[];
+  /** The connection ids between consecutive path locations. */
+  readonly connectionIds?: readonly StringId[];
+  /** The index of the current path leg. */
+  readonly step?: Int;
+  /** Progress on the current leg in ticks. */
+  readonly progress?: Int;
 };
 
 /** A transport unit's handling configuration (GDD-15.4). */
