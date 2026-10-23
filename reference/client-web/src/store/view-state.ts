@@ -12,7 +12,7 @@ import type { Signal } from './signals.js';
 export type ClientMode = 'inspect' | 'place' | 'route-edit';
 
 /** The grid overlays of REF-12.2. */
-export type GridOverlay = 'connectivity' | 'suitability' | 'throughput' | null;
+export type GridOverlay = 'connectivity' | 'suitability' | 'throughput' | 'coverage' | null;
 
 /** The placement ghost cursor and its latest authoritative result (REF-13.3). */
 export interface PlacementCursor {
@@ -47,6 +47,7 @@ export function toggleOverlay(current: GridOverlay, key: string): GridOverlay {
   if (normalized === 'c') return current === 'connectivity' ? null : 'connectivity';
   if (normalized === 's') return current === 'suitability' ? null : 'suitability';
   if (normalized === 't') return current === 'throughput' ? null : 'throughput';
+  if (normalized === 'o') return current === 'coverage' ? null : 'coverage';
   return current;
 }
 
@@ -75,6 +76,7 @@ export function drawerAction(current: string | null, key: string): string | null
   if (normalized === 'e') return current === 'economy' ? null : 'economy';
   if (normalized === 'p') return current === 'planning' ? null : 'planning';
   if (normalized === 'l') return current === 'logistics' ? null : 'logistics';
+  if (normalized === 'v') return current === 'population' ? null : 'population';
   return current;
 }
 

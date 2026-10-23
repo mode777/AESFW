@@ -212,3 +212,5 @@ export function populationRows(
     (a, b) => a.location - b.location || (a.tier < b.tier ? -1 : a.tier > b.tier ? 1 : 0),
   );
 }
+export { coverageOverlay, residenceChecklist, tierPyramid } from './progression.js';
+export type { CoverageCircle, PyramidLocation, PyramidModel, TierBar } from './progression.js';

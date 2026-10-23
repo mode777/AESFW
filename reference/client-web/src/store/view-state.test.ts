@@ -67,3 +67,15 @@ describe('[REF-13.4] drawerAction', () => {
     expect(drawerAction('economy', 'b')).toBe('economy');
   });
 });
+
+describe('[REF-13.2] progression keys', () => {
+  it('[REF-13.2] V toggles the population drawer', () => {
+    expect(drawerAction(null, 'v')).toBe('population');
+    expect(drawerAction('population', 'v')).toBeNull();
+  });
+
+  it('[REF-12.2] O toggles the coverage overlay', () => {
+    expect(toggleOverlay(null, 'o')).toBe('coverage');
+    expect(toggleOverlay('coverage', 'o')).toBeNull();
+  });
+});

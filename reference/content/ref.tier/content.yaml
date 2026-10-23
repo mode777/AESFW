@@ -96,12 +96,23 @@ population_tiers:
       - resource: ref.tier.resource.credits
         scope: owner
         rate_per_population_per_tick: 10
+  - id: ref.tier.population.s2
+    consumption_factor: 1000
+    need_categories: [ref.tier.need_category.b2]
+    outputs:
+      - resource: ref.tier.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 20
 
 need_categories:
   - id: ref.tier.need_category.b1
     evaluation: { mode: all }
     members:
       - { need: ref.tier.need.c1, weight: 1000 }
+  - id: ref.tier.need_category.b2
+    evaluation: { mode: all }
+    members:
+      - { need: ref.tier.need.c2, weight: 1000 }
 
 needs:
   - id: ref.tier.need.c1
@@ -111,6 +122,16 @@ needs:
       type: resource_consumption
       resource: ref.tier.resource.c1
       quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 10
+      target_ratio: 1000
+  - id: ref.tier.need.c2
+    category: ref.tier.need_category.b2
+    applies_to: [ref.tier.population.s2]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c1
+      quantity_per_population_per_tick: 2
     fulfillment:
       measurement_window_ticks: 10
       target_ratio: 1000
@@ -128,6 +149,45 @@ conditions:
       greater_equal:
         left: { aggregate_need_fulfillment: current_entity }
         right: 800
+  - id: ref.tier.condition.advance
+    expression:
+      greater_equal:
+        left: { aggregate_need_fulfillment: current_entity }
+        right: 800
+
+satisfaction_bands:
+  - id: ref.tier.bands.default
+    bands:
+      - min: 0
+        effects: [{ type: 'enable_advancement' }]
+
+transitions:
+  - id: ref.tier.transition.s1_s2
+    source_tier: ref.tier.population.s1
+    target_tier: ref.tier.population.s2
+    trigger: manual_command
+    condition: ref.tier.condition.advance
+    costs:
+      - { resource: ref.tier.resource.credits, quantity: 1000 }
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 10
+    conversion:
+      population: retain_count_clamped
+      entity_definition: ref.tier.entity.residence_s2
+  - id: ref.tier.transition.s2_s1
+    source_tier: ref.tier.population.s2
+    target_tier: ref.tier.population.s1
+    trigger: manual_command
+    costs: []
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 10
+    conversion:
+      population: clamp_to_target_capacity
+      entity_definition: ref.tier.entity.residence
 
 entity_definitions:
   - id: ref.tier.entity.slot_extractor_p2
@@ -239,6 +299,16 @@ entity_definitions:
         capacity: 10
         initial_population: 1
         growth_policy: ref.tier.growth.default
+  - id: ref.tier.entity.residence_s2
+    components:
+      placement:
+        footprint: [3, 3]
+      residence:
+        population_tier: ref.tier.population.s2
+        capacity: 10
+        initial_population: 0
+        growth_policy: ref.tier.growth.default
+        empty_residence: { policy: retain }
 
   - id: ref.tier.entity.transport
     components: {}
@@ -302,5 +372,6 @@ worlds:
           - { definition: ref.tier.entity.connector, location: ref.tier.loc.a }
           - { definition: ref.tier.entity.storage_module, location: ref.tier.loc.a }
           - { definition: ref.tier.entity.residence, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.residence_s2, location: ref.tier.loc.a }
           - { definition: ref.tier.entity.transport, location: ref.tier.loc.a }
           - { definition: ref.tier.entity.slot_extractor_p2, location: ref.tier.loc.b }

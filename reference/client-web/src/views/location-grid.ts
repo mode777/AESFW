@@ -33,6 +33,8 @@ export interface LocationGrid {
 export interface LocationGridDeps {
   readonly archetypes: () => ReadonlyMap<string, ShapeArchetype>;
   readonly footprints: () => ReadonlyMap<string, Footprint>;
+  /** Coverage circles derived from metadata (REF-12.2); empty when unknown. */
+  readonly coverage?: () => readonly { readonly entityId: number; readonly radius: number }[];
   readonly propertyId: string;
   readonly onCursorMove?: (position: readonly [number, number]) => void;
   readonly onConfirm?: () => void;
@@ -286,6 +288,22 @@ export function createLocationGrid(
         );
       }
       legend.textContent = `${i18n.t('overlay.connectivity')}: ${overlayNodes.length}`;
+    } else if (overlay === 'coverage') {
+      const byId = new Map(shapes.map((shape) => [shape.entityId, shape]));
+      for (const circle of deps.coverage?.() ?? []) {
+        const shape = byId.get(circle.entityId);
+        if (shape === undefined) continue;
+        overlayNodes.push(
+          svg('circle', {
+            cx: shape.x + shape.width / 2,
+            cy: shape.y + shape.height / 2,
+            r: circle.radius,
+            class: 'grid-coverage',
+            'data-testid': `grid-coverage-${circle.entityId}`,
+          }),
+        );
+      }
+      legend.textContent = `${i18n.t('overlay.coverage')}: ${overlayNodes.length}`;
     } else if (overlay === 'throughput') {
       const throttled = new Set(throughputOverlay(entities));
       for (const entityId of throttled) {

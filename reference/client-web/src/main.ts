@@ -39,6 +39,7 @@ import { createWorkerClient } from './session/client.js';
 import { createMirror } from './store/mirror.js';
 import { createViewState, drawerAction, nextMode, toggleOverlay } from './store/view-state.js';
 import type { PlacementCursor } from './store/view-state.js';
+import { coverageOverlay } from './selectors/progression.js';
 import { createBuildPalette } from './views/build-palette.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
 import { createEconomyView } from './views/economy.js';
@@ -48,6 +49,7 @@ import { createLocationGrid } from './views/location-grid.js';
 import { createNotice } from './views/notice.js';
 import { createPlanningView } from './views/planning.js';
 import { createLogisticsView } from './views/logistics.js';
+import { createProgressionView } from './views/progression.js';
 import { createPopulationTable } from './views/population-table.js';
 import { createTopBar } from './views/top-bar.js';
 import { createWorldMap } from './views/world-map.js';
@@ -85,6 +87,16 @@ const CLIENT_STRINGS: Readonly<Record<string, string>> = {
   'planning.population': 'population',
   'planning.coverage': 'coverage',
   'planning.output': 'output',
+  'progression.title': 'Population',
+  'progression.location': 'Location',
+  'progression.transitions': 'Transitions',
+  'progression.eligible': 'eligible',
+  'progression.ineligible': 'ineligible',
+  'progression.advance': 'Advance',
+  'progression.locks': 'Purpose locks',
+  'progression.lock': 'Lock',
+  'progression.unlock': 'Unlock',
+  'overlay.coverage': 'Coverage',
   'planning.maintenance': 'maintenance',
 };
 
@@ -123,6 +135,7 @@ export function mount(root: HTMLElement): void {
       logisticsView(mirror.projection(), transportOrderList, transportDetailModel, null),
     );
   };
+  const progression = createProgressionView(client, ACTOR_ID, i18n);
   const logistics = createLogisticsView({
     onCreate: (draft) => {
       client.command({
@@ -174,10 +187,12 @@ export function mount(root: HTMLElement): void {
     economy.el,
     planning.el,
     logistics.el,
+    progression.el,
   );
   let trend: readonly number[] = [];
   const archetypes = new Map<string, ShapeArchetype>();
   const footprints = new Map<string, Footprint>();
+  let definitions: readonly DefinitionMetadataDto[] = [];
   let palette: readonly PaletteEntry[] = [];
 
   const refreshDrawer = (): void => {
@@ -185,6 +200,7 @@ export function mount(root: HTMLElement): void {
     economy.el.hidden = kind !== 'economy';
     planning.el.hidden = kind !== 'planning';
     logistics.el.hidden = kind !== 'logistics';
+    progression.el.hidden = kind !== 'population';
     drawer.hidden = kind === null;
     if (kind === 'economy') {
       economy.show(economyView(mirror.projection(), ACTOR_ID, trend));
@@ -195,6 +211,14 @@ export function mount(root: HTMLElement): void {
     if (kind === 'logistics') {
       refreshLogistics();
       client.query(ACTOR_ID, { kind: 'transport_orders' });
+    }
+    if (kind === 'population') {
+      progression.show(
+        mirror.projection()?.locations ?? [],
+        [...summaries.values()],
+        currentDetail,
+        view.location(),
+      );
     }
   };
 
@@ -284,6 +308,7 @@ export function mount(root: HTMLElement): void {
   const grid = createLocationGrid(mirror, view, i18n, {
     archetypes: () => archetypes,
     footprints: () => footprints,
+    coverage: () => coverageOverlay(mirror.projection(), definitions),
     propertyId: SUITABILITY_PROPERTY,
     onCursorMove: (position) => {
       const current = view.placement();
@@ -391,6 +416,14 @@ export function mount(root: HTMLElement): void {
         if (result.entity_detail !== undefined) {
           currentDetail = result.entity_detail;
           inspector.show(currentDetail, currentBreakdown);
+          if (view.drawer() === 'population') {
+            progression.show(
+              mirror.projection()?.locations ?? [],
+              [...summaries.values()],
+              currentDetail,
+              view.location(),
+            );
+          }
         }
         if (result.need_breakdown !== undefined) {
           currentBreakdown = result.need_breakdown;
@@ -399,8 +432,17 @@ export function mount(root: HTMLElement): void {
         if (result.location_summary !== undefined && result.location_summary !== null) {
           summaries.set(result.location_summary.entity_id, result.location_summary);
           population.show([...summaries.values()]);
+          if (view.drawer() === 'population') {
+            progression.show(
+              mirror.projection()?.locations ?? [],
+              [...summaries.values()],
+              currentDetail,
+              view.location(),
+            );
+          }
         }
         if (result.definition_metadata !== undefined) {
+          definitions = result.definition_metadata;
           for (const definition of result.definition_metadata) {
             archetypes.set(definition.definition_id, archetypeOf(definition));
             const footprint = placementFootprint(definition);
