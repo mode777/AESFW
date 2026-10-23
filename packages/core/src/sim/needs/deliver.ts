@@ -31,8 +31,18 @@ const isServiceProvider = (
   value: ServiceProvider | { readonly kind: 'storage_provider' },
 ): value is ServiceProvider => value.kind === 'service_provider';
 
-/** The coverage test of the v1 spatial relation (CONT-6.12, ARCH-11). */
-const covers = withinRadius;
+/**
+ * The coverage test of the v1 spatial relation (CONT-6.12, ARCH-11). At an
+ * abstract-capacity location entities carry no transform; they are co-located,
+ * so a provider at the same location covers every residence there.
+ */
+const covers = (world: World, provider: EntityId, consumer: EntityId, radius: number): boolean => {
+  const transformStore = world.stores.get<{ readonly location: EntityId | null }>('transform');
+  if (transformStore.get(provider) === undefined || transformStore.get(consumer) === undefined) {
+    return true;
+  }
+  return withinRadius(world, provider, consumer, radius);
+};
 
 const coverageCount = (
   world: World,
@@ -82,7 +92,7 @@ export function deliverNeeds(
       const entry = providerStore.get(providerEntity);
       if (entry === undefined || !isServiceProvider(entry)) continue;
       const provider = entry;
-      const at = transform.get(providerEntity)?.location;
+      const at = transform.get(providerEntity)?.location ?? provider.location ?? null;
       if (at !== location) continue;
       list.push([providerEntity, provider] as const);
     }

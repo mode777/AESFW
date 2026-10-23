@@ -140,6 +140,24 @@ export function buildSustainedTimerUpdater(
     if (handle !== null) unlockConditions.add(handle);
   }
 
+  // Conditions referenced by transitions are evaluated per residence of the
+  // transition's source tier (TDS-14.3: "residences of the transition's
+  // source tier").
+  const transitionConditions = new Map<DefinitionHandle, DefinitionHandle>();
+  const transitionDefinitions =
+    typeof registry.definitionsOf === 'function' ? registry.definitionsOf('transition') : [];
+  for (const definition of transitionDefinitions) {
+    const data = definition.data;
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) continue;
+    const record = data as { readonly [key: string]: unknown };
+    const conditionId = record['condition'];
+    const sourceTierId = record['source_tier'];
+    if (typeof conditionId !== 'string' || typeof sourceTierId !== 'string') continue;
+    const condition = registry.handleOf('condition', ids.stringId(conditionId));
+    const sourceTier = registry.handleOf('tier', ids.stringId(sourceTierId));
+    if (condition !== null && sourceTier !== null) transitionConditions.set(condition, sourceTier);
+  }
+
   return (ctx: TickContext): void => {
     const world: World = ctx.world;
     const existing = new Map<string, number>();
@@ -184,6 +202,32 @@ export function buildSustainedTimerUpdater(
             const context: EvalContext = {
               subject: { kind: 'owner', id: owner.handle },
               query: (query) => resolveOwnerQuery(world, owner.handle, query),
+              aggregate: () => 0,
+              timer: (slot) => readTicks(condition, slot, subject),
+            };
+            const holds = evaluate(node.inner, context) === true;
+            pending.push({
+              condition,
+              slot: node.slot,
+              subject,
+              consecutiveTrueTicks: holds ? readTicks(condition, node.slot, subject) + 1 : 0,
+            });
+          }
+        }
+      }
+    }
+    if (transitionConditions.size > 0) {
+      const residenceStore = world.stores.get<{ readonly tier: DefinitionHandle }>('residence');
+      for (const entity of residenceStore.ids()) {
+        const tier = residenceStore.get(entity)?.tier;
+        if (tier === undefined) continue;
+        for (const [condition, trackedCondition] of tracked) {
+          if (transitionConditions.get(condition) !== tier) continue;
+          const subject = ids.entityId(entity);
+          for (const node of trackedCondition.nodes) {
+            const context: EvalContext = {
+              subject: { kind: 'entity', id: subject },
+              query: (query) => resolveQuery(world, subject, query),
               aggregate: () => 0,
               timer: (slot) => readTicks(condition, slot, subject),
             };

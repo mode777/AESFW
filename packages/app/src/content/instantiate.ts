@@ -518,7 +518,7 @@ const instantiateDefinition = (
     }
   }
   applyStorageProvider(world, registry, definition.handle, entity, ids.entityId(location));
-  applyServiceProvider(world, registry, definition.handle, entity);
+  applyServiceProvider(world, registry, definition.handle, entity, ids.entityId(location));
   if (components['connectivity'] !== undefined) {
     const node = connectivityNodeFrom(components['connectivity']);
     if (node !== null) {

@@ -182,3 +182,67 @@ describe('[GDD-12] needs and satisfaction', () => {
     expect(satisfaction?.z).toBeLessThanOrEqual(1000);
   });
 });
+
+describe('[SCN-08] breadth versus depth', () => {
+  it('[SCN-08][GDD-12.3] two member sets with equal weighted score reach equal category fulfillment', () => {
+    const world = makeWorld();
+    const residenceOf = (
+      needHandles: readonly number[],
+      category: CategorySpec,
+    ): {
+      residence: Residence;
+      runtime: { need: number; demanded: number; window: number[] }[];
+    } => ({
+      residence: {
+        tier: res(0),
+        capacity: 100,
+        location: entityId(1),
+        growthPolicy: null,
+        consumptionFactor: 1000,
+        outputs: [],
+        needs: needHandles.map((handle) => ({
+          need: definitionHandle(handle),
+          category: category.category,
+          type: 'resource_consumption' as const,
+          resource: res(9),
+          quantityPerPopulationPerTick: 1,
+          measurementWindowTicks: 1,
+          targetRatio: 1000,
+        })),
+        categories: [category],
+        satisfactionAggregation: 'average',
+      },
+      runtime: needHandles.map((handle) => ({
+        need: handle,
+        demanded: 10,
+        window: [10],
+      })),
+    });
+    const breadth: CategorySpec = {
+      category: definitionHandle(20),
+      mode: 'weighted_score',
+      requiredScore: 4000,
+      members: [
+        { need: definitionHandle(1), weight: 1000 },
+        { need: definitionHandle(2), weight: 3000 },
+      ],
+    };
+    const depth: CategorySpec = {
+      category: definitionHandle(21),
+      mode: 'weighted_score',
+      requiredScore: 4000,
+      members: [{ need: definitionHandle(3), weight: 4000 }],
+    };
+    const a = residenceOf([1, 2], breadth);
+    const b = residenceOf([3], depth);
+    stores(world).get<Residence>('residence').set(entityId(41), a.residence);
+    stores(world).get('needStates').set(entityId(41), { needs: a.runtime });
+    stores(world).get<Residence>('residence').set(entityId(42), b.residence);
+    stores(world).get('needStates').set(entityId(42), { needs: b.runtime });
+    runPhases(world, registry, [21], input);
+    const breadthZ = stores(world).get<Satisfaction>('satisfaction').get(entityId(41))?.z;
+    const depthZ = stores(world).get<Satisfaction>('satisfaction').get(entityId(42))?.z;
+    expect(breadthZ).toBe(1000);
+    expect(depthZ).toBe(1000);
+  });
+});

@@ -2,110 +2,28 @@
 
 ## Purpose
 
-The SCN-01 basic-loop scenario: the `demo-basic-loop` fixture content of CONT-14, the content-to-world entity instantiation the scenario runner uses, the scenario and its golden hashes, and the `golden:update` tool (VER-9.3, GDD-23.1).
+Deterministic scenario fixtures and committed goldens that prove milestone mechanics end to end, together with the intent tests that assert each scenario's design claim.
 
 ## Requirements
 
-### Requirement: Basic-loop fixture content
-`fixtures/content/demo-basic-loop` SHALL be a valid, theme-free content package with a `demo.` namespace: an infinite-rate source of `demo.resource.source`, a batch recipe turning it into `demo.resource.need` and requiring `demo.capability.tier_1`, a population tier that outputs `demo.capability.tier_1` and needs `demo.resource.need`, and a growth policy. `loadContent` SHALL accept it with no error diagnostics.
+### Requirement: Progression scenario fixture and golden
+A theme-free content fixture SHALL cover two tiers with an advancement transition, a decline transition, a coverage service and provider, breadth and depth need categories, and a construction-costing transition; a scenario SHALL run it for 60 ticks with invariants and a committed golden whose checkpoints match on every run.
 
-Source: CONT-14, GDD-23.1
+Source: VER-9.3, GDD-13.1, GDD-13.4
 
-#### Scenario: The fixture content validates
-- **WHEN** the fixture package is loaded
-- **THEN** it has no error-severity diagnostics
+#### Scenario: The golden matches on every run
+- **WHEN** the progression scenario runs twice
+- **THEN** its checkpoint sequence equals the committed golden and no invariant finding is reported
 
-### Requirement: Content entity instantiation
-The scenario runner SHALL instantiate the content's entity definitions at the default location after the default world plan: a resource source becomes a `resourceSource` at the location's shared inventory, a producer becomes a `producer` with its resolved recipes and a matching `capabilityConsumer`, and a residence becomes a `residence`, `populationGroup`, and `growth` with its resolved tier outputs, needs, categories, and growth policy. This keeps the core content-free (TDS-4.3).
+### Requirement: Progression intent coverage
+The scenarios SHALL be covered by tests that assert: advancement and decline complete (SCN-03); primary production starves after the only tier-1 population advances (SCN-07); breadth and depth reach equal category fulfillment (SCN-08); a coverage need is satisfied while the higher tier is active (SCN-09); decline refunds nothing and clamps population (SCN-11); and a purpose lock paces advancement until cleared (SCN-12).
 
-Source: CONT-6.6, CONT-6.8, GDD-9.4, GDD-9.5, GDD-11, GDD-12
+Source: VER-9.3, SCN-03, SCN-07, SCN-08, SCN-09, SCN-11, SCN-12
 
-#### Scenario: The loop entities are created
-- **WHEN** the fixture content is instantiated
-- **THEN** the world holds a source, a producer, and a residence at the default location
+#### Scenario: Advancement starves primary production
+- **WHEN** the only tier-1 residence advances to tier 2 and loses its capability output
+- **THEN** a capability shortage is reported after the advancement tick
 
-#### Scenario: The producer consumes a capability
-- **WHEN** the producer's recipe requires `demo.capability.tier_1`
-- **THEN** the producer entity carries a `capabilityConsumer` for it
-
-### Requirement: Basic-loop scenario and goldens
-`fixtures/scenarios/basic_loop.yaml` SHALL define SCN-01 against the fixture content, running 600 ticks with invariants and a golden hash file. Running it SHALL produce no invariant findings and hash checkpoints matching `fixtures/scenarios/basic_loop.hashes.json`; the population SHALL grow and the need SHALL be fulfilled.
-
-Source: VER-9.3, GDD-23.1
-
-#### Scenario: SCN-01 runs without invariant violations
-- **WHEN** the basic-loop scenario runs
-- **THEN** the report has no findings
-
-#### Scenario: SCN-01 matches its golden hashes
-- **WHEN** the scenario runs and its checkpoints are compared with the golden file
-- **THEN** every checkpoint matches
-
-#### Scenario: The loop is closed
-- **WHEN** the scenario runs to completion
-- **THEN** the producer has produced the need resource, needs are fulfilled, and the population has grown
-
-### Requirement: Golden update tool
-`pnpm golden:update <scenario>` SHALL regenerate the scenario's golden hash file from a fresh run and record the `fnv1a64-canonical-json-v1` algorithm tag. It SHALL NOT be invoked by CI.
-
-Source: VER-9.4
-
-#### Scenario: The tool writes the golden file
-- **WHEN** `pnpm golden:update fixtures/scenarios/basic_loop.yaml` is run
-- **THEN** `fixtures/scenarios/basic_loop.hashes.json` is rewritten with the algorithm tag and checkpoints
-
-### Requirement: Loss spiral scenario
-The `loss_spiral` scenario SHALL run a deficit-prone chain for 600 ticks with invariants enabled and produce no invariant findings. During the run the owner's balance SHALL enter deficit, the deficit policy SHALL pause the chain's producer (`DeficitPaused`), and automatic resume SHALL later restore it (`DeficitResumed`), demonstrating a recoverable spiral rather than defeat. The scenario SHALL carry golden hashes matching every checkpoint.
-
-Source: VER-9.3 (SCN-04), GDD-3.7, GDD-20.3
-
-#### Scenario: The spiral pauses and recovers without findings
-- **WHEN** the loss-spiral scenario runs for 600 ticks
-- **THEN** the report has no findings, at least one `DeficitPaused` and one `DeficitResumed` event, and every checkpoint hash matches the golden
-
-#### Scenario: The golden reproduces the run
-- **WHEN** the scenario runs twice from the same seed
-- **THEN** both runs produce identical checkpoint sequences
-
-### Requirement: SCN-10 throughput-throttling golden
-The scenario suite SHALL include SCN-10, a theme-free throughput-throttling scenario whose content declares a throughput-limited location, whose combined requests exceed the location capacity, and whose committed golden pins every hash checkpoint with invariants enabled.
-
-Source: VER-9.3, SCN-10, GDD-15.1
-
-#### Scenario: The throughput scenario has no invariant findings
-- **WHEN** the SCN-10 scenario runs for its configured ticks with invariants enabled
-- **THEN** the run reports no findings
-
-#### Scenario: Over-densification emits throttling events
-- **WHEN** the scenario's combined per-tick requests exceed the location's throughput capacity
-- **THEN** the run emits at least one `ThroughputThrottled` event
-
-#### Scenario: The scenario matches its golden and replays identically
-- **WHEN** the scenario runs twice and its checkpoints are compared with the committed golden
-- **THEN** every checkpoint equals the golden and both runs produce identical output
-
-### Requirement: Scenario commands are applied
-The scenario runner SHALL submit each scenario command at its declared tick through the application command gateway before advancing that tick. A rejected command SHALL add a `command_rejected` finding at that tick and the run SHALL continue.
-
-Source: VER-9.1, VER-9.2, TDS-16.1
-
-#### Scenario: A due command is applied
-- **WHEN** a scenario declares `CreateTransportOrder` at tick `1`
-- **THEN** the order exists when tick `1` advances
-
-#### Scenario: A rejected command is reported
-- **WHEN** a scenario command is rejected by the gateway
-- **THEN** the report has a `command_rejected` finding at that tick
-
-### Requirement: SCN-02 logistics loop golden
-SCN-02 SHALL provide a theme-free fixture in which a resource exists at only one of two connected locations and a transport route moves it to the other. The scenario SHALL run with invariants after every tick, produce transport load and unload events, and match a committed golden.
-
-Source: VER-9.3, GDD-23.2, GDD-4.5, SCN-02
-
-#### Scenario: The logistics loop matches its golden
-- **WHEN** the SCN-02 scenario runs for `200` ticks with a `10`-tick hash interval
-- **THEN** there are no findings, transport load and unload events occur, and every checkpoint matches the committed hash
-
-#### Scenario: The logistics loop is deterministic
-- **WHEN** the scenario runs twice
-- **THEN** both reports are identical
+#### Scenario: A purpose lock blocks advancement
+- **WHEN** the transition's construction resource is locked against `population_transition`
+- **THEN** no advancement starts until the lock is cleared

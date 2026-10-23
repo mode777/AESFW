@@ -15,10 +15,23 @@ import { poolKey } from './types.js';
  */
 export function buildCapabilitySupply(world: World): CapabilitySupply {
   const store = world.stores.get<CapabilityProvider>('capabilityProvider');
+  const residenceStore = world.stores.get<{
+    readonly outputs: readonly { readonly resource: number }[];
+  }>('residence');
   const supply = new Map<string, CapabilityPool>();
   for (const entity of store.ids()) {
     const provider = store.get(entity);
     if (provider === undefined) continue;
+    // A residence that lost its capability output (e.g. by a tier conversion)
+    // no longer contributes supply; the stale provider component is ignored
+    // until phase 26 republishes it.
+    const residence = residenceStore.get(entity);
+    if (
+      residence !== undefined &&
+      !residence.outputs.some((output) => output.resource === provider.capability)
+    ) {
+      continue;
+    }
     const key = poolKey(provider.scope, provider.location, provider.capability);
     const existing = supply.get(key);
     if (existing === undefined) {

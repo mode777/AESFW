@@ -42,6 +42,7 @@ export function applyServiceProvider(
   registry: Registry,
   definition: DefinitionHandle,
   entity: EntityId,
+  location: EntityId | null = null,
 ): void {
   const components = entityComponentsOf(registry, definition);
   const component = asRecord(components?.['service_provider']);
@@ -60,6 +61,7 @@ export function applyServiceProvider(
   const provider: ServiceProvider = {
     kind: 'service_provider',
     mode,
+    ...(location !== null ? { location } : {}),
     service,
     ...(radiusCells !== undefined ? { radiusCells } : {}),
     ...(mode === 'capacity' && capability !== null

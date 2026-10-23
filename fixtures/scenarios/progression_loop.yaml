@@ -1,0 +1,15 @@
+scenario:
+  id: test.scenario.progression_loop
+  requirements: [GDD-13.1, GDD-13.4, GDD-3.6, SCN-03, SCN-07, SCN-09, SCN-11]
+  content:
+    packages: [fixtures/content/demo-progression]
+  setup:
+    seed: [3, 4]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 60
+    hash_interval: 5
+    invariants: true
+  golden:
+    hashes: fixtures/scenarios/progression_loop.hashes.json

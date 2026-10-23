@@ -1,0 +1,18 @@
+{
+  "algorithm": "fnv1a64-canonical-json-v1",
+  "scenario": "test.scenario.progression_loop",
+  "checkpoints": {
+    "5": "5c9ff65622964267",
+    "10": "6bbd6cd181780353",
+    "15": "4780bfc1bea12a38",
+    "20": "7dcfedff80c8d380",
+    "25": "a6c806a0b6e313cc",
+    "30": "cbe4b7244123dcb3",
+    "35": "087ee5a14a6b17c4",
+    "40": "3bc75fbd53fe1a89",
+    "45": "e467c4683c6bf8e0",
+    "50": "91e117ffc61bb8c7",
+    "55": "f1f3c545677d1738",
+    "60": "a2822a6697998a39"
+  }
+}

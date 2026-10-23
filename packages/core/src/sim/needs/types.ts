@@ -6,7 +6,7 @@
  * Source: GDD-12.1, GDD-12.3, GDD-12.4, GDD-12.5
  */
 import type { Int } from '../../fx/index.js';
-import type { DefinitionHandle } from '../../ids/index.js';
+import type { DefinitionHandle, EntityId } from '../../ids/index.js';
 
 /** The need supplier type (GDD-12.2). */
 export type NeedType =
@@ -87,6 +87,8 @@ export type ServiceProvider = {
   readonly kind: 'service_provider';
   readonly mode: 'coverage' | 'capacity';
   readonly service: DefinitionHandle;
+  /** The provider's location; used when the entity has no transform. */
+  readonly location?: EntityId | null;
   /** Effective coverage radius in cells; present for coverage providers. */
   readonly radiusCells?: Int;
   /** The generated capability of a capacity provider. */

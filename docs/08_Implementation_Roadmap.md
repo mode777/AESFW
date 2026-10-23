@@ -263,7 +263,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 7.5 | `add-unlocks` | sim/unlocks | unlock definitions, scopes, definition and command availability, metadata exposure (phase 25) ✓ archived 2026-10-23 | GDD-19, CONT-6.17, PIC-4 | 7.1 | M |
 | 7.6 | `add-services-and-coverage-needs` | sim/needs | coverage and capacity service providers; `spatial_coverage`, `service_capacity`, and `state_query` needs ✓ archived 2026-10-23 | GDD-3.6, GDD-9.6, GDD-12.2, CONT-6.11, CONT-6.12 | 3.1, 1.13 | M |
 | 7.7 | `add-transition-eligibility-read-model` | app/projections | condition breakdown including sustained-timer progress ✓ archived 2026-10-23 | PIC-10.1 | 7.3, 2.4 | S |
-| 7.8 | `add-progression-goldens` | testkit/scenarios | SCN-03, 07, 08, 09, 11, 12 | VER-9.3 | 7.3, 7.4, 7.5, 7.6 | M |
+| 7.8 | `add-progression-goldens` | testkit/scenarios | SCN-03, 07, 08, 09, 11, 12 ✓ archived 2026-10-23 | VER-9.3 | 7.3, 7.4, 7.5, 7.6 | M |
 | 7.9 | `add-client-population-and-transitions` | reference/client | tier pyramid, residence checklist, transition command, purpose-lock toggles, coverage overlay; R3 partial content (S2) | REF-12.3, REF-12.4 | 7.7, 4.7 | M |
 
 **Exit criteria:** all progression scenarios pass. **Demo:** the pyramid trade-off and breadth versus depth are playable.

@@ -1,0 +1,255 @@
+resources:
+  - id: demo.resource.goods
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: demo.resource.food
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: demo.resource.construction
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: demo.resource.absent
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: demo.capability.tier_1
+    tags: [virtual, capability]
+    quantity: { precision: integer, scale: 1 }
+    storage: { policy: recomputed, scope: location }
+    transportable: false
+
+location_templates:
+  - id: demo.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 1000 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+
+recipes:
+  - id: demo.recipe.food
+    mode: batch
+    duration_ticks: 5
+    inputs:
+      - { resource: demo.resource.goods, quantity: 1000 }
+    outputs:
+      - { resource: demo.resource.food, quantity: 1000 }
+    capability_requirements:
+      - { resource: demo.capability.tier_1, quantity: 1 }
+
+services:
+  - id: demo.service.market
+    mode: coverage
+    default_relation: { type: radius, cells: 6 }
+
+conditions:
+  - id: demo.condition.advance
+    expression:
+      greater_equal:
+        left: { aggregate_need_fulfillment: current_entity }
+        right: 500
+  - id: demo.condition.grow
+    expression:
+      greater_equal:
+        left: { aggregate_need_fulfillment: current_entity }
+        right: 500
+  - id: demo.condition.never
+    expression:
+      greater_equal:
+        left: 0
+        right: 1
+
+satisfaction_bands:
+  - id: demo.bands.default
+    bands:
+      - min: 0
+        effects: [{ type: 'enable_advancement' }]
+  - id: demo.bands.declining
+    bands:
+      - min: 0
+        effects:
+          - { type: 'trigger_decline', transition: demo.transition.decline, grace_ticks: 20 }
+
+growth_policies:
+  - id: demo.growth.default
+    interval_ticks: 10
+    increase:
+      quantity: 1
+      condition: demo.condition.grow
+  - id: demo.growth.none
+    interval_ticks: 10
+    increase:
+      quantity: 1
+      condition: demo.condition.never
+
+need_categories:
+  - id: demo.need_category.tier_1
+    evaluation: { mode: weighted_score, required_score: 1000 }
+    members:
+      - { need: demo.need.food, weight: 1000 }
+      - { need: demo.need.goods, weight: 3000 }
+  - id: demo.need_category.small
+    evaluation: { mode: all }
+    members:
+      - { need: demo.need.never, weight: 1000 }
+  - id: demo.need_category.tier_2
+    evaluation: { mode: weighted_score, required_score: 1000 }
+    members:
+      - { need: demo.need.food_2, weight: 3000 }
+      - { need: demo.need.market, weight: 1000 }
+
+needs:
+  - id: demo.need.food
+    category: demo.need_category.tier_1
+    applies_to: [demo.population.tier_1]
+    demand:
+      type: resource_consumption
+      resource: demo.resource.food
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+  - id: demo.need.goods
+    category: demo.need_category.tier_1
+    applies_to: [demo.population.tier_1]
+    demand:
+      type: resource_consumption
+      resource: demo.resource.goods
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+  - id: demo.need.food_2
+    category: demo.need_category.tier_2
+    applies_to: [demo.population.tier_2]
+    demand:
+      type: resource_consumption
+      resource: demo.resource.food
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+  - id: demo.need.never
+    category: demo.need_category.small
+    applies_to: [demo.population.tier_small]
+    demand:
+      type: resource_consumption
+      resource: demo.resource.absent
+      quantity_per_population_per_tick: 1000
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+  - id: demo.need.market
+    category: demo.need_category.tier_2
+    applies_to: [demo.population.tier_2]
+    demand:
+      type: spatial_coverage
+      service: demo.service.market
+      required_distinct_providers: 1
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+
+population_tiers:
+  - id: demo.population.tier_1
+    consumption_factor: 1000
+    need_categories: [demo.need_category.tier_1]
+    satisfaction: { aggregation: average, bands: demo.bands.default }
+    outputs:
+      - resource: demo.capability.tier_1
+        scope: location
+        rate_per_population_per_tick: 1
+  - id: demo.population.tier_small
+    consumption_factor: 1000
+    need_categories: [demo.need_category.small]
+    satisfaction: { aggregation: average, bands: demo.bands.default }
+    outputs: []
+  - id: demo.population.tier_2
+    consumption_factor: 1000
+    need_categories: [demo.need_category.tier_2]
+    satisfaction: { aggregation: average, bands: demo.bands.declining }
+    decline_transitions: [demo.transition.decline]
+    outputs: []
+
+transitions:
+  - id: demo.transition.advance
+    source_tier: demo.population.tier_1
+    target_tier: demo.population.tier_2
+    trigger: automatic
+    condition: demo.condition.advance
+    costs:
+      - { resource: demo.resource.construction, quantity: 1000 }
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 2
+    conversion:
+      population: retain_count_clamped
+      entity_definition: demo.entity.residence_2
+  - id: demo.transition.decline
+    source_tier: demo.population.tier_2
+    target_tier: demo.population.tier_1
+    trigger: manual_command
+    costs:
+      - { resource: demo.resource.construction, quantity: 500 }
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 1
+    conversion:
+      population: clamp_to_target_capacity
+      entity_definition: demo.entity.residence_small
+
+entity_definitions:
+  - id: demo.entity.source
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: demo.resource.goods, quantity_per_tick: 1000 }
+          - { resource: demo.resource.construction, quantity_per_tick: 1000 }
+  - id: demo.entity.producer
+    components:
+      producer:
+        recipes: [demo.recipe.food]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: demo.entity.market
+    components:
+      service_provider:
+        mode: coverage
+        service: demo.service.market
+  - id: demo.entity.residence
+    components:
+      residence:
+        population_tier: demo.population.tier_1
+        capacity: 5
+        initial_population: 3
+        growth_policy: demo.growth.default
+        empty_residence: { policy: retain }
+  - id: demo.entity.residence_2
+    components:
+      residence:
+        population_tier: demo.population.tier_2
+        capacity: 2
+        initial_population: 0
+        growth_policy: demo.growth.default
+        empty_residence: { policy: retain }
+  - id: demo.entity.residence_small
+    components:
+      residence:
+        population_tier: demo.population.tier_small
+        capacity: 1
+        initial_population: 0
+        growth_policy: demo.growth.none
+        empty_residence: { policy: retain }

@@ -16,6 +16,7 @@ export const phase24AdvanceTransitions: SystemDescriptor = {
     'residence',
     'populationGroup',
     'transition',
+    'bandState',
     'definition',
     'growth',
     'constructionProgress',

@@ -16,6 +16,7 @@ import { sharedLocationPolicy } from '../../policies/inventory-access/index.js';
 import type { PlacementConditionEvaluator } from '../placement/types.js';
 import { isPopulationGroup, isResidence } from '../population/types.js';
 import type { PopulationGroup } from '../population/types.js';
+import { updateBands } from '../population/bands.js';
 import { resolveGrowthPolicy } from '../population/growth.js';
 import type { BandState } from '../population/bands.js';
 import type { ConstructionProgress } from '../construction/types.js';
@@ -255,6 +256,10 @@ const completeTransition = (
     depositRefund(world, tx, entity, residence.location, definition.costs, definition.refund);
   }
   world.stores.get<RunningTransition>('transition').markRemoved(entity);
+  // The target tier has different bands; recompute the derived band state now
+  // so the stale decline trigger cannot re-fire in this tick and INV-09 holds
+  // at the end of it.
+  updateBands(world, registry);
   events.emit({
     type: 'TransitionCompleted',
     subjects: [entity],
