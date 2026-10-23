@@ -73,6 +73,7 @@ export interface LocationDto {
   readonly throughput?: ThroughputDto;
   readonly inventories?: readonly InventoryDto[];
   readonly connections?: readonly string[];
+  readonly connection_details?: readonly ConnectionDto[];
   readonly grid?: LocationGridDto;
 }
 
@@ -105,6 +106,21 @@ export interface ProductionDto {
   readonly block_reasons: readonly string[];
 }
 
+/** A transport summary in a snapshot (PIC-9.1, PIC-10.4). */
+export interface TransportSummaryDto {
+  readonly state: string;
+  readonly order_id?: WireInt;
+}
+
+/** A connection instance in a snapshot (PIC-9.1, GDD-6.3). */
+export interface ConnectionDto {
+  readonly connection_id: WireId;
+  readonly origin_id: WireInt;
+  readonly destination_id: WireInt;
+  readonly base_duration_ticks: WireInt;
+  readonly enabled: boolean;
+}
+
 /** An entity entry in a snapshot (PIC-9.1). */
 export interface EntityDto {
   readonly entity_id: WireInt;
@@ -115,6 +131,7 @@ export interface EntityDto {
   readonly spatial?: SpatialDto;
   readonly connectivity?: ConnectivityDto;
   readonly production?: ProductionDto;
+  readonly transport?: TransportSummaryDto;
 }
 
 /** A full snapshot (PIC-9.1). */

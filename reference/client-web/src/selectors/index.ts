@@ -46,6 +46,13 @@ export {
 } from './economy.js';
 export type { EconomySourceRow, EconomyViewModel } from './economy.js';
 export { planningView } from './planning-view.js';
+export { worldMap } from './world-map.js';
+export type {
+  WorldMapConnection,
+  WorldMapModel,
+  WorldMapPoint,
+  WorldMapTransport,
+} from './world-map.js';
 export type { PlanningChainStageRow, PlanningTierRow, PlanningViewModel } from './planning-view.js';
 export {
   commandNotice,

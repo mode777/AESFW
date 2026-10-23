@@ -7,6 +7,7 @@ import type { ProtocolError } from '../errors.js';
 import { err, ok, type DecodeResult } from '../result.js';
 import type {
   ConnectivityDto,
+  ConnectionDto,
   EntityDto,
   EntityUpdateDto,
   FootprintDto,
@@ -291,6 +292,51 @@ function decodeLocation(value: unknown, path: string, errors: ProtocolError[]): 
     if (isStringArray(connections)) location['connections'] = connections;
     else errors.push(invalidField(`${path}.connections`));
   }
+  const rawConnectionDetails = value['connection_details'];
+  if (rawConnectionDetails !== undefined) {
+    if (!Array.isArray(rawConnectionDetails)) {
+      errors.push(invalidField(`${path}.connection_details`));
+    } else {
+      const details: ConnectionDto[] = [];
+      rawConnectionDetails.forEach((raw, index) => {
+        if (!isObject(raw)) {
+          errors.push(invalidField(`${path}.connection_details[${index}]`));
+          return;
+        }
+        const id = raw['connection_id'];
+        const origin = raw['origin_id'];
+        const destination = raw['destination_id'];
+        const duration = raw['base_duration_ticks'];
+        const enabled = raw['enabled'];
+        if (!isString(id))
+          errors.push(invalidField(`${path}.connection_details[${index}].connection_id`));
+        if (!isNonNegativeInteger(origin))
+          errors.push(invalidField(`${path}.connection_details[${index}].origin_id`));
+        if (!isNonNegativeInteger(destination))
+          errors.push(invalidField(`${path}.connection_details[${index}].destination_id`));
+        if (!isNonNegativeInteger(duration))
+          errors.push(invalidField(`${path}.connection_details[${index}].base_duration_ticks`));
+        if (!isBoolean(enabled))
+          errors.push(invalidField(`${path}.connection_details[${index}].enabled`));
+        if (
+          isString(id) &&
+          isNonNegativeInteger(origin) &&
+          isNonNegativeInteger(destination) &&
+          isNonNegativeInteger(duration) &&
+          isBoolean(enabled)
+        ) {
+          details.push({
+            connection_id: id,
+            origin_id: origin,
+            destination_id: destination,
+            base_duration_ticks: duration,
+            enabled,
+          });
+        }
+      });
+      location['connection_details'] = details;
+    }
+  }
   const rawGrid = value['grid'];
   if (rawGrid !== undefined) {
     const decoded = decodeLocationGrid(rawGrid, `${path}.grid`, errors);
@@ -329,6 +375,25 @@ function decodeEntity(value: unknown, path: string, errors: ProtocolError[]): En
   if (rawConnectivity !== undefined) {
     const decoded = decodeConnectivity(rawConnectivity, `${path}.connectivity`, errors);
     if (decoded !== null) entity['connectivity'] = decoded;
+  }
+  const rawTransport = value['transport'];
+  if (rawTransport !== undefined) {
+    if (!isObject(rawTransport)) {
+      errors.push(invalidField(`${path}.transport`));
+    } else {
+      const state = rawTransport['state'];
+      const orderId = rawTransport['order_id'];
+      if (!isString(state)) errors.push(invalidField(`${path}.transport.state`));
+      if (orderId !== undefined && !isNonNegativeInteger(orderId)) {
+        errors.push(invalidField(`${path}.transport.order_id`));
+      }
+      if (isString(state)) {
+        entity['transport'] = {
+          state,
+          ...(isNonNegativeInteger(orderId) ? { order_id: orderId } : {}),
+        };
+      }
+    }
   }
   return entity;
 }

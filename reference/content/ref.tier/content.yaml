@@ -239,3 +239,68 @@ entity_definitions:
         capacity: 10
         initial_population: 1
         growth_policy: ref.tier.growth.default
+
+  - id: ref.tier.entity.transport
+    components: {}
+
+connections:
+  - id: ref.tier.connection.standard
+    tags: [ref.tier.connection.transport]
+    direction: bidirectional
+    traversal:
+      base_duration_ticks: 300
+    allowed_transport_tags: [ref.tier.transport.standard]
+
+transport_units:
+  - id: ref.tier.transport.basic
+    tags: [ref.tier.transport.standard]
+    entity_definition: ref.tier.entity.transport
+    cargo:
+      compartment_policy: typed_slots
+      slots: 2
+      slot_capacity: 50000
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 1000
+      allowed_connection_tags: [ref.tier.transport.standard]
+    handling:
+      loading_rate_per_tick: 10000
+      unloading_rate_per_tick: 10000
+    order_modes: [route]
+
+transport_order_templates:
+  - id: ref.tier.order.standard
+    mode: route
+    failure_policies:
+      path_unavailable: retry
+      cargo_cannot_unload: retain
+    scheduling:
+      repeat: true
+      retry_interval_ticks: 20
+
+worlds:
+  - id: ref.tier.world.r2
+    locations:
+      - id: ref.tier.loc.a
+        template: ref.tier.location.a
+        region: ref.tier.region.core
+      - id: ref.tier.loc.b
+        template: ref.tier.location.a
+        region: ref.tier.region.core
+    connections:
+      - id: ref.tier.conn.a_b
+        definition: ref.tier.connection.standard
+        origin: ref.tier.loc.a
+        destination: ref.tier.loc.b
+    owners:
+      - id: owner.0
+        established_locations: [ref.tier.loc.a, ref.tier.loc.b]
+        initial_entities:
+          - { definition: ref.tier.entity.area_extractor_p1, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.refiner, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.combiner, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.connector, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.storage_module, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.residence, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.transport, location: ref.tier.loc.a }
+          - { definition: ref.tier.entity.slot_extractor_p2, location: ref.tier.loc.b }

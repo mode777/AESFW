@@ -169,3 +169,26 @@ describe('[REF-5] presentation skeleton', () => {
     expect(rates['tick_duration_ms']).toBe(1000);
   });
 });
+
+describe('[REF-7] R2 world and transport content', () => {
+  it('[REF-7] the R2 world has two connected locations', () => {
+    const world = definitionData('world', 'ref.tier.world.r2');
+    expect(world).not.toBeNull();
+    const locations = world?.['locations'] as readonly Record<string, JsonValue>[];
+    expect(locations).toHaveLength(2);
+    const connections = world?.['connections'] as readonly Record<string, JsonValue>[];
+    expect(connections).toHaveLength(1);
+    expect(connections[0]?.['origin']).toBe('ref.tier.loc.a');
+    expect(connections[0]?.['destination']).toBe('ref.tier.loc.b');
+  });
+
+  it('[REF-7] the R2 transport unit declares typed cargo and handling', () => {
+    const unit = definitionData('transportType', 'ref.tier.transport.basic');
+    expect(unit?.['entity_definition']).toBe('ref.tier.entity.transport');
+    const cargo = unit?.['cargo'] as Record<string, JsonValue>;
+    expect(cargo['compartment_policy']).toBe('typed_slots');
+    expect(cargo['slots']).toBe(2);
+    const handling = unit?.['handling'] as Record<string, JsonValue>;
+    expect(handling['loading_rate_per_tick']).toBe(10000);
+  });
+});

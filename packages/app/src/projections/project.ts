@@ -26,12 +26,17 @@ import type {
   Registry,
   Residence,
   Satisfaction,
+  StationCursor,
   ThroughputPool,
+  TransportAssignment,
+  TransportMovement,
+  TransportOrder,
   World,
   WorldReader,
 } from '@aesfw/core';
 import type {
   ConnectivityDto,
+  ConnectionDto,
   EntityDto,
   OwnerBalanceDto,
   InventoryDto,
@@ -42,6 +47,7 @@ import type {
   SnapshotDto,
   ThroughputDto,
   SpatialDto,
+  TransportSummaryDto,
 } from '@aesfw/protocol';
 import type { SessionState } from '../session/types.js';
 
@@ -199,7 +205,16 @@ const locationDto = (
       ...(throughput === null ? {} : { throughput }),
       ...(location.connections === undefined || location.connections.length === 0
         ? {}
-        : { connections: location.connections.map((connection) => connection.id) }),
+        : {
+            connections: location.connections.map((connection) => connection.id),
+            connection_details: location.connections.map((connection): ConnectionDto => ({
+              connection_id: connection.id,
+              origin_id: connection.origin,
+              destination_id: connection.destination,
+              base_duration_ticks: connection.baseDurationTicks,
+              enabled: connection.enabled,
+            })),
+          }),
       ...(location.grid === undefined
         ? {}
         : {
@@ -240,7 +255,9 @@ const locationOfEntity = (
   const producer = reader.producer(entity);
   if (producer?.location != null) return producer.location;
   const residence = world.stores.get<Residence>('residence').get(entity);
-  return residence?.location ?? undefined;
+  if (residence?.location != null) return residence.location;
+  const movement = world.stores.get<TransportMovement>('movement').get(entity);
+  return movement?.location ?? undefined;
 };
 
 const spatialDto = (world: World, entity: EntityId): SpatialDto | null => {
@@ -262,6 +279,30 @@ const connectivityDto = (world: World, entity: EntityId): ConnectivityDto | null
   return { role: node.role, network: node.network, connected: isConnected(world, entity) };
 };
 
+const transportSummary = (world: World, entity: EntityId): TransportSummaryDto | null => {
+  const movement = world.stores.get<TransportMovement>('movement').get(entity);
+  const assignment = world.stores.get<TransportAssignment>('transportAssignment').get(entity);
+  if (movement === undefined && assignment === undefined) return null;
+  const order =
+    assignment?.order == null
+      ? undefined
+      : world.stores.get<TransportOrder>('transportOrder').get(assignment.order);
+  const cursor = world.stores.get<StationCursor>('stationCursor').get(entity);
+  const moving = movement?.path !== undefined && (movement.step ?? 0) + 1 < movement.path.length;
+  const state =
+    order === undefined
+      ? 'unassigned'
+      : moving
+        ? 'moving'
+        : cursor !== undefined
+          ? 'handling'
+          : 'waiting';
+  return {
+    state,
+    ...(assignment?.order == null ? {} : { order_id: assignment.order }),
+  };
+};
+
 const entityDto = (
   reader: WorldReader,
   world: World,
@@ -274,6 +315,7 @@ const entityDto = (
   const lifecycle = reader.lifecycle(id);
   const spatial = spatialDto(world, id);
   const connectivity = connectivityDto(world, id);
+  const transport = transportSummary(world, id);
   const definitionString =
     definition === undefined ? null : definitionId(registry, 'entity', definition);
   return {
@@ -285,6 +327,7 @@ const entityDto = (
     ...(spatial === null ? {} : { spatial }),
     ...(connectivity === null ? {} : { connectivity }),
     ...(production === null ? {} : { production }),
+    ...(transport === null ? {} : { transport }),
   };
 };
 

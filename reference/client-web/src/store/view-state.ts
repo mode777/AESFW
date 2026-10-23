@@ -32,6 +32,7 @@ export interface ViewState {
   readonly overlay: Signal<GridOverlay>;
   readonly drawer: Signal<string | null>;
   readonly debug: Signal<boolean>;
+  readonly worldMap: Signal<boolean>;
 }
 
 /**
@@ -96,5 +97,6 @@ export function createViewState(): ViewState {
     overlay: signal<GridOverlay>(null),
     drawer: signal<string | null>(null),
     debug: signal(false),
+    worldMap: signal(false),
   };
 }

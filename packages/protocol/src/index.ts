@@ -33,6 +33,7 @@ export type {
 
 export type {
   ConnectivityDto,
+  ConnectionDto,
   EntityDto,
   EntityUpdateDto,
   FootprintDto,
@@ -49,6 +50,7 @@ export type {
   SnapshotDto,
   SpatialDto,
   ThroughputDto,
+  TransportSummaryDto,
 } from './snapshot.js';
 
 export type { EventDto } from './events.js';

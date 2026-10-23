@@ -45,6 +45,7 @@ import { createNotice } from './views/notice.js';
 import { createPlanningView } from './views/planning.js';
 import { createPopulationTable } from './views/population-table.js';
 import { createTopBar } from './views/top-bar.js';
+import { createWorldMap } from './views/world-map.js';
 
 const ACTOR_ID = 'owner.0';
 const SUITABILITY_PROPERTY = 'ref.tier.property.suitability_p1';
@@ -221,6 +222,24 @@ export function mount(root: HTMLElement): void {
     },
     onConfirm: () => submitPlacement(),
   });
+  const worldMapView = createWorldMap(mirror);
+  const mapButton = h('button', {
+    class: 'map-toggle',
+    'data-testid': 'map-toggle',
+    text: 'Map',
+    onclick: () => toggleMap(),
+  });
+  const refreshView = (): void => {
+    const showMap = view.worldMap();
+    grid.el.hidden = showMap;
+    worldMapView.el.hidden = !showMap;
+    mapButton.textContent = showMap ? 'Grid' : 'Map';
+    if (showMap) worldMapView.update();
+  };
+  const toggleMap = (): void => {
+    view.worldMap.set(!view.worldMap());
+    refreshView();
+  };
   const entityList = h('div', { class: 'entity-list', 'data-testid': 'entity-list' });
   const locationList = h('div', { class: 'location-list', 'data-testid': 'location-list' });
 
@@ -264,6 +283,7 @@ export function mount(root: HTMLElement): void {
       view.location.set(locations[0].entity_id);
     }
     inventory.show(projection);
+    worldMapView.update();
     for (const location of locations) {
       client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
     }
@@ -336,6 +356,7 @@ export function mount(root: HTMLElement): void {
     refreshDrawer();
   });
   refreshDrawer();
+  refreshView();
 
   const topBar = createTopBar(client, mirror, view, i18n, setDrawer);
   const debug = createDebugOverlay(mirror, view, metadata);
@@ -348,9 +369,10 @@ export function mount(root: HTMLElement): void {
       entityList,
       locationList,
       h('h3', { class: 'palette-title', text: i18n.t('palette.title') }),
+      mapButton,
       paletteView.el,
     ),
-    h('main', { class: 'canvas' }, grid.el),
+    h('main', { class: 'canvas' }, grid.el, worldMapView.el),
     inspector.el,
     inventory.el,
     population.el,
@@ -360,6 +382,10 @@ export function mount(root: HTMLElement): void {
 
   document.addEventListener('keydown', (event) => {
     if (event.key === '`') view.debug.set(!view.debug());
+    if (event.key === 'm' || event.key === 'M') {
+      toggleMap();
+      return;
+    }
     if (view.mode() === 'place') {
       const bounds = gridBounds();
       if (bounds !== null) {

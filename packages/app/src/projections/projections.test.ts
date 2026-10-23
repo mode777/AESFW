@@ -514,3 +514,75 @@ describe('[PIC-9.1][GDD-6.3] location connections', () => {
     expect(snapshot.locations[0]?.connections).toBeUndefined();
   });
 });
+
+describe('[PIC-9.1][GDD-6.3] connection details and transport summaries', () => {
+  it('[PIC-9.1] a location exposes connection details', () => {
+    const state = session();
+    const store = state.world.stores.get('location');
+    const location = store.get(ids.entityId(1));
+    if (location === null || typeof location !== 'object' || Array.isArray(location)) {
+      throw new Error('location missing');
+    }
+    store.set(ids.entityId(1), {
+      ...location,
+      connections: [
+        {
+          id: ids.stringId('test.conn.a_b'),
+          definition: ids.definitionHandle(7),
+          origin: ids.entityId(1),
+          destination: ids.entityId(2),
+          direction: 'bidirectional',
+          baseDurationTicks: 300,
+          enabled: true,
+          allowedTransportTags: [],
+        },
+      ],
+    });
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.connection_details).toEqual([
+      {
+        connection_id: 'test.conn.a_b',
+        origin_id: 1,
+        destination_id: 2,
+        base_duration_ticks: 300,
+        enabled: true,
+      },
+    ]);
+  });
+
+  it('[PIC-9.1] a moving transport reports its state and current location', () => {
+    const state = session();
+    state.world.stores.get('movement').set(ids.entityId(3), {
+      speedPermille: 1000,
+      mode: 'physical',
+      allowedConnectionTags: [],
+      location: ids.entityId(1),
+      path: [ids.entityId(1), ids.entityId(2)],
+      connectionIds: [ids.stringId('test.conn.a_b')],
+      step: 0,
+      progress: 0,
+    });
+    state.world.stores.get('transportAssignment').set(ids.entityId(3), {
+      order: ids.entityId(5),
+    });
+    state.world.stores.get('transportOrder').set(ids.entityId(5), {
+      mode: 'route',
+      stations: [],
+      pathPolicy: 'shortest_stable',
+      repeat: true,
+      retryIntervalTicks: 20,
+      failurePolicies: {
+        origin_unavailable: 'retry',
+        destination_unavailable: 'retry',
+        path_unavailable: 'retry',
+        cargo_cannot_unload: 'retain',
+        exchange_limit_not_met: 'skip',
+        establishment_target_occupied: 'return',
+      },
+    });
+    const snapshot = project(state, ids.ownerHandle(0));
+    const entity = snapshot.entities.find((entry) => entry.entity_id === 3);
+    expect(entity?.location_id).toBe(1);
+    expect(entity?.transport).toEqual({ state: 'moving', order_id: 5 });
+  });
+});

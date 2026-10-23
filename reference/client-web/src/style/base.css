@@ -337,3 +337,64 @@ body {
   stroke-width: 0.08;
   stroke-dasharray: 0.2 0.15;
 }
+
+.world-map-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+}
+
+.world-map {
+  width: 100%;
+  height: 100%;
+  background: var(--surface, #111);
+}
+
+.world-connection {
+  stroke: var(--ink-muted, #889);
+  stroke-width: 2;
+}
+
+.world-connection.disabled {
+  stroke-dasharray: 4 4;
+  opacity: 0.4;
+}
+
+.world-connection-label {
+  fill: var(--ink-muted, #889);
+  font-size: 12px;
+}
+
+.world-location-shape {
+  fill: var(--surface-raised, #222);
+  stroke: var(--ink, #ddd);
+  stroke-width: 2;
+}
+
+.world-location-shape.inactive {
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+
+.world-location.knowledge-unknown .world-location-shape {
+  stroke-dasharray: 5 5;
+  fill: transparent;
+}
+
+.world-location-label {
+  fill: var(--ink, #ddd);
+  font-size: 11px;
+}
+
+.world-owner-mark {
+  fill: var(--accent, #6cf);
+}
+
+.transport-dot {
+  fill: var(--accent, #6cf);
+  transition: transform 250ms linear;
+}
+
+.transport-dot.state-moving {
+  fill: var(--ink, #fff);
+}
