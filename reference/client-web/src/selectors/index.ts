@@ -35,6 +35,16 @@ export type {
   StateEncoding,
 } from './grid.js';
 export {
+  economyView,
+  ownerEntry,
+  pushTrend,
+  CREDITS_RESOURCE_ID,
+  REFERENCE_BASE_SCALE,
+} from './economy.js';
+export type { EconomySourceRow, EconomyViewModel } from './economy.js';
+export { planningView } from './planning-view.js';
+export type { PlanningChainStageRow, PlanningTierRow, PlanningViewModel } from './planning-view.js';
+export {
   commandNotice,
   constructionCommands,
   ghostShape,

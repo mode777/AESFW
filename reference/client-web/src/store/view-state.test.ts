@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createViewState, nextMode, toggleOverlay } from './view-state.js';
+import { createViewState, drawerAction, nextMode, toggleOverlay } from './view-state.js';
 
 describe('[REF-12.2] grid overlay view state', () => {
   it('[REF-12.2] the connectivity key selects the connectivity overlay', () => {
@@ -43,5 +43,22 @@ describe('[REF-13.1][REF-13.2] placement mode view state', () => {
       result: null,
     });
     expect(view.placement().definitionId).toBe('test.entity.a');
+  });
+});
+
+describe('[REF-13.4] drawerAction', () => {
+  it('[REF-13.4] the economy key toggles the drawer', () => {
+    expect(drawerAction(null, 'e')).toBe('economy');
+    expect(drawerAction('economy', 'E')).toBeNull();
+  });
+
+  it('[REF-13.4] the planning key toggles the drawer', () => {
+    expect(drawerAction(null, 'p')).toBe('planning');
+    expect(drawerAction('planning', 'P')).toBeNull();
+    expect(drawerAction('economy', 'p')).toBe('planning');
+  });
+
+  it('[REF-13.4] other keys leave the drawer unchanged', () => {
+    expect(drawerAction('economy', 'b')).toBe('economy');
   });
 });

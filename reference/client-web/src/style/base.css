@@ -267,3 +267,44 @@ body {
 .notice[data-message] {
   color: var(--accent);
 }
+
+.drawer {
+  border: var(--stroke-1) solid var(--rule);
+  padding: 8px;
+  background: var(--paper);
+}
+
+.drawer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drawer-title {
+  margin: 0;
+  font-size: var(--size-2);
+}
+
+.drawer-subtitle {
+  margin: 8px 0 2px;
+  font-size: var(--size-1);
+  color: var(--ink-2);
+}
+
+.drawer .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--font-num);
+  font-size: var(--size-1);
+}
+
+.drawer .value.attention {
+  color: var(--accent);
+}
+
+.sparkline {
+  width: 100%;
+  height: 32px;
+  color: var(--ink-2);
+}

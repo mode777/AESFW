@@ -17,6 +17,7 @@ import {
   locationSummary,
   needBreakdown,
   placementQuery,
+  planningMetrics,
   project,
   save,
   submitCommand,
@@ -149,6 +150,11 @@ const answerQuery = (
         content,
         query['definition_type'] as DefinitionType,
       ) as unknown as JsonValue,
+    };
+  }
+  if (kind === 'planning') {
+    return {
+      planning: planningMetrics(session, session.settings.actor) as unknown as JsonValue,
     };
   }
   if (kind === 'placement_query') {

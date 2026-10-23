@@ -12,6 +12,7 @@ import type {
   LocationSummaryDto,
   NeedBreakdownDto,
   PlacementResultDto,
+  PlanningDto,
 } from '@aesfw/protocol';
 import { R0_CONTENT } from './content/r0.js';
 import { h, replaceChildren } from './dom/h.js';
@@ -19,24 +20,29 @@ import { createI18n } from './i18n/index.js';
 import {
   archetypeOf,
   commandNotice,
+  economyView,
   gridCells,
   paletteEntries,
   placeEntityPlanPayload,
   placementFootprint,
   placementKeyAction,
   placementQueryPayload,
+  planningView,
+  pushTrend,
 } from './selectors/index.js';
 import type { Footprint, PaletteEntry, ShapeArchetype } from './selectors/index.js';
 import { createWorkerClient } from './session/client.js';
 import { createMirror } from './store/mirror.js';
-import { createViewState, nextMode, toggleOverlay } from './store/view-state.js';
+import { createViewState, drawerAction, nextMode, toggleOverlay } from './store/view-state.js';
 import type { PlacementCursor } from './store/view-state.js';
 import { createBuildPalette } from './views/build-palette.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
+import { createEconomyView } from './views/economy.js';
 import { createInspector } from './views/inspector.js';
 import { createInventoryTable } from './views/inventory-table.js';
 import { createLocationGrid } from './views/location-grid.js';
 import { createNotice } from './views/notice.js';
+import { createPlanningView } from './views/planning.js';
 import { createPopulationTable } from './views/population-table.js';
 import { createTopBar } from './views/top-bar.js';
 
@@ -56,6 +62,23 @@ const CLIENT_STRINGS: Readonly<Record<string, string>> = {
   'placement.valid': 'valid',
   'placement.invalid': 'invalid',
   'command.rejected': 'Command rejected',
+  'economy.title': 'Economy',
+  'economy.credits': 'Credits',
+  'economy.net': 'Net',
+  'economy.revenue': 'Revenue',
+  'economy.expenses': 'Expenses',
+  'economy.idle': 'Idle paying',
+  'economy.paused': 'Deficit paused',
+  'economy.resume': 'Resume all',
+  'planning.title': 'Planning',
+  'planning.tiers': 'Supported population',
+  'planning.chains': 'Chains',
+  'planning.net': 'net',
+  'planning.supported': 'supported',
+  'planning.population': 'population',
+  'planning.coverage': 'coverage',
+  'planning.output': 'output',
+  'planning.maintenance': 'maintenance',
 };
 
 interface QueryResult {
@@ -64,6 +87,7 @@ interface QueryResult {
   readonly location_summary?: LocationSummaryDto | null;
   readonly definition_metadata?: readonly DefinitionMetadataDto[];
   readonly placement_result?: PlacementResultDto | null;
+  readonly planning?: PlanningDto;
 }
 
 /**
@@ -81,9 +105,31 @@ export function mount(root: HTMLElement): void {
   const inventory = createInventoryTable(i18n);
   const population = createPopulationTable(i18n);
   const notice = createNotice();
+  const economy = createEconomyView(client, ACTOR_ID, i18n);
+  const planning = createPlanningView(i18n);
+  const drawer = h('div', { class: 'drawer', 'data-testid': 'drawer' }, economy.el, planning.el);
+  let trend: readonly number[] = [];
   const archetypes = new Map<string, ShapeArchetype>();
   const footprints = new Map<string, Footprint>();
   let palette: readonly PaletteEntry[] = [];
+
+  const refreshDrawer = (): void => {
+    const kind = view.drawer();
+    economy.el.hidden = kind !== 'economy';
+    planning.el.hidden = kind !== 'planning';
+    drawer.hidden = kind === null;
+    if (kind === 'economy') {
+      economy.show(economyView(mirror.projection(), ACTOR_ID, trend));
+    }
+    if (kind === 'planning') {
+      client.query(ACTOR_ID, { kind: 'planning' });
+    }
+  };
+
+  const setDrawer = (kind: 'economy' | 'planning'): void => {
+    view.drawer.set(view.drawer() === kind ? null : kind);
+    refreshDrawer();
+  };
 
   const currentLocation = (): LocationDto | undefined => {
     const projection = mirror.projection();
@@ -269,6 +315,9 @@ export function mount(root: HTMLElement): void {
           paletteView.show(palette, view.placement().definitionId);
           grid.update();
         }
+        if (result.planning !== undefined) {
+          planning.show(planningView(result.planning));
+        }
         if (result.placement_result !== undefined) {
           const placement = view.placement();
           view.placement.set({ ...placement, result: result.placement_result });
@@ -280,7 +329,14 @@ export function mount(root: HTMLElement): void {
     }
   });
 
-  const topBar = createTopBar(client, mirror, view);
+  mirror.projection.subscribe(() => {
+    const model = economyView(mirror.projection(), ACTOR_ID, trend);
+    trend = pushTrend(trend, model.netPerTick);
+    refreshDrawer();
+  });
+  refreshDrawer();
+
+  const topBar = createTopBar(client, mirror, view, i18n, setDrawer);
   const debug = createDebugOverlay(mirror, view, metadata);
   const panels = h(
     'div',
@@ -297,6 +353,7 @@ export function mount(root: HTMLElement): void {
     inspector.el,
     inventory.el,
     population.el,
+    drawer,
   );
   root.append(topBar.el, panels, notice.el, debug.el);
 
@@ -333,6 +390,13 @@ export function mount(root: HTMLElement): void {
     }
     if (event.key === 'c' || event.key === 'C' || event.key === 's' || event.key === 'S') {
       view.overlay.set(toggleOverlay(view.overlay(), event.key));
+    }
+    if (event.key === 'e' || event.key === 'E' || event.key === 'p' || event.key === 'P') {
+      const next = drawerAction(view.drawer(), event.key);
+      if (next !== view.drawer()) {
+        view.drawer.set(next);
+        refreshDrawer();
+      }
     }
   });
 

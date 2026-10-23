@@ -30,6 +30,13 @@ resources:
     storage: { policy: normal, scope: inventory }
     transportable: true
 
+  - id: ref.tier.resource.credits
+    tags: [balance]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: owner }
+    transportable: false
+    allow_negative: true
+
   - id: ref.tier.capability.s1
     tags: [virtual, capability]
     quantity: { precision: integer, scale: 1 }
@@ -83,6 +90,9 @@ population_tiers:
       - resource: ref.tier.capability.s1
         scope: location
         rate_per_population_per_tick: 1
+      - resource: ref.tier.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 10
 
 need_categories:
   - id: ref.tier.need_category.b1
@@ -119,6 +129,13 @@ conditions:
 entity_definitions:
   - id: ref.tier.entity.slot_extractor_p2
     components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - resource: ref.tier.resource.credits
+            quantity: 6000
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
       placement:
         footprint: [3, 3]
         requires_slot: ref.tier.slot.v_a
@@ -129,9 +146,15 @@ entity_definitions:
           - { resource: ref.tier.resource.p2, quantity_per_tick: 400 }
       connectivity:
         requires: ref.tier.connectivity.hub_network
-
   - id: ref.tier.entity.area_extractor_p1
     components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - resource: ref.tier.resource.credits
+            quantity: 6000
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
       placement:
         footprint: [3, 3]
         working_area: { cells: 12, exclusive: true }
@@ -142,9 +165,15 @@ entity_definitions:
         scale_by_property: ref.tier.property.suitability_p1
       connectivity:
         requires: ref.tier.connectivity.hub_network
-
   - id: ref.tier.entity.refiner
     components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - resource: ref.tier.resource.credits
+            quantity: 6000
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
       placement:
         footprint: [3, 3]
       producer:
@@ -154,9 +183,15 @@ entity_definitions:
         output_inventory: location.shared
       connectivity:
         requires: ref.tier.connectivity.hub_network
-
   - id: ref.tier.entity.combiner
     components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - resource: ref.tier.resource.credits
+            quantity: 6000
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
       placement:
         footprint: [4, 4]
       producer:
@@ -166,7 +201,6 @@ entity_definitions:
         output_inventory: location.shared
       connectivity:
         requires: ref.tier.connectivity.hub_network
-
   - id: ref.tier.entity.connector
     components:
       placement:

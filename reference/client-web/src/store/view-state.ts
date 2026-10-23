@@ -62,6 +62,20 @@ export function nextMode(current: ClientMode, key: string): ClientMode {
 }
 
 /**
+ * Toggles a drawer from a key (REF-13.4): `E` selects the economy drawer, `P`
+ * the planning drawer, and re-pressing the active drawer's key closes it.
+ * Other keys leave the drawer unchanged.
+ *
+ * Source: REF-13.4
+ */
+export function drawerAction(current: string | null, key: string): string | null {
+  const normalized = key.toLowerCase();
+  if (normalized === 'e') return current === 'economy' ? null : 'economy';
+  if (normalized === 'p') return current === 'planning' ? null : 'planning';
+  return current;
+}
+
+/**
  * Creates the client-local view state (REF-14.1).
  *
  * Source: REF-14.1

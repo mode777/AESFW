@@ -7,6 +7,8 @@
  */
 import type { SessionClient } from '@aesfw/host-web/client';
 import { h } from '../dom/h.js';
+import type { I18n } from '../i18n/index.js';
+import { CREDITS_RESOURCE_ID, REFERENCE_BASE_SCALE } from '../selectors/economy.js';
 import type { Mirror } from '../store/mirror.js';
 import type { ViewState } from '../store/view-state.js';
 
@@ -23,8 +25,19 @@ export interface TopBar {
  *
  * Source: REF-11
  */
-export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewState): TopBar {
+export function createTopBar(
+  client: SessionClient,
+  mirror: Mirror,
+  view: ViewState,
+  i18n: I18n,
+  toggleDrawer: (kind: 'economy' | 'planning') => void,
+): TopBar {
   const tick = h('span', { class: 'tick', 'data-testid': 'topbar-tick', text: 'tick 0' });
+  const credits = h('span', {
+    class: 'credits',
+    'data-testid': 'topbar-credits',
+    text: `${i18n.t('economy.credits')} 0`,
+  });
   const speed = h('span', { class: 'speed', 'data-testid': 'topbar-speed', text: '×1' });
   const mode = h('span', { class: 'mode', 'data-testid': 'topbar-mode', text: 'inspect' });
   const blocked = h('span', {
@@ -68,6 +81,16 @@ export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewSt
     text: 'load',
     onclick: () => client.load('auto'),
   });
+  const economy = h('button', {
+    'data-testid': 'topbar-economy',
+    text: i18n.t('economy.title'),
+    onclick: () => toggleDrawer('economy'),
+  });
+  const planning = h('button', {
+    'data-testid': 'topbar-planning',
+    text: i18n.t('planning.title'),
+    onclick: () => toggleDrawer('planning'),
+  });
   const el = h(
     'header',
     { class: 'top-bar', 'data-testid': 'top-bar' },
@@ -75,7 +98,8 @@ export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewSt
     tick,
     speed,
     mode,
-    h('span', { class: 'controls' }, play, pause, step, speedUp, save, load),
+    h('span', { class: 'controls' }, play, pause, step, speedUp, save, load, economy, planning),
+    credits,
     blocked,
   );
 
@@ -84,6 +108,11 @@ export function createTopBar(client: SessionClient, mirror: Mirror, view: ViewSt
     tick.textContent = `tick ${projection?.tick ?? 0}`;
     speed.textContent = `×${Number(speed.dataset['speed'] ?? '1')}`;
     mode.textContent = view.mode();
+    const owner = projection?.owners[0];
+    const balance = owner?.resources[CREDITS_RESOURCE_ID];
+    credits.textContent = `${i18n.t('economy.credits')} ${
+      balance === undefined ? '-' : i18n.formatBaseUnits(balance, REFERENCE_BASE_SCALE)
+    }`;
     const entities = projection?.entities ?? [];
     const blockedCount = entities.filter(
       (entity) => (entity.production?.block_reasons.length ?? 0) > 0,

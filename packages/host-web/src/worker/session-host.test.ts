@@ -376,3 +376,37 @@ describe('[TDS-21.1] session host', () => {
     }
   });
 });
+
+describe('[PIC-10.5] planning query through the web host', () => {
+  it('[PIC-10.5] a planning query returns the read model', () => {
+    const { port } = setup();
+    init(port);
+    port.send({
+      kind: 'query',
+      protocol_version: PROTOCOL_VERSION,
+      actor_id: 'test.owner.1',
+      query: { kind: 'planning' },
+    });
+    const results = port.of('query_result');
+    expect(results).toHaveLength(1);
+    if (results[0]?.kind === 'query_result') {
+      const planning = results[0].result['planning'] as { owner_id?: string } | undefined;
+      expect(planning?.owner_id).toBe('owner.0');
+    }
+  });
+
+  it('[PIC-10.5] a planning query without a session returns empty', () => {
+    const { port } = setup();
+    port.send({
+      kind: 'query',
+      protocol_version: PROTOCOL_VERSION,
+      actor_id: 'test.owner.1',
+      query: { kind: 'planning' },
+    });
+    const results = port.of('query_result');
+    expect(results).toHaveLength(1);
+    if (results[0]?.kind === 'query_result') {
+      expect(results[0].result).toEqual({});
+    }
+  });
+});
