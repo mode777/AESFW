@@ -23,6 +23,7 @@ export { CurveSchema } from './curve.js';
 export { ConnectionDefinitionSchema } from './connection.js';
 export { WorldDefinitionSchema } from './world.js';
 export { TransportUnitSchema } from './transport.js';
+export { TransportOrderTemplateSchema } from './order.js';
 export { isValidDefinitionId } from './ids.js';
 export {
   COLLECTION_ORDER,

@@ -12,11 +12,18 @@ import type {
   CommandOutcome,
   Diagnostic,
   EntityId,
+  FailureKey,
+  FailurePolicies,
+  FailurePolicy,
   LogicalTransform,
   Orientation,
+  QuantityRule,
   Result,
   ScheduledCommand,
+  StationAction,
+  StationSpec,
   TickOutput,
+  TransportOrderSpec,
   World,
 } from '@aesfw/core';
 import { decodeCommandEnvelope } from '@aesfw/protocol';
@@ -66,6 +73,202 @@ const entityOf = (payload: Record<string, unknown>): EntityId | null => {
     : null;
 };
 
+const FAILURE_KEYS: readonly FailureKey[] = [
+  'origin_unavailable',
+  'destination_unavailable',
+  'path_unavailable',
+  'cargo_cannot_unload',
+  'exchange_limit_not_met',
+  'establishment_target_occupied',
+];
+
+const FAILURE_POLICIES: readonly FailurePolicy[] = [
+  'skip',
+  'wait',
+  'retry',
+  'return',
+  'fail',
+  'retain',
+];
+
+const defaultFailurePolicies = (): FailurePolicies => ({
+  origin_unavailable: 'retry',
+  destination_unavailable: 'retry',
+  path_unavailable: 'retry',
+  cargo_cannot_unload: 'retain',
+  exchange_limit_not_met: 'skip',
+  establishment_target_occupied: 'return',
+});
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+const parseRule = (value: unknown): QuantityRule | null => {
+  const record = asRecord(value);
+  const mode = record?.['mode'];
+  if (typeof mode !== 'string') return null;
+  const quantity = record?.['quantity'];
+  if (mode === 'fixed') {
+    return typeof quantity === 'number' && Number.isSafeInteger(quantity) && quantity >= 0
+      ? { mode: 'fixed', quantity }
+      : null;
+  }
+  if (mode === 'up_to_capacity' || mode === 'all') return { mode };
+  if (
+    mode === 'excess_above' ||
+    mode === 'deficit_below' ||
+    mode === 'maintain_origin_minimum' ||
+    mode === 'maintain_destination_target'
+  ) {
+    return typeof quantity === 'number' && Number.isSafeInteger(quantity) && quantity >= 0
+      ? { mode, quantity }
+      : null;
+  }
+  if (mode === 'priority_list') {
+    const quantities = record?.['quantities'];
+    if (
+      Array.isArray(quantities) &&
+      quantities.every((entry) => typeof entry === 'number' && Number.isSafeInteger(entry))
+    ) {
+      return { mode: 'priority_list', quantities: quantities as readonly number[] };
+    }
+  }
+  return null;
+};
+
+const parseOrderSpec = (
+  content: CompiledContent,
+  payload: Record<string, unknown>,
+): Result<TransportOrderSpec, CommandError> => {
+  const templateId = payload['template'];
+  let templateData: Record<string, unknown> | null = null;
+  if (typeof templateId === 'string') {
+    const handle = content.registry.handleOf('transportOrder', ids.stringId(templateId));
+    const data =
+      handle === null ? null : content.registry.definitionDataOf?.('transportOrder', handle);
+    templateData = asRecord(data);
+    if (handle === null || templateData === null) {
+      return {
+        ok: false,
+        error: {
+          code: 'unknown_definition',
+          arguments: { type: 'transportOrder', definition: templateId },
+        },
+      };
+    }
+  }
+  const templatePolicies = asRecord(templateData?.['failure_policies']);
+  const payloadPolicies = asRecord(payload['failure_policies']);
+  const failurePolicies: Record<FailureKey, FailurePolicy> = { ...defaultFailurePolicies() };
+  for (const key of FAILURE_KEYS) {
+    const candidate = payloadPolicies?.[key] ?? templatePolicies?.[key];
+    if (
+      typeof candidate === 'string' &&
+      (FAILURE_POLICIES as readonly string[]).includes(candidate)
+    ) {
+      failurePolicies[key] = candidate as FailurePolicy;
+    }
+  }
+  const templateScheduling = asRecord(templateData?.['scheduling']);
+  const payloadScheduling = asRecord(payload['scheduling']);
+  const repeat =
+    typeof payload['repeat'] === 'boolean'
+      ? payload['repeat']
+      : typeof payloadScheduling?.['repeat'] === 'boolean'
+        ? payloadScheduling['repeat']
+        : typeof templateScheduling?.['repeat'] === 'boolean'
+          ? templateScheduling['repeat']
+          : true;
+  const retry =
+    typeof payload['retry_interval_ticks'] === 'number'
+      ? payload['retry_interval_ticks']
+      : typeof payloadScheduling?.['retry_interval_ticks'] === 'number'
+        ? payloadScheduling['retry_interval_ticks']
+        : typeof templateScheduling?.['retry_interval_ticks'] === 'number'
+          ? templateScheduling['retry_interval_ticks']
+          : 20;
+  const mode = payload['mode'] ?? templateData?.['mode'] ?? 'route';
+  if (mode !== 'route' && mode !== 'explore' && mode !== 'establish' && mode !== 'trade') {
+    return { ok: false, error: { code: 'unknown_command', arguments: { type: 'TransportOrder' } } };
+  }
+  const stationsValue = payload['stations'];
+  if (!Array.isArray(stationsValue) || stationsValue.length === 0) {
+    return { ok: false, error: { code: 'unknown_command', arguments: { type: 'TransportOrder' } } };
+  }
+  const stations: StationSpec[] = [];
+  for (const rawStation of stationsValue) {
+    const station = asRecord(rawStation);
+    const endpoint = station?.['endpoint'];
+    if (typeof endpoint !== 'number' || !Number.isSafeInteger(endpoint) || endpoint < 0) {
+      return { ok: false, error: { code: 'unknown_location', arguments: { location: -1 } } };
+    }
+    const rawActions = station?.['actions'];
+    if (!Array.isArray(rawActions)) {
+      return {
+        ok: false,
+        error: { code: 'unknown_command', arguments: { type: 'TransportOrder' } },
+      };
+    }
+    const actions: StationAction[] = [];
+    for (const rawAction of rawActions) {
+      const action = asRecord(rawAction);
+      const resourceId = action?.['resource'];
+      const actionType = action?.['action'];
+      const rule = parseRule(action?.['rule']);
+      if (typeof resourceId !== 'string' || rule === null) {
+        return {
+          ok: false,
+          error: { code: 'unknown_command', arguments: { type: 'TransportOrder' } },
+        };
+      }
+      if (
+        actionType !== 'load' &&
+        actionType !== 'unload' &&
+        actionType !== 'buy' &&
+        actionType !== 'sell'
+      ) {
+        return {
+          ok: false,
+          error: { code: 'unknown_command', arguments: { type: 'TransportOrder' } },
+        };
+      }
+      const resource = content.registry.handleOf('resource', ids.stringId(resourceId));
+      if (resource === null) {
+        return {
+          ok: false,
+          error: {
+            code: 'unknown_definition',
+            arguments: { type: 'resource', definition: resourceId },
+          },
+        };
+      }
+      const priceLimit = action?.['price_limit'];
+      actions.push({
+        resource,
+        action: actionType,
+        rule,
+        ...(typeof priceLimit === 'number' && Number.isSafeInteger(priceLimit)
+          ? { priceLimit }
+          : {}),
+      });
+    }
+    stations.push({ endpoint: ids.entityId(endpoint), actions });
+  }
+  return {
+    ok: true,
+    value: {
+      mode,
+      stations,
+      pathPolicy: 'shortest_stable',
+      repeat,
+      retryIntervalTicks: retry,
+      failurePolicies,
+    },
+  };
+};
+
 const mapCommand = (
   content: CompiledContent,
   type: string,
@@ -110,6 +313,37 @@ const mapCommand = (
       orientation: orientation as Orientation,
     };
     return ok({ type: 'PlaceEntityPlan', definition, location, transform: logicalTransform });
+  }
+  if (type === 'CreateTransportOrder') {
+    const spec = parseOrderSpec(content, payload);
+    return spec.ok ? ok({ type: 'CreateTransportOrder', spec: spec.value }) : spec;
+  }
+  if (type === 'ModifyTransportOrder') {
+    const order = entityOf({ entity_id: payload['order_id'] });
+    if (order === null)
+      return { ok: false, error: { code: 'unknown_entity', arguments: { entity: -1 } } };
+    const spec = parseOrderSpec(content, payload);
+    return spec.ok ? ok({ type: 'ModifyTransportOrder', order, spec: spec.value }) : spec;
+  }
+  if (type === 'DeleteTransportOrder') {
+    const order = entityOf({ entity_id: payload['order_id'] });
+    if (order === null)
+      return { ok: false, error: { code: 'unknown_entity', arguments: { entity: -1 } } };
+    return ok({ type: 'DeleteTransportOrder', order });
+  }
+  if (type === 'AssignTransport') {
+    const unit = entityOf({ entity_id: payload['unit_id'] });
+    const order = entityOf({ entity_id: payload['order_id'] });
+    if (unit === null || order === null) {
+      return { ok: false, error: { code: 'unknown_entity', arguments: { entity: -1 } } };
+    }
+    return ok({ type: 'AssignTransport', unit, order });
+  }
+  if (type === 'UnassignTransport') {
+    const unit = entityOf({ entity_id: payload['unit_id'] });
+    if (unit === null)
+      return { ok: false, error: { code: 'unknown_entity', arguments: { entity: -1 } } };
+    return ok({ type: 'UnassignTransport', unit });
   }
   if (type === 'ActivateLocation' || type === 'DeactivateLocation') {
     const location = payload['location_id'];
@@ -207,6 +441,15 @@ const referencedEntities = (command: Command): readonly EntityId[] => {
   if (command.type === 'ActivateLocation' || command.type === 'DeactivateLocation') {
     return [command.location];
   }
+  if (command.type === 'CreateTransportOrder') {
+    return command.spec.stations.map((station) => station.endpoint);
+  }
+  if (command.type === 'ModifyTransportOrder') {
+    return [command.order, ...command.spec.stations.map((station) => station.endpoint)];
+  }
+  if (command.type === 'DeleteTransportOrder') return [command.order];
+  if (command.type === 'AssignTransport') return [command.unit, command.order];
+  if (command.type === 'UnassignTransport') return [command.unit];
   if (command.type === 'ResumeDeficitPausedEntities') {
     return command.entities === 'all' ? [] : command.entities;
   }

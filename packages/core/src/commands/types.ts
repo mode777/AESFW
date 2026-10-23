@@ -10,6 +10,7 @@
 import type { Int } from '../fx/index.js';
 import type { DefinitionHandle, EntityId, Tick } from '../ids/index.js';
 import type { LogicalTransform } from '../sim/spatial.js';
+import type { TransportOrderSpec } from '../sim/transport/types.js';
 
 /** A scheduled command the kernel can apply (TDS-16.2). */
 export type Command =
@@ -63,6 +64,28 @@ export type Command =
   | {
       readonly type: 'DeactivateLocation';
       readonly location: EntityId;
+    }
+  | {
+      readonly type: 'CreateTransportOrder';
+      readonly spec: TransportOrderSpec;
+    }
+  | {
+      readonly type: 'ModifyTransportOrder';
+      readonly order: EntityId;
+      readonly spec: TransportOrderSpec;
+    }
+  | {
+      readonly type: 'DeleteTransportOrder';
+      readonly order: EntityId;
+    }
+  | {
+      readonly type: 'AssignTransport';
+      readonly unit: EntityId;
+      readonly order: EntityId;
+    }
+  | {
+      readonly type: 'UnassignTransport';
+      readonly unit: EntityId;
     };
 
 /** The stable command type names (TDS-16.2). */

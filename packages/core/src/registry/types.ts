@@ -25,6 +25,7 @@ export type DefinitionType =
   | 'transition'
   | 'capability'
   | 'transportType'
+  | 'transportOrder'
   | 'exchange'
   | 'maintenancePolicy'
   | 'deficitPolicy'

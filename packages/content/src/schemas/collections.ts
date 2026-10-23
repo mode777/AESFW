@@ -20,6 +20,7 @@ import { NeedCategorySchema, NeedSchema } from './need.js';
 import { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 import { RecipeSchema } from './recipe.js';
 import { ResourceSchema } from './resource.js';
+import { TransportOrderTemplateSchema } from './order.js';
 import { TransportUnitSchema } from './transport.js';
 import { WorldDefinitionSchema } from './world.js';
 
@@ -39,6 +40,7 @@ export const DEFINITION_COLLECTIONS = {
   connections: 'connection',
   worlds: 'world',
   transport_units: 'transportType',
+  transport_order_templates: 'transportOrder',
 } as const satisfies Readonly<Record<string, DefinitionType>>;
 
 /** A top-level document key of the M1 content set. */
@@ -65,6 +67,7 @@ export const DEFINITION_SCHEMAS = {
   connections: ConnectionDefinitionSchema,
   worlds: WorldDefinitionSchema,
   transport_units: TransportUnitSchema,
+  transport_order_templates: TransportOrderTemplateSchema,
 } as const satisfies Readonly<Record<DefinitionCollection, TSchema>>;
 
 /** True when `key` names a known definition collection. */

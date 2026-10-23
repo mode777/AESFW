@@ -1,0 +1,218 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "mode"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "mode": {
+      "anyOf": [
+        {
+          "const": "route",
+          "type": "string"
+        },
+        {
+          "const": "explore",
+          "type": "string"
+        },
+        {
+          "const": "establish",
+          "type": "string"
+        },
+        {
+          "const": "trade",
+          "type": "string"
+        }
+      ]
+    },
+    "failure_policies": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "origin_unavailable": {
+          "anyOf": [
+            {
+              "const": "skip",
+              "type": "string"
+            },
+            {
+              "const": "wait",
+              "type": "string"
+            },
+            {
+              "const": "retry",
+              "type": "string"
+            },
+            {
+              "const": "return",
+              "type": "string"
+            },
+            {
+              "const": "fail",
+              "type": "string"
+            },
+            {
+              "const": "retain",
+              "type": "string"
+            }
+          ]
+        },
+        "destination_unavailable": {
+          "anyOf": [
+            {
+              "const": "skip",
+              "type": "string"
+            },
+            {
+              "const": "wait",
+              "type": "string"
+            },
+            {
+              "const": "retry",
+              "type": "string"
+            },
+            {
+              "const": "return",
+              "type": "string"
+            },
+            {
+              "const": "fail",
+              "type": "string"
+            },
+            {
+              "const": "retain",
+              "type": "string"
+            }
+          ]
+        },
+        "path_unavailable": {
+          "anyOf": [
+            {
+              "const": "skip",
+              "type": "string"
+            },
+            {
+              "const": "wait",
+              "type": "string"
+            },
+            {
+              "const": "retry",
+              "type": "string"
+            },
+            {
+              "const": "return",
+              "type": "string"
+            },
+            {
+              "const": "fail",
+              "type": "string"
+            },
+            {
+              "const": "retain",
+              "type": "string"
+            }
+          ]
+        },
+        "cargo_cannot_unload": {
+          "anyOf": [
+            {
+              "const": "skip",
+              "type": "string"
+            },
+            {
+              "const": "wait",
+              "type": "string"
+            },
+            {
+              "const": "retry",
+              "type": "string"
+            },
+            {
+              "const": "return",
+              "type": "string"
+            },
+            {
+              "const": "fail",
+              "type": "string"
+            },
+            {
+              "const": "retain",
+              "type": "string"
+            }
+          ]
+        },
+        "exchange_limit_not_met": {
+          "anyOf": [
+            {
+              "const": "skip",
+              "type": "string"
+            },
+            {
+              "const": "wait",
+              "type": "string"
+            },
+            {
+              "const": "retry",
+              "type": "string"
+            },
+            {
+              "const": "return",
+              "type": "string"
+            },
+            {
+              "const": "fail",
+              "type": "string"
+            },
+            {
+              "const": "retain",
+              "type": "string"
+            }
+          ]
+        },
+        "establishment_target_occupied": {
+          "anyOf": [
+            {
+              "const": "skip",
+              "type": "string"
+            },
+            {
+              "const": "wait",
+              "type": "string"
+            },
+            {
+              "const": "retry",
+              "type": "string"
+            },
+            {
+              "const": "return",
+              "type": "string"
+            },
+            {
+              "const": "fail",
+              "type": "string"
+            },
+            {
+              "const": "retain",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "scheduling": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "repeat": {
+          "type": "boolean"
+        },
+        "retry_interval_ticks": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

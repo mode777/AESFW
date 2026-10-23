@@ -21,8 +21,26 @@ export {
   startMovement,
   traversalTicks,
 } from './route.js';
+export {
+  actionTarget,
+  advanceTransportOrders,
+  assignTransport,
+  assignedOrderOf,
+  collectTransportHandlingRequests,
+  commitTransportOrders,
+  createTransportOrder,
+  defaultFailurePolicies,
+  deleteTransportOrder,
+  modifyTransportOrder,
+  planTransportOrders,
+  readTransportHandling,
+  routeStateOf,
+  stationCursorOf,
+  transportOrderOf,
+  unassignTransport,
+} from './orders.js';
 export type { RoutePath } from './route.js';
-export { TRANSPORT_ARRIVALS_KEY } from './types.js';
+export { TRANSPORT_ARRIVALS_KEY, TRANSPORT_HANDLING_KEY } from './types.js';
 export type {
   Cargo,
   CargoCompartmentPolicy,
@@ -30,5 +48,19 @@ export type {
   CargoSlot,
   TransportArrival,
   TransportHandling,
+  FailureKey,
+  FailurePolicies,
+  FailurePolicy,
+  PendingTransportTransfer,
+  QuantityRule,
+  RouteState,
+  StationAction,
+  StationCursor,
+  StationSpec,
+  TransportAction,
+  TransportAssignment,
   TransportMovement,
+  TransportOrder,
+  TransportOrderMode,
+  TransportOrderSpec,
 } from './types.js';

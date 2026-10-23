@@ -56,6 +56,99 @@ export type TransportHandling = {
   readonly unloadingRatePerTick: Int;
 };
 
+/** The transport-order mode (GDD-15.5). */
+export type TransportOrderMode = 'route' | 'explore' | 'establish' | 'trade';
+
+/** An action at a station (GDD-15.2). */
+export type TransportAction = 'load' | 'unload' | 'buy' | 'sell';
+
+/** A transport failure policy (GDD-15.7). */
+export type FailurePolicy = 'skip' | 'wait' | 'retry' | 'return' | 'fail' | 'retain';
+
+/** The failure policy keys of an order (CONT-9). */
+export type FailureKey =
+  | 'origin_unavailable'
+  | 'destination_unavailable'
+  | 'path_unavailable'
+  | 'cargo_cannot_unload'
+  | 'exchange_limit_not_met'
+  | 'establishment_target_occupied';
+
+/** A per-failure policy table. */
+export type FailurePolicies = Readonly<Record<FailureKey, FailurePolicy>>;
+
+/** A quantity rule (GDD-15.3). Modes beyond the basic three arrive with 6.5. */
+export type QuantityRule =
+  | { readonly mode: 'fixed'; readonly quantity: Int }
+  | { readonly mode: 'up_to_capacity' }
+  | { readonly mode: 'all' }
+  | { readonly mode: 'excess_above'; readonly quantity: Int }
+  | { readonly mode: 'deficit_below'; readonly quantity: Int }
+  | { readonly mode: 'maintain_origin_minimum'; readonly quantity: Int }
+  | { readonly mode: 'maintain_destination_target'; readonly quantity: Int }
+  | { readonly mode: 'priority_list'; readonly quantities: readonly Int[] };
+
+/** One action of a station. */
+export type StationAction = {
+  readonly resource: DefinitionHandle;
+  readonly action: TransportAction;
+  readonly rule: QuantityRule;
+  readonly priceLimit?: Int;
+};
+
+/** One station of a route. */
+export type StationSpec = {
+  readonly endpoint: EntityId;
+  readonly actions: readonly StationAction[];
+};
+
+/** A runtime transport order. */
+export type TransportOrder = {
+  readonly mode: TransportOrderMode;
+  readonly stations: readonly StationSpec[];
+  readonly pathPolicy: 'shortest_stable';
+  readonly repeat: boolean;
+  readonly retryIntervalTicks: Int;
+  readonly failurePolicies: FailurePolicies;
+};
+
+/** A transport order as submitted by a command, before entity allocation. */
+export type TransportOrderSpec = TransportOrder;
+
+/** The station cursor of an assigned unit (ARCH-14.4). */
+export type StationCursor = {
+  readonly station: Int;
+  readonly action: Int;
+  readonly handled: Int;
+  readonly target: Int;
+  readonly started: boolean;
+};
+
+/** A unit's assignment to an order. */
+export type TransportAssignment = {
+  readonly order: EntityId | null;
+};
+
+/** A unit's planned route state for the current station. */
+export type RouteState = {
+  readonly order: EntityId;
+  readonly station: Int;
+  readonly path: readonly EntityId[];
+};
+
+/** One staged handling transfer. */
+export type PendingTransportTransfer = {
+  readonly unit: EntityId;
+  readonly order: EntityId;
+  readonly action: TransportAction;
+  readonly resource: DefinitionHandle;
+  readonly quantity: Int;
+  readonly inventory: EntityId;
+};
+
+/** The scratch key holding phase 16's staged handling transfers. */
+export const TRANSPORT_HANDLING_KEY = 'transportHandling';
+
 /** The scratch key holding transport arrivals of the tick. */
 export const TRANSPORT_ARRIVALS_KEY = 'transportArrivals';
 

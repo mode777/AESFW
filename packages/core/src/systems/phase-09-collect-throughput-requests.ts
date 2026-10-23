@@ -20,6 +20,13 @@ export const phase09CollectThroughputRequests: SystemDescriptor = {
     'lifecycle',
     'owners',
     'throughputPool',
+    'movement',
+    'transportAssignment',
+    'transportOrder',
+    'stationCursor',
+    'cargo',
+    'inventory',
+    'handling',
   ],
   writes: [],
   run: (ctx) => {

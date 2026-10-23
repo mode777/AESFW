@@ -33,6 +33,7 @@ import { advanceSource } from '../production/sources.js';
 import type { Producer, ResourceSource } from '../production/types.js';
 import type { Residence } from '../population/types.js';
 import { storageThroughputBonus } from './storage.js';
+import { collectTransportHandlingRequests } from '../transport/orders.js';
 import { THROUGHPUT_LIMITED_POLICY, THROUGHPUT_REQUESTS_KEY } from './types.js';
 import type { ThroughputAllocation, ThroughputPool, ThroughputRequest } from './types.js';
 
@@ -166,6 +167,10 @@ export function collectThroughputRequests(world: World, scratch: TickScratch): v
       quantity += state.demanded;
     }
     add(entity, residence.location, quantity);
+  }
+
+  for (const request of collectTransportHandlingRequests(world)) {
+    add(request.entity, request.location, request.quantity);
   }
 
   const ordered = [...requests.values()].sort((a, b) => a.entity - b.entity);

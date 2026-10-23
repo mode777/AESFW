@@ -8,6 +8,7 @@ import { NeedCategorySchema, NeedSchema } from './need.js';
 import { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 import { RecipeSchema } from './recipe.js';
 import { ResourceSchema } from './resource.js';
+import { TransportOrderTemplateSchema } from './order.js';
 import { TransportUnitSchema } from './transport.js';
 import { WorldDefinitionSchema } from './world.js';
 
@@ -568,6 +569,28 @@ describe('[CONT-6.16] transport unit schema', () => {
       valid(TransportUnitSchema, {
         ...unit,
         cargo: { ...unit.cargo, compartment_policy: 'containers' },
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('[CONT-9] transport order template schema', () => {
+  const template = {
+    id: 'test.order.default',
+    mode: 'route',
+    failure_policies: { path_unavailable: 'retry', cargo_cannot_unload: 'retain' },
+    scheduling: { repeat: true, retry_interval_ticks: 20 },
+  };
+
+  it('[CONT-9] a route template validates', () => {
+    expect(valid(TransportOrderTemplateSchema, template)).toBe(true);
+  });
+
+  it('[CONT-9] an unknown failure policy is rejected', () => {
+    expect(
+      valid(TransportOrderTemplateSchema, {
+        ...template,
+        failure_policies: { path_unavailable: 'teleport' },
       }),
     ).toBe(false);
   });

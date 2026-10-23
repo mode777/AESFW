@@ -23,6 +23,13 @@ import {
   applyDeconstructEntity,
   applyPlaceEntityPlan,
 } from '../sim/placement/apply.js';
+import {
+  assignTransport,
+  createTransportOrder,
+  deleteTransportOrder,
+  modifyTransportOrder,
+  unassignTransport,
+} from '../sim/transport/orders.js';
 
 const applied = (commandId: string, tick: Tick, entity: EntityId): CommandOutcome => ({
   commandId,
@@ -198,6 +205,55 @@ const applyOne = (ctx: TickContext, scheduled: ScheduledCommand): CommandOutcome
       store.set(command.entity, { ...consumer, priority: command.priority });
       return emitApplied(command.entity);
     }
+    case 'CreateTransportOrder': {
+      const order = createTransportOrder(world, scheduled.actor, command.spec);
+      return emitApplied(order);
+    }
+    case 'ModifyTransportOrder': {
+      if (!world.stores.get('transportOrder').has(command.order)) {
+        return reject(
+          [{ code: 'unknown_entity', arguments: { entity: command.order } }],
+          [command.order],
+        );
+      }
+      modifyTransportOrder(world, command.order, command.spec);
+      return emitApplied(command.order);
+    }
+    case 'DeleteTransportOrder': {
+      if (!world.stores.get('transportOrder').has(command.order)) {
+        return reject(
+          [{ code: 'unknown_entity', arguments: { entity: command.order } }],
+          [command.order],
+        );
+      }
+      deleteTransportOrder(world, command.order);
+      return emitApplied(command.order);
+    }
+    case 'AssignTransport': {
+      if (!entityExists(world, command.unit) || !entityExists(world, command.order)) {
+        return reject(
+          [{ code: 'unknown_entity', arguments: { entity: command.unit } }],
+          [command.unit, command.order],
+        );
+      }
+      if (!assignTransport(world, command.unit, command.order)) {
+        return reject(
+          [{ code: 'unknown_entity', arguments: { entity: command.unit } }],
+          [command.unit, command.order],
+        );
+      }
+      return emitApplied(command.unit);
+    }
+    case 'UnassignTransport': {
+      if (!entityExists(world, command.unit)) {
+        return reject(
+          [{ code: 'unknown_entity', arguments: { entity: command.unit } }],
+          [command.unit],
+        );
+      }
+      unassignTransport(world, command.unit);
+      return emitApplied(command.unit);
+    }
     case 'ActivateLocation':
     case 'DeactivateLocation': {
       const locationStore = world.stores.get<{ active: boolean; owner: number | null }>('location');
@@ -287,6 +343,14 @@ export const phase01ApplyCommands: SystemDescriptor = {
     'producer',
     'capabilityConsumer',
     'revision',
+    'transportOrder',
+    'transportAssignment',
+    'stationCursor',
+    'route',
+    'movement',
+    'cargo',
+    'inventory',
+    'handling',
   ],
   run: (ctx) => {
     const world = ctx.world;
