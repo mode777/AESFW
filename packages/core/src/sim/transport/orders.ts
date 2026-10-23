@@ -93,8 +93,9 @@ const rateOf = (world: World, unit: EntityId, action: TransportActionName): numb
 type TransportActionName = StationAction['action'];
 
 /**
- * The target quantity of one station action at its start. Modes owned by 6.5
- * return zero until that row implements them.
+ * The target quantity of one station action at its start (GDD-15.3). The rule
+ * is interpreted from the acting side: a load measures the origin inventory
+ * and cargo space, an unload measures the cargo and destination inventory.
  *
  * Source: GDD-15.3
  */
@@ -110,21 +111,60 @@ export function actionTarget(
   const inventoryQuantity =
     inventoryComponent === undefined ? 0 : quantityOf(inventoryComponent, action.resource);
   const cargoAmount = cargoQuantity(cargo, action.resource);
+  const free = cargoFreeCapacity(cargo, action.resource);
   const rule = action.rule;
+  const loading = action.action === 'load' || action.action === 'buy';
   let target = 0;
-  if (action.action === 'load' || action.action === 'buy') {
-    if (rule.mode === 'fixed') target = rule.quantity;
-    else if (rule.mode === 'up_to_capacity' || rule.mode === 'all') {
-      target = cargoFreeCapacity(cargo, action.resource);
-    } else if (rule.mode === 'excess_above' || rule.mode === 'maintain_origin_minimum') {
-      target = Math.max(0, inventoryQuantity - rule.quantity);
+  if (loading) {
+    switch (rule.mode) {
+      case 'fixed':
+        target = rule.quantity;
+        break;
+      case 'up_to_capacity':
+        target = free;
+        break;
+      case 'all':
+        target = Math.min(free, inventoryQuantity);
+        break;
+      case 'excess_above':
+      case 'maintain_origin_minimum':
+        target = Math.max(0, inventoryQuantity - rule.quantity);
+        break;
+      case 'deficit_below':
+      case 'maintain_destination_target':
+        target = Math.max(0, rule.quantity - cargoAmount);
+        break;
+      case 'priority_list': {
+        const fit = rule.quantities.find(
+          (quantity) => quantity <= free && quantity <= inventoryQuantity,
+        );
+        target = fit ?? 0;
+        break;
+      }
     }
     return Math.min(target, inventoryQuantity);
   }
-  if (rule.mode === 'fixed') target = rule.quantity;
-  else if (rule.mode === 'up_to_capacity' || rule.mode === 'all') target = cargoAmount;
-  else if (rule.mode === 'deficit_below' || rule.mode === 'maintain_destination_target') {
-    target = Math.max(0, rule.quantity - inventoryQuantity);
+  switch (rule.mode) {
+    case 'fixed':
+      target = rule.quantity;
+      break;
+    case 'up_to_capacity':
+    case 'all':
+      target = cargoAmount;
+      break;
+    case 'excess_above':
+    case 'maintain_origin_minimum':
+      target = Math.max(0, cargoAmount - rule.quantity);
+      break;
+    case 'deficit_below':
+    case 'maintain_destination_target':
+      target = Math.max(0, rule.quantity - inventoryQuantity);
+      break;
+    case 'priority_list': {
+      const fit = rule.quantities.find((quantity) => quantity <= cargoAmount);
+      target = fit ?? 0;
+      break;
+    }
   }
   return Math.min(target, cargoAmount);
 }
