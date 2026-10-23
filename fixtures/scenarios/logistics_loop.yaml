@@ -1,0 +1,37 @@
+scenario:
+  id: test.scenario.logistics_loop
+  requirements: [GDD-23.2, SCN-02]
+  content:
+    packages: [fixtures/content/demo-logistics]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: demo.world.logistics
+  commands:
+    - tick: 1
+      actor: owner.0
+      type: CreateTransportOrder
+      payload:
+        template: demo.order.default
+        mode: route
+        stations:
+          - endpoint: 1
+            actions:
+              - resource: demo.resource.raw
+                action: load
+                rule: { mode: all }
+          - endpoint: 3
+            actions:
+              - resource: demo.resource.raw
+                action: unload
+                rule: { mode: all }
+    - tick: 2
+      actor: owner.0
+      type: AssignTransport
+      payload: { unit_id: 8, order_id: 9 }
+  run:
+    ticks: 200
+    hash_interval: 10
+    invariants: true
+  golden:
+    hashes: fixtures/scenarios/logistics_loop.hashes.json

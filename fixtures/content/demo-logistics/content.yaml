@@ -1,0 +1,150 @@
+resources:
+  - id: demo.resource.raw
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  - id: demo.resource.good
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+location_templates:
+  - id: demo.location.standard
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 1000
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+
+connections:
+  - id: demo.connection.standard
+    direction: bidirectional
+    traversal: { base_duration_ticks: 5 }
+    allowed_transport_tags: [demo.transport.standard]
+
+recipes:
+  - id: demo.recipe.good
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      - { resource: demo.resource.raw, quantity: 100 }
+    outputs:
+      - { resource: demo.resource.good, quantity: 100 }
+
+population_tiers:
+  - id: demo.population.tier_1
+    consumption_factor: 1000
+    need_categories: [demo.need_category.base]
+    outputs: []
+
+need_categories:
+  - id: demo.need_category.base
+    evaluation: { mode: all }
+    members:
+      - { need: demo.need.base, weight: 1000 }
+
+needs:
+  - id: demo.need.base
+    category: demo.need_category.base
+    applies_to: [demo.population.tier_1]
+    demand:
+      type: resource_consumption
+      resource: demo.resource.good
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 10
+      target_ratio: 1000
+
+growth_policies:
+  - id: demo.growth.default
+    interval_ticks: 10
+    increase:
+      quantity: 1
+      condition: demo.condition.grow
+
+conditions:
+  - id: demo.condition.grow
+    expression:
+      greater_equal:
+        left: { aggregate_need_fulfillment: current_entity }
+        right: 500
+
+entity_definitions:
+  - id: demo.entity.source
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: demo.resource.raw, quantity_per_tick: 100 }
+
+  - id: demo.entity.producer
+    components:
+      producer:
+        recipes: [demo.recipe.good]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+
+  - id: demo.entity.residence
+    components:
+      residence:
+        population_tier: demo.population.tier_1
+        capacity: 10
+        initial_population: 2
+        growth_policy: demo.growth.default
+
+  - id: demo.entity.transport
+    components: {}
+
+transport_units:
+  - id: demo.transport.basic
+    entity_definition: demo.entity.transport
+    cargo:
+      compartment_policy: unrestricted
+      slots: 1
+      slot_capacity: 1000
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 1000
+      allowed_connection_tags: [demo.transport.standard]
+    handling:
+      loading_rate_per_tick: 100
+      unloading_rate_per_tick: 100
+    order_modes: [route]
+
+transport_order_templates:
+  - id: demo.order.default
+    mode: route
+    failure_policies:
+      path_unavailable: retry
+      cargo_cannot_unload: retain
+    scheduling:
+      repeat: true
+      retry_interval_ticks: 20
+
+worlds:
+  - id: demo.world.logistics
+    locations:
+      - { id: demo.loc.a, template: demo.location.standard }
+      - { id: demo.loc.b, template: demo.location.standard }
+    connections:
+      - id: demo.conn.a_b
+        definition: demo.connection.standard
+        origin: demo.loc.a
+        destination: demo.loc.b
+    owners:
+      - id: owner.a
+        established_locations: [demo.loc.a, demo.loc.b]
+        initial_entities:
+          - { definition: demo.entity.source, location: demo.loc.a }
+          - { definition: demo.entity.producer, location: demo.loc.b }
+          - { definition: demo.entity.residence, location: demo.loc.b }
+          - { definition: demo.entity.transport, location: demo.loc.a }
