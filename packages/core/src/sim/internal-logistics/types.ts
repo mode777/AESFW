@@ -39,3 +39,13 @@ export type ThroughputRequest = {
 
 /** The scratch key holding phase 09's requests. */
 export const THROUGHPUT_REQUESTS_KEY = 'throughputRequests';
+
+/** A storage-provider runtime entry (GDD-9.7, CONT-6.8). */
+export type StorageProvider = {
+  readonly kind: 'storage_provider';
+  readonly inventory: EntityId;
+  readonly location: EntityId | null;
+  readonly capacityTotal: Int;
+  readonly capacityPerResource: Int;
+  readonly throughput: Int;
+};

@@ -13,6 +13,7 @@ import { err, ok } from '../result.js';
 import type { Result } from '../result.js';
 import type { OwnerState, Purpose, Reservation, World } from '../world/types.js';
 import { accepts } from './inventory.js';
+import { effectiveInventoryCapacity } from '../sim/internal-logistics/storage.js';
 import type { Inventory } from './inventory.js';
 import type {
   AccountRequest,
@@ -178,7 +179,7 @@ const capacityAllows = (
   resource: DefinitionHandle,
   additional: Int,
 ): boolean => {
-  const { total, perResource } = component.capacity;
+  const { total, perResource } = effectiveInventoryCapacity(state.world, inventory);
   if (
     total !== null &&
     storedTotal(state, inventory) + capacityReservedTotalIn(state, inventory) + additional > total

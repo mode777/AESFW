@@ -134,6 +134,43 @@ describe('[CONT-6.8][CONT-6.9] entity definition schema', () => {
     ).toBe(true);
   });
 
+  it('[CONT-6.8] a storage provider entity definition validates', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.storage',
+        components: {
+          storage_provider: {
+            inventory: 'location.shared',
+            capacity: { total: 1800000 },
+            throughput: 2000,
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('[CONT-6.8] a negative storage-provider throughput is rejected', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.storage',
+        components: {
+          storage_provider: { inventory: 'location.shared', throughput: -1 },
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('[CONT-6.8] an unknown storage-provider field is rejected', () => {
+    expect(
+      valid(EntityDefinitionSchema, {
+        id: 'test.entity.storage',
+        components: {
+          storage_provider: { inventory: 'location.shared', accepts: [] },
+        },
+      }),
+    ).toBe(false);
+  });
+
   it('[CONT-6.9] a residence entity definition validates', () => {
     expect(
       valid(EntityDefinitionSchema, {

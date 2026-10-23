@@ -176,7 +176,11 @@ export type {
 } from './sim/capabilities/index.js';
 export {
   allocateThroughput,
+  applyStorageProvider,
   collectThroughputRequests,
+  effectiveInventoryCapacity,
+  storageProviderIsActive,
+  storageThroughputBonus,
   readThroughputRequests,
   throttlePermilleOf,
   throttleQuantity,
@@ -186,6 +190,7 @@ export {
   THROUGHPUT_REQUESTS_KEY,
 } from './sim/internal-logistics/index.js';
 export type {
+  StorageProvider,
   ThroughputAllocation,
   ThroughputPool,
   ThroughputRequest,

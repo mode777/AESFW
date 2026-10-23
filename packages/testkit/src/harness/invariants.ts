@@ -13,6 +13,7 @@ import {
   decodeWorld,
   det,
   encodeWorld,
+  effectiveInventoryCapacity,
   hashWorld,
   ids,
   resourceAllowsNegative,
@@ -173,7 +174,7 @@ const checkCapacity = (world: World, findings: InvariantFinding[]): void => {
   for (const id of store.ids()) {
     const inventory = store.get(id) as Inventory | null | undefined;
     if (inventory == null) continue;
-    const { total, perResource } = inventory.capacity;
+    const { total, perResource } = effectiveInventoryCapacity(world, id);
     let storedTotal = 0;
     for (const entry of inventory.entries) storedTotal += entry.quantity;
     let capacityTotal = 0;

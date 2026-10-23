@@ -32,6 +32,7 @@ import { sourceScalePermille } from '../production/advance.js';
 import { advanceSource } from '../production/sources.js';
 import type { Producer, ResourceSource } from '../production/types.js';
 import type { Residence } from '../population/types.js';
+import { storageThroughputBonus } from './storage.js';
 import { THROUGHPUT_LIMITED_POLICY, THROUGHPUT_REQUESTS_KEY } from './types.js';
 import type { ThroughputAllocation, ThroughputPool, ThroughputRequest } from './types.js';
 
@@ -82,7 +83,7 @@ export function throughputCapacity(
   location: EntityId,
   supply?: CapabilitySupply,
 ): Int {
-  let capacity = pool.baseCapacity;
+  let capacity = pool.baseCapacity + storageThroughputBonus(world, location);
   if (pool.baseThroughputCapability !== null) {
     const pools = supply ?? buildCapabilitySupply(world);
     const key = poolKey('location', location, pool.baseThroughputCapability);

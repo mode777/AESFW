@@ -6,6 +6,7 @@
  */
 import {
   curveMultiplier,
+  effectiveInventoryCapacity,
   isCharging,
   isConnected,
   readWorld,
@@ -125,7 +126,12 @@ const ownerDto = (world: World, registry: Registry, handle: OwnerHandle): OwnerD
   return { owner_id: `owner.${handle}`, resources, balance: balanceDto(world, registry, handle) };
 };
 
-const inventoryDto = (reader: WorldReader, registry: Registry, id: EntityId): InventoryDto => {
+const inventoryDto = (
+  reader: WorldReader,
+  world: World,
+  registry: Registry,
+  id: EntityId,
+): InventoryDto => {
   const inventory = reader.inventory(id);
   const entries: InventoryEntryDto[] = [];
   if (inventory !== undefined) {
@@ -137,8 +143,9 @@ const inventoryDto = (reader: WorldReader, registry: Registry, id: EntityId): In
         (reserved.get(reservation.resource) ?? 0) + reservation.quantity,
       );
     }
-    const capacity = inventory.capacity.perResource ?? inventory.capacity.total;
     for (const entry of inventory.entries) {
+      const effective = effectiveInventoryCapacity(world, id);
+      const capacity = effective.perResource ?? effective.total;
       entries.push({
         resource_id: resourceId(registry, entry.resource),
         stored: entry.quantity,
@@ -152,6 +159,7 @@ const inventoryDto = (reader: WorldReader, registry: Registry, id: EntityId): In
 
 const locationDto = (
   reader: WorldReader,
+  world: World,
   registry: Registry,
   id: EntityId,
   actor: OwnerHandle,
@@ -159,7 +167,7 @@ const locationDto = (
   const location = reader.location(id);
   const hub = reader.locationHub(id);
   const inventories = (hub?.inventories ?? []).map((inventoryId) =>
-    inventoryDto(reader, registry, inventoryId),
+    inventoryDto(reader, world, registry, inventoryId),
   );
   const dto: LocationDto = { entity_id: id, knowledge: reader.knowledge(actor, id), inventories };
   if (location !== undefined) {
@@ -278,7 +286,7 @@ export function project(session: SessionState, actor: OwnerHandle): SnapshotDto 
     revision: session.revision,
     configuration_checksum: session.content.checksum,
     owners: reader.ownerHandles.map((handle) => ownerDto(world, registry, handle)),
-    locations: reader.locationIds.map((id) => locationDto(reader, registry, id, actor)),
+    locations: reader.locationIds.map((id) => locationDto(reader, world, registry, id, actor)),
     entities: reader.entityIds.map((id) => entityDto(reader, world, registry, id)),
   };
 }

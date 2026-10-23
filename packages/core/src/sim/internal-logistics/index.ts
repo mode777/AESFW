@@ -11,6 +11,17 @@ export {
   throughputCapacity,
   throughputPoolOf,
 } from './pool.js';
+export {
+  applyStorageProvider,
+  effectiveInventoryCapacity,
+  storageProviderIsActive,
+  storageThroughputBonus,
+} from './storage.js';
 export { throttlePermilleOf, throttleQuantity } from './throttle.js';
 export { THROUGHPUT_LIMITED_POLICY, THROUGHPUT_REQUESTS_KEY } from './types.js';
-export type { ThroughputAllocation, ThroughputPool, ThroughputRequest } from './types.js';
+export type {
+  StorageProvider,
+  ThroughputAllocation,
+  ThroughputPool,
+  ThroughputRequest,
+} from './types.js';

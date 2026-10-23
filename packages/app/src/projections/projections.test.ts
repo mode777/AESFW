@@ -3,10 +3,12 @@ import { instantiateWorld, ids } from '@aesfw/core';
 import type {
   ConnectivityNode,
   Footprint,
+  Inventory,
   LogicalTransform,
   Maintenance,
   Producer,
   Registry,
+  StorageProvider,
 } from '@aesfw/core';
 import { applyDelta } from '@aesfw/protocol';
 import type { CompiledContent } from '@aesfw/content';
@@ -151,6 +153,30 @@ describe('[PIC-9.1] project', () => {
     expect(snapshot.entities).toHaveLength(1);
     expect(snapshot.entities[0]?.definition_id).toBe('test.entity.producer');
     expect(snapshot.entities[0]?.production?.recipe_id).toBe('test.recipe.a');
+  });
+
+  it('[PIC-9.1][GDD-9.7] an inventory exposes its effective capacity', () => {
+    const state = session();
+    state.world.stores.get<Inventory>('inventory').set(ids.entityId(2), {
+      owner: ids.ownerHandle(0),
+      policy: 'framework.inventory.shared_location',
+      revision: 0,
+      entries: [{ resource: ids.definitionHandle(4), quantity: 100 }],
+      capacity: { total: 1000, perResource: null },
+      acceptance: { accepts: [] },
+    });
+    const provider: StorageProvider = {
+      kind: 'storage_provider',
+      inventory: ids.entityId(2),
+      location: ids.entityId(1),
+      capacityTotal: 500,
+      capacityPerResource: 0,
+      throughput: 0,
+    };
+    state.world.stores.get<StorageProvider>('modifierSet').set(ids.entityId(7), provider);
+    const snapshot = project(state, ids.ownerHandle(0));
+    const entry = snapshot.locations[0]?.inventories?.[0]?.entries[0];
+    expect(entry?.capacity).toBe(1500);
   });
 
   it('[PIC-9.1] projection order is ascending entity ID', () => {

@@ -95,6 +95,23 @@ const StorageAccessSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const StorageProviderCapacitySchema = Type.Object(
+  {
+    total: Type.Optional(Type.Integer({ minimum: 0 })),
+    per_resource: Type.Optional(Type.Integer({ minimum: 0 })),
+  },
+  { additionalProperties: false },
+);
+
+const StorageProviderSchema = Type.Object(
+  {
+    inventory: InventoryRefSchema,
+    capacity: Type.Optional(StorageProviderCapacitySchema),
+    throughput: Type.Optional(Type.Integer({ minimum: 0 })),
+  },
+  { additionalProperties: false },
+);
+
 const DeconstructionSchema = Type.Object(
   {
     duration_ticks: Type.Integer({ minimum: 0 }),
@@ -150,6 +167,7 @@ const ComponentsSchema = Type.Object(
     producer: Type.Optional(ProducerSchema),
     residence: Type.Optional(ResidenceSchema),
     storage_access: Type.Optional(StorageAccessSchema),
+    storage_provider: Type.Optional(StorageProviderSchema),
     construction: Type.Optional(ConstructionSchema),
     placement: Type.Optional(PlacementSchema),
     connectivity: Type.Optional(ConnectivitySchema),

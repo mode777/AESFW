@@ -6,7 +6,7 @@
  *
  * Source: CONT-6.6, CONT-6.8, GDD-9.4, GDD-9.5, GDD-11, GDD-12
  */
-import { allocateEntity, ids } from '@aesfw/core';
+import { allocateEntity, applyStorageProvider, ids } from '@aesfw/core';
 import type {
   CapabilityConsumer,
   CategorySpec,
@@ -387,6 +387,7 @@ export function instantiateContentEntities(world: World, registry: ContentRegist
       const growth = growthFrom(registry, component['growth_policy']);
       if (growth !== null) world.stores.get<Growth>('growth').set(entity, growth);
     }
+    applyStorageProvider(world, registry, definition.handle, entity, ids.entityId(location));
     if (components['connectivity'] !== undefined) {
       const node = connectivityNodeFrom(components['connectivity']);
       if (node !== null) {

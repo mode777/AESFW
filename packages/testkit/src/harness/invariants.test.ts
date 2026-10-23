@@ -4,6 +4,7 @@ import { createTransactionWriter } from '@aesfw/core';
 import type {
   Inventory,
   Registry,
+  StorageProvider,
   ThroughputAllocation,
   ThroughputPool,
   TickInput,
@@ -621,5 +622,43 @@ describe('[VER-6][INV-06] throughput invariants', () => {
     expect(
       checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
     ).not.toContain('INV-06');
+  });
+});
+
+describe('[VER-6][INV-03] storage-provider capacity', () => {
+  const capacityWorld = (stored: number) => {
+    const working = world(resourceRegistry())
+      .store(
+        'inventory',
+        ids.entityId(1),
+        inventory([{ resource, quantity: stored }], { total: 1000, perResource: null }),
+      )
+      .build();
+    const provider: StorageProvider = {
+      kind: 'storage_provider',
+      inventory: ids.entityId(1),
+      location: null,
+      capacityTotal: 500,
+      capacityPerResource: 0,
+      throughput: 0,
+    };
+    working.stores.get<StorageProvider>('modifierSet').set(ids.entityId(2), provider);
+    const before = cloneWorld(working);
+    const output = runPhases(working, resourceRegistry(), [], input);
+    return { before, output };
+  };
+
+  it('[INV-03] stored quantity within the storage bonus passes', () => {
+    const { before, output } = capacityWorld(1500);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).not.toContain('INV-03');
+  });
+
+  it('[INV-03] stored quantity above the effective capacity is reported', () => {
+    const { before, output } = capacityWorld(1501);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-03');
   });
 });

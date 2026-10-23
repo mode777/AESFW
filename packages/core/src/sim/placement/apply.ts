@@ -26,6 +26,7 @@ import {
 } from '../construction/plan.js';
 import { commitReservations } from '../construction/reserve.js';
 import { requestCancellation, requestDeconstruction } from '../construction/seams.js';
+import { applyStorageProvider } from '../internal-logistics/storage.js';
 import type { ConstructionPlan, ConstructionProgress } from '../construction/types.js';
 import {
   constructionPlanOf as planOf,
@@ -91,6 +92,7 @@ export function applyPlaceEntityPlan(
   if (owner !== null) {
     world.stores.get<{ owner: number }>('owner').set(entity, { owner });
   }
+  applyStorageProvider(world, registry, command.definition, entity, command.location);
   world.stores.get('placement').set(entity, {
     capacityCost: spec.capacityCost,
     footprint: spec.footprint,

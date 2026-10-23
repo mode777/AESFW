@@ -177,6 +177,36 @@
             }
           }
         },
+        "storage_provider": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["inventory"],
+          "properties": {
+            "inventory": {
+              "minLength": 1,
+              "pattern": "^(?:location\\.)?[a-z0-9_]+$",
+              "type": "string"
+            },
+            "capacity": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "total": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "per_resource": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            },
+            "throughput": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
         "construction": {
           "additionalProperties": false,
           "type": "object",
