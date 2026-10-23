@@ -205,13 +205,13 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 
 | # | Change ID | Capability | Scope | Sources | Depends on | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 4.1 | `add-balance-resources-and-income` | sim/economy | owner-scoped resources, `allow_negative`, population income with satisfaction curve (phase 26) | GDD-7.5, GDD-11.3, GDD-20.2, CONT-6.3 | 1.11 | M |
-| 4.2 | `add-maintenance` | sim/economy | charge policies, intervals, shortage policies including delegation | GDD-4.8, GDD-20.1 | 4.1 | M |
-| 4.3 | `add-owner-deficit-policy` | sim/economy | phase 27 pause/resume ordering, `paused_by_deficit`, `ResumeDeficitPausedEntities`; INV-11, INV-23 | GDD-3.7, GDD-20.3, CONT-6.22 | 4.2 | M |
-| 4.4 | `add-owner-economy-read-model` | app/projections | revenue and expenses by source, idle-but-paying, paused entities | PIC-10.6 | 4.3, 2.4 | S |
-| 4.5 | `add-planning-metrics-read-model` | app/projections | supported population, chain metrics, integer ratios; SCN-18 (framework fixture) | GDD-3.8, GDD-10.6, PIC-10.5, TDS-18.5 | 2.4, 1.13 | M |
-| 4.6 | `add-golden-loss-spiral` | testkit/scenarios | SCN-04 | VER-9.3 | 4.3 | S |
-| 4.7 | `add-client-economy-and-planning` | reference/client | balance in top bar; economy and planning views; R1 credits and maintenance content | REF-12.4 | 4.4, 4.5, 3.8 | M |
+| 4.1 | `add-balance-resources-and-income` | sim/economy | owner-scoped resources, `allow_negative`, population income with satisfaction curve (phase 26) ✓ archived 2026-10-22 | GDD-7.5, GDD-11.3, GDD-20.2, CONT-6.3 | 1.11 | M |
+| 4.2 | `add-maintenance` | sim/economy | charge policies, intervals, shortage policies including delegation ✓ archived 2026-10-22 | GDD-4.8, GDD-20.1 | 4.1 | M |
+| 4.3 | `add-owner-deficit-policy` | sim/economy | phase 27 pause/resume ordering, `paused_by_deficit`, `ResumeDeficitPausedEntities`; INV-11, INV-23 ✓ archived 2026-10-22 | GDD-3.7, GDD-20.3, CONT-6.22 | 4.2 | M |
+| 4.4 | `add-owner-economy-read-model` | app/projections | revenue and expenses by source, idle-but-paying, paused entities ✓ archived 2026-10-22 | PIC-10.6 | 4.3, 2.4 | S |
+| 4.5 | `add-planning-metrics-read-model` | app/projections | supported population, chain metrics, integer ratios; SCN-18 (framework fixture) ✓ archived 2026-10-22 | GDD-3.8, GDD-10.6, PIC-10.5, TDS-18.5 | 2.4, 1.13 | M |
+| 4.6 | `add-golden-loss-spiral` | testkit/scenarios | SCN-04 ✓ archived 2026-10-22 | VER-9.3 | 4.3 | S |
+| 4.7 | `add-client-economy-and-planning` | reference/client | balance in top bar; economy and planning views; R1 credits and maintenance content ✓ archived 2026-10-22 | REF-12.4 | 4.4, 4.5, 3.8 | M |
 
 **Exit criteria:** SCN-04 and SCN-18 (framework) pass. **Demo:** a player sees why a chain loses money and how many inhabitants it supports.
 
@@ -526,3 +526,33 @@ Rows 3.1–3.8 are archived. Exit criteria and their verification:
 **Risks.** R-09 (spatial and placement complexity) retired: the grid policy, construction lifecycle, placement predicates and commands, connectivity, slot/area sources, the per-actor spatial projection, and the client placement mode all work end to end. R-06 (browser performance) still has no M3-specific measurement; the 40×40 grid and ghost rendering budgets (07 §14.6) remain to be checked on the build/verification box.
 
 **Next.** M4 (continuous economy and planning metrics) is unblocked: 4.1 depends on 1.11 (archived). M6 (world map and transport) remains gated on its own rows.
+
+### M4 — Continuous Economy and Planning Metrics (completed 2026-10-22)
+
+Rows 4.1–4.7 are archived. Exit criteria and their verification:
+
+| Exit criterion | Verification |
+| --- | --- |
+| SCN-04 (deficit loss spiral and recovery) passes | `fixtures/scenarios/loss_spiral` golden and `packages/host-node/src/loss-spiral.test.ts`: 600 ticks with no invariant findings, and both `DeficitPaused` and `DeficitResumed` events observed |
+| SCN-18 (framework) passes | `packages/app/src/readmodels/planning.test.ts`: the hand calculation (2 extractors + 2 refiners → supported population `1`, coverage `1000` permille) |
+
+**Scope and interpretation notes.**
+
+- 4.1 fixed the v1 income rules: phase 26 applies every output (first recomputed-storage output as the capability provider, normal-storage outputs as owner income scaled by the satisfaction curve), and curve evaluation moved into `fx` so income depends only on `(world, registry)`.
+- 4.2 added the `owner` attribution component at instantiation and placement; that component changed world encodings, so the `demo-basic-loop` golden was regenerated with an explained reason (change design, 06 §9.4). The `accumulate_debt` shortage policy accrues arrears on the maintenance component (v1 interpretation); `trigger_transition` stays a validation diagnostic until 7.3.
+- 4.3 defines the deficit net rate per tick (income − maintenance normalized per tick) and records the semantics in its design. `Registry.handlesOf` was added as an optional accessor so phase 27 can enumerate content-defined policies without importing `@aesfw/content`.
+- 4.4 populates `OwnerBalanceDto` with per-tick rates and adds `owner_updates` to the projection delta; without the delta field balances would freeze after the first snapshot. By-source keys are `tier.<id>` and `entity.<id>`; multi-currency aggregation is lossy (v1 single balance resource).
+- 4.5 computes planning metrics as exact rationals with floored display; chains are one-hop (producers outputting or consuming the resource), to be refined with reference content in M11.
+- 4.7 ships R1 credits, income, and maintenance. **The R1 deficit policy is deferred to M9**: R1 has no exchange starting capital yet (GDD-3.11), and an early deficit would pause producers before the growth loop can fund recovery. The spiral itself is demonstrated by the framework fixture (4.6). R1 maintenance quantity is tuned (`6000` per `60` ticks) rather than the Appendix-B conversion (`120000`), which targets R4.
+
+**Known gap for M11.** The scenario format parses `commands` and `expect`, but the runner applies neither. SCN-04 is self-playing by design; M11a's scripted strategies (`add-balance-runner-strategies`) must implement scenario command scheduling (or own their own strategy runner) before SCN-14's scripted overexpansion can run.
+
+**Benchmarks.** No M4 change touches a hot path; `bench.small` is unchanged and no budget regression was recorded. The planning read model is a pure on-demand computation; the client queries it only while the planning drawer is visible.
+
+**Playtest note (automated first look).** The economy drawer answers "why does this chain lose money" with balance, net rate, revenue/expenses by source, idle-but-paying entities, and the deficit pause order with a resume control; the planning drawer answers "how many inhabitants does it support" with per-tier supported population and coverage plus chain stage ratios. The top bar carries the credits balance. Inputs for reference content and client priorities: (a) the early R1 sandbox runs a negative net rate, which is legible but needs the M5/M9 economy to become recoverable; (b) by-source rows should eventually show presentation codes rather than IDs; (c) the sparkline is a client-local heuristic and should move to a session-scoped history if M12 adds one.
+
+**Spec reconciliation.** No normative amendment to 01–04 was required. Clarifications recorded in the change designs: per-tick net-rate semantics (4.3), per-tick `*_per_interval` rates and by-source keys (4.4), one-hop chain closure and exact-rational display (4.5), and the R1 deficit deferral (4.7). The client continues to import only `@aesfw/protocol` and `@aesfw/host-web/client`.
+
+**Risks.** R-08's planning currency is retired: supported population is computable for every consumed resource and displayed in the planning view (SCN-18 framework). R-06 has no new browser measurement; the economy/planning views add no per-tick client work beyond selector updates on published projections. R-14 (late specification gaps) added the M11 scenario-command note above.
+
+**Next.** M5 (internal-logistics throughput) is unblocked: 5.1 depends on 1.13 and 3.4 (both archived). M6 remains gated on its own rows (6.1).
