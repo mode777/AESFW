@@ -251,6 +251,119 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
         );
       } else if (collection === 'deficit_policies') {
         check(id, definition['resource'], 'resource', `/deficit_policies/${id}/resource`);
+      } else if (collection === 'connections') {
+        const traversal = asRecord(definition['traversal']);
+        asArray(traversal?.['costs']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/connections/${id}/traversal/costs/${index}/resource`,
+          ),
+        );
+      } else if (collection === 'worlds') {
+        const locationIds = new Set<string>();
+        asArray(definition['locations']).forEach((entry, index) => {
+          const location = asRecord(entry);
+          const locationId = asString(location?.['id']);
+          if (locationId !== null) {
+            if (locationIds.has(locationId)) {
+              diagnostics.push(
+                diag('duplicate_world_location', {
+                  definition: id,
+                  path: `/worlds/${id}/locations/${index}/id`,
+                  args: { location: locationId },
+                }),
+              );
+            }
+            locationIds.add(locationId);
+          }
+          check(
+            id,
+            location?.['template'],
+            'location',
+            `/worlds/${id}/locations/${index}/template`,
+          );
+        });
+        const connectionIds = new Set<string>();
+        asArray(definition['connections']).forEach((entry, index) => {
+          const connection = asRecord(entry);
+          const connectionId = asString(connection?.['id']);
+          if (connectionId !== null) {
+            if (connectionIds.has(connectionId)) {
+              diagnostics.push(
+                diag('duplicate_world_connection', {
+                  definition: id,
+                  path: `/worlds/${id}/connections/${index}/id`,
+                  args: { connection: connectionId },
+                }),
+              );
+            }
+            connectionIds.add(connectionId);
+          }
+          check(
+            id,
+            connection?.['definition'],
+            'connection',
+            `/worlds/${id}/connections/${index}/definition`,
+          );
+          for (const endpoint of ['origin', 'destination'] as const) {
+            const value = asString(connection?.[endpoint]);
+            if (value !== null && !locationIds.has(value)) {
+              diagnostics.push(
+                diag('unresolved_reference', {
+                  definition: id,
+                  path: `/worlds/${id}/connections/${index}/${endpoint}`,
+                  args: { reference: value, expected: 'world_location' },
+                }),
+              );
+            }
+          }
+        });
+        asArray(definition['owners']).forEach((entry, ownerIndex) => {
+          const owner = asRecord(entry);
+          asArray(owner?.['initial_resources']).forEach((resource, index) =>
+            check(
+              id,
+              asRecord(resource)?.['resource'],
+              'resource',
+              `/worlds/${id}/owners/${ownerIndex}/initial_resources/${index}/resource`,
+            ),
+          );
+          for (const field of ['established_locations', 'known_locations'] as const) {
+            asArray(owner?.[field]).forEach((location, index) => {
+              const value = asString(location);
+              if (value !== null && !locationIds.has(value)) {
+                diagnostics.push(
+                  diag('unresolved_reference', {
+                    definition: id,
+                    path: `/worlds/${id}/owners/${ownerIndex}/${field}/${index}`,
+                    args: { reference: value, expected: 'world_location' },
+                  }),
+                );
+              }
+            });
+          }
+          asArray(owner?.['initial_entities']).forEach((entity, index) => {
+            const record = asRecord(entity);
+            check(
+              id,
+              record?.['definition'],
+              'entity',
+              `/worlds/${id}/owners/${ownerIndex}/initial_entities/${index}/definition`,
+            );
+            const location = asString(record?.['location']);
+            if (location !== null && !locationIds.has(location)) {
+              diagnostics.push(
+                diag('unresolved_reference', {
+                  definition: id,
+                  path: `/worlds/${id}/owners/${ownerIndex}/initial_entities/${index}/location`,
+                  args: { reference: location, expected: 'world_location' },
+                }),
+              );
+            }
+          });
+        });
       } else if (collection === 'need_categories') {
         asArray(definition['members']).forEach((entry, index) =>
           check(

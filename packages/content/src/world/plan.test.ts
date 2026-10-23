@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildRegistry } from '../registry/build.js';
 import type { RawDefinition } from '../schemas/validate.js';
-import { defaultWorldPlan } from './plan.js';
+import { defaultWorldPlan, worldPlan } from './plan.js';
 
 const template = (id: string, overrides: Record<string, unknown> = {}): RawDefinition => ({
   id,
@@ -150,5 +150,99 @@ describe('[CONT-6.4][CONT-6.6] default world plan', () => {
       registryFor([gridTemplate({ spatial_parameters: { buildable_ratio: { min: 1, max: 2 } } })]),
     );
     expect(codes(result.diagnostics)).toContain('unsupported_spatial_parameter');
+  });
+});
+
+describe('[CONT-6.6] world definition plan', () => {
+  const templateA = template('test.location.a');
+  const templateB = template('test.location.b', {
+    properties: { 'test.property.p': 500 },
+  });
+  const connection = {
+    id: 'test.connection.standard',
+    direction: 'bidirectional',
+    traversal: { base_duration_ticks: 100 },
+    allowed_transport_tags: ['test.transport.standard'],
+  };
+  const world = {
+    id: 'test.world.prototype',
+    locations: [
+      { id: 'test.loc.b', template: 'test.location.b', properties: { 'test.property.p': 750 } },
+      { id: 'test.loc.a', template: 'test.location.a' },
+    ],
+    connections: [
+      {
+        id: 'test.conn.a_b',
+        definition: 'test.connection.standard',
+        origin: 'test.loc.a',
+        destination: 'test.loc.b',
+        base_duration_ticks: 300,
+      },
+    ],
+    owners: [
+      {
+        id: 'owner.a',
+        initial_resources: [{ resource: 'test.resource.credits', quantity: 1000 }],
+        established_locations: ['test.loc.a'],
+        known_locations: ['test.loc.b'],
+      },
+      { id: 'owner.b', established_locations: ['test.loc.b'] },
+    ],
+  };
+  const registry = () =>
+    buildRegistry({
+      location_templates: [templateA, templateB],
+      resources: [
+        {
+          id: 'test.resource.credits',
+          quantity: { precision: 'fixed', scale: 1000 },
+          storage: { policy: 'normal', scope: 'owner' },
+          transportable: false,
+        },
+      ],
+      connections: [connection],
+      worlds: [world],
+    }).registry;
+
+  it('[CONT-6.6] a world plan lists locations in ascending id order', () => {
+    const result = worldPlan(registry(), null);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.plan.locations).toHaveLength(2);
+    expect(result.plan.locations[0]?.owner).toBe(ids.ownerHandle(0));
+    expect(result.plan.locations[1]?.owner).toBe(ids.ownerHandle(1));
+    expect(result.plan.locations[0]?.properties).toEqual([]);
+    expect(result.plan.locations[1]?.properties).toEqual([
+      { property: ids.stringId('test.property.p'), value: 750 },
+    ]);
+  });
+
+  it('[CONT-6.6] owners, resources, knowledge, and connection instances are planned', () => {
+    const result = worldPlan(registry(), 'test.world.prototype');
+    expect(result.plan.owners).toHaveLength(2);
+    expect(result.plan.owners?.[0]?.accounts).toEqual([
+      { resource: ids.definitionHandle(0), amount: 1000 },
+    ]);
+    expect(result.plan.owners?.[0]?.knowledge).toEqual([
+      { locationIndex: 0, level: 'established' },
+      { locationIndex: 1, level: 'discovered' },
+    ]);
+    expect(result.plan.connections).toEqual([
+      {
+        id: ids.stringId('test.conn.a_b'),
+        definition: ids.definitionHandle(0),
+        originIndex: 0,
+        destinationIndex: 1,
+        direction: 'bidirectional',
+        baseDurationTicks: 300,
+        enabled: true,
+        allowedTransportTags: [ids.stringId('test.transport.standard')],
+      },
+    ]);
+  });
+
+  it('[CONT-6.6] an unknown world id is reported', () => {
+    const result = worldPlan(registry(), 'test.world.missing');
+    expect(codes(result.diagnostics)).toContain('unknown_world');
+    expect(result.plan.locations).toEqual([]);
   });
 });

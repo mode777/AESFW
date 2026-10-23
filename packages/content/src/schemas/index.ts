@@ -20,6 +20,8 @@ export { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 export { NeedCategorySchema, NeedSchema } from './need.js';
 export { ConditionSchema } from './condition.js';
 export { CurveSchema } from './curve.js';
+export { ConnectionDefinitionSchema } from './connection.js';
+export { WorldDefinitionSchema } from './world.js';
 export { isValidDefinitionId } from './ids.js';
 export {
   COLLECTION_ORDER,

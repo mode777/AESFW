@@ -228,6 +228,8 @@ describe('[TDS-7] definition collection catalogue', () => {
       'conditions',
       'curves',
       'deficit_policies',
+      'connections',
+      'worlds',
     ]);
     expect(DEFINITION_COLLECTIONS.resources).toBe('resource');
     expect(DEFINITION_COLLECTIONS.location_templates).toBe('location');
@@ -238,5 +240,7 @@ describe('[TDS-7] definition collection catalogue', () => {
     expect(DEFINITION_COLLECTIONS.need_categories).toBe('needCategory');
     expect(DEFINITION_COLLECTIONS.growth_policies).toBe('growthPolicy');
     expect(DEFINITION_COLLECTIONS.deficit_policies).toBe('deficitPolicy');
+    expect(DEFINITION_COLLECTIONS.connections).toBe('connection');
+    expect(DEFINITION_COLLECTIONS.worlds).toBe('world');
   });
 });

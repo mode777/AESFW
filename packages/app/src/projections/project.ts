@@ -197,6 +197,9 @@ const locationDto = (
         ),
       },
       ...(throughput === null ? {} : { throughput }),
+      ...(location.connections === undefined || location.connections.length === 0
+        ? {}
+        : { connections: location.connections.map((connection) => connection.id) }),
       ...(location.grid === undefined
         ? {}
         : {

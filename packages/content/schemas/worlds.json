@@ -1,0 +1,139 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "locations"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "locations": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["id", "template"],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "template": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "region": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "properties": {
+            "type": "object",
+            "patternProperties": {
+              "^(.*)$": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["id", "definition", "origin", "destination"],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "definition": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "origin": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "destination": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "base_duration_ticks": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "owners": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "initial_resources": {
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["resource", "quantity"],
+              "properties": {
+                "resource": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "quantity": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "established_locations": {
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "known_locations": {
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "initial_entities": {
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["definition", "location"],
+              "properties": {
+                "definition": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "location": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

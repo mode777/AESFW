@@ -23,7 +23,7 @@ import {
   submitCommand,
 } from '@aesfw/app';
 import type { SaveDocument, SessionState } from '@aesfw/app';
-import { createMemorySource, defaultWorldPlan, loadContent } from '@aesfw/content';
+import { createMemorySource, loadContent, worldPlan } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { InvariantViolation, instantiateWorld } from '@aesfw/core';
 import type { DefinitionType, DomainEvent, OwnerHandle } from '@aesfw/core';
@@ -330,7 +330,7 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
       }
       session = created.value;
       const registry = content.registry as ContentRegistry;
-      const plan = defaultWorldPlan(registry);
+      const plan = worldPlan(registry, null);
       instantiateWorld(session.world, plan.plan);
       instantiateContentEntities(session.world, registry);
       options.prepare?.(session);

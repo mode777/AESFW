@@ -111,6 +111,13 @@ const mapCommand = (
     };
     return ok({ type: 'PlaceEntityPlan', definition, location, transform: logicalTransform });
   }
+  if (type === 'ActivateLocation' || type === 'DeactivateLocation') {
+    const location = payload['location_id'];
+    if (typeof location !== 'number' || !Number.isSafeInteger(location) || location < 0) {
+      return { ok: false, error: { code: 'unknown_location', arguments: { location: -1 } } };
+    }
+    return ok({ type, location: ids.entityId(location) });
+  }
   if (type === 'ResumeDeficitPausedEntities') {
     const raw = payload['entities'];
     if (raw === 'all') {
@@ -197,6 +204,9 @@ const mapCommand = (
 
 const referencedEntities = (command: Command): readonly EntityId[] => {
   if (command.type === 'PlaceEntityPlan') return [command.location];
+  if (command.type === 'ActivateLocation' || command.type === 'DeactivateLocation') {
+    return [command.location];
+  }
   if (command.type === 'ResumeDeficitPausedEntities') {
     return command.entities === 'all' ? [] : command.entities;
   }

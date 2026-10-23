@@ -198,6 +198,30 @@ const applyOne = (ctx: TickContext, scheduled: ScheduledCommand): CommandOutcome
       store.set(command.entity, { ...consumer, priority: command.priority });
       return emitApplied(command.entity);
     }
+    case 'ActivateLocation':
+    case 'DeactivateLocation': {
+      const locationStore = world.stores.get<{ active: boolean; owner: number | null }>('location');
+      const location = locationStore.get(command.location);
+      if (location === undefined) {
+        return reject(
+          [{ code: 'unknown_location', arguments: { location: command.location } }],
+          [command.location],
+          command.location,
+        );
+      }
+      if (location.owner !== null && location.owner !== scheduled.actor) {
+        return reject(
+          [{ code: 'not_owner', arguments: { actor: scheduled.actor } }],
+          [command.location],
+          command.location,
+        );
+      }
+      locationStore.set(command.location, {
+        ...location,
+        active: command.type === 'ActivateLocation',
+      });
+      return emitApplied(command.location, command.location);
+    }
     case 'ResumeDeficitPausedEntities': {
       const targets =
         command.entities === 'all' ? null : ([...command.entities] as readonly EntityId[]);

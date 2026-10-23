@@ -7,12 +7,15 @@
  */
 import { GRID_POLICY_ID, det, ids } from '@aesfw/core';
 import type {
+  ConnectionPlan,
+  DefinitionHandle,
   Diagnostic,
   InternalLogisticsPlan,
   InventoryPlan,
   LocationGridPlan,
   LocationPlan,
   LocationProperty,
+  OwnerPlan,
   SourceSlot,
   WorldPlan,
 } from '@aesfw/core';
@@ -26,6 +29,12 @@ export interface DefaultWorldPlanResult {
   readonly plan: WorldPlan;
   readonly diagnostics: readonly Diagnostic[];
 }
+
+const asArray = (value: JsonValue | undefined): readonly JsonValue[] =>
+  Array.isArray(value) ? (value as readonly JsonValue[]) : [];
+
+const asString = (value: JsonValue | undefined): string | null =>
+  typeof value === 'string' ? value : null;
 
 const asRecord = (value: JsonValue | undefined): Record<string, JsonValue> | null =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -120,6 +129,80 @@ const mapGrid = (params: Record<string, JsonValue> | null): LocationGridPlan | n
   return { width, height, blocked: null, buildableRatio: { min, max } };
 };
 
+const templatePlan = (
+  registry: ContentRegistry,
+  definition: { readonly handle: number; readonly id: string; readonly data: unknown },
+  overrides: Record<string, JsonValue> | null,
+  diagnostics: Diagnostic[],
+): LocationPlan | null => {
+  const data = asRecord(definition.data as JsonValue);
+  if (data === null) return null;
+  const merged: Record<string, JsonValue> = { ...data };
+  if (overrides !== null) {
+    for (const key of Object.keys(overrides)) {
+      if (key === 'properties') {
+        merged['properties'] = {
+          ...(asRecord(data['properties']) ?? {}),
+          ...(asRecord(overrides['properties']) ?? {}),
+        };
+      } else {
+        merged[key] = overrides[key] ?? null;
+      }
+    }
+  }
+  const activation = asRecord(merged['activation']);
+  const active = activation?.['initial'] !== false;
+  const spatialPolicy =
+    typeof merged['spatial_policy'] === 'string' ? merged['spatial_policy'] : '';
+  const params = asRecord(merged['spatial_parameters']);
+  const internalLogistics = mapInternalLogistics(registry, merged['internal_logistics']);
+  if (spatialPolicy === GRID_POLICY_ID) {
+    const grid = mapGrid(params);
+    if (grid === null) {
+      diagnostics.push(
+        diag('unsupported_spatial_parameter', {
+          definition: definition.id,
+          args: { policy: spatialPolicy, parameter: 'width_height' },
+        }),
+      );
+      return null;
+    }
+    return {
+      template: definition.handle as LocationPlan['template'],
+      spatialPolicy,
+      capacity: grid.width * grid.height,
+      properties: mapProperties(merged['properties']),
+      sourceSlots: mapSourceSlots(merged['source_slots']),
+      region: null,
+      active,
+      inventories: mapInventories(merged['inventories']),
+      grid,
+      ...(internalLogistics === undefined ? {} : { internalLogistics }),
+    };
+  }
+  const totalCapacity = params?.['total_capacity'];
+  if (typeof totalCapacity !== 'number' || !Number.isInteger(totalCapacity) || totalCapacity < 0) {
+    diagnostics.push(
+      diag('unsupported_spatial_parameter', {
+        definition: definition.id,
+        args: { policy: spatialPolicy, parameter: 'total_capacity' },
+      }),
+    );
+    return null;
+  }
+  return {
+    template: definition.handle as LocationPlan['template'],
+    spatialPolicy,
+    capacity: totalCapacity,
+    properties: mapProperties(merged['properties']),
+    sourceSlots: mapSourceSlots(merged['source_slots']),
+    region: null,
+    active,
+    inventories: mapInventories(merged['inventories']),
+    ...(internalLogistics === undefined ? {} : { internalLogistics }),
+  };
+};
+
 /**
  * Derives the default world plan from compiled location templates (CONT-6.6).
  *
@@ -137,59 +220,171 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
     if (data === null) continue;
     const activation = asRecord(data['activation']);
     if (activation?.['initial'] !== true) continue;
-    const spatialPolicy = typeof data['spatial_policy'] === 'string' ? data['spatial_policy'] : '';
-    const params = asRecord(data['spatial_parameters']);
-    const internalLogistics = mapInternalLogistics(registry, data['internal_logistics']);
-    if (spatialPolicy === GRID_POLICY_ID) {
-      const grid = mapGrid(params);
-      if (grid === null) {
-        diagnostics.push(
-          diag('unsupported_spatial_parameter', {
-            definition: definition.id,
-            args: { policy: spatialPolicy, parameter: 'width_height' },
-          }),
-        );
-        continue;
-      }
-      locations.push({
-        template: definition.handle,
-        spatialPolicy,
-        capacity: grid.width * grid.height,
-        properties: mapProperties(data['properties']),
-        sourceSlots: mapSourceSlots(data['source_slots']),
-        region: null,
-        active: true,
-        inventories: mapInventories(data['inventories']),
-        grid,
-        ...(internalLogistics === undefined ? {} : { internalLogistics }),
-      });
-      continue;
+    const plan = templatePlan(registry, definition, null, diagnostics);
+    if (plan !== null) locations.push(plan);
+  }
+  return { plan: { owner: ids.ownerHandle(0), locations }, diagnostics };
+}
+
+/**
+ * Derives a world plan from a world definition (CONT-6.6). With no id, the
+ * first world definition in ascending ID order is used; with no world
+ * definition at all, the default plan is returned.
+ *
+ * Source: CONT-6.6
+ */
+export function worldPlan(
+  registry: ContentRegistry,
+  worldId: string | null = null,
+): DefaultWorldPlanResult {
+  const worlds = registry.definitionsOf('world');
+  if (worlds.length === 0) return defaultWorldPlan(registry);
+  let world = worlds[0];
+  if (worldId !== null) {
+    world = worlds.find((entry) => entry.id === worldId);
+    if (world === undefined) {
+      return {
+        plan: { owner: ids.ownerHandle(0), locations: [] },
+        diagnostics: [diag('unknown_world', { definition: worldId })],
+      };
     }
-    const totalCapacity = params?.['total_capacity'];
-    if (
-      typeof totalCapacity !== 'number' ||
-      !Number.isInteger(totalCapacity) ||
-      totalCapacity < 0
-    ) {
+  }
+  if (world === undefined) return defaultWorldPlan(registry);
+  const data = asRecord(world.data);
+  if (data === null) return defaultWorldPlan(registry);
+  const diagnostics: Diagnostic[] = [];
+
+  const ownerEntries = asArray(data['owners'])
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, JsonValue> => entry !== null)
+    .sort((a, b) => det.compareStrings(asString(a['id']) ?? '', asString(b['id']) ?? ''));
+  const locationEntries = asArray(data['locations'])
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, JsonValue> => entry !== null)
+    .sort((a, b) => det.compareStrings(asString(a['id']) ?? '', asString(b['id']) ?? ''));
+  const locationIndexById = new Map<string, number>();
+  locationEntries.forEach((entry, index) =>
+    locationIndexById.set(asString(entry['id']) ?? '', index),
+  );
+  const locationOwnerByIndex = new Map<number, number>();
+  ownerEntries.forEach((entry, index) => {
+    for (const locationId of asArray(entry['established_locations'])) {
+      const locationIndex = locationIndexById.get(asString(locationId) ?? '');
+      if (locationIndex !== undefined && !locationOwnerByIndex.has(locationIndex)) {
+        locationOwnerByIndex.set(locationIndex, index);
+      }
+    }
+  });
+
+  const locations: LocationPlan[] = [];
+  for (let locationIndex = 0; locationIndex < locationEntries.length; locationIndex += 1) {
+    const entry = locationEntries[locationIndex];
+    if (entry === undefined) continue;
+    const templateId = typeof entry['template'] === 'string' ? entry['template'] : '';
+    const handle = registry.handleOf('location', ids.stringId(templateId));
+    if (handle === null) {
       diagnostics.push(
-        diag('unsupported_spatial_parameter', {
-          definition: definition.id,
-          args: { policy: spatialPolicy, parameter: 'total_capacity' },
+        diag('unknown_world_location', {
+          definition: world.id,
+          args: { location: asString(entry['id']) ?? '', template: templateId },
         }),
       );
       continue;
     }
-    locations.push({
-      template: definition.handle,
-      spatialPolicy,
-      capacity: totalCapacity,
-      properties: mapProperties(data['properties']),
-      sourceSlots: mapSourceSlots(data['source_slots']),
-      region: null,
-      active: true,
-      inventories: mapInventories(data['inventories']),
-      ...(internalLogistics === undefined ? {} : { internalLogistics }),
+    const definition = registry.definitionOf('location', handle);
+    if (definition === null) continue;
+    const plan = templatePlan(registry, definition, entry, diagnostics);
+    if (plan === null) continue;
+    const owner = ids.ownerHandle(locationOwnerByIndex.get(locationIndex) ?? 0);
+    locations.push({ ...plan, owner });
+  }
+
+  const connections: ConnectionPlan[] = [];
+  const connectionEntries = asArray(data['connections'])
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, JsonValue> => entry !== null)
+    .sort((a, b) => det.compareStrings(asString(a['id']) ?? '', asString(b['id']) ?? ''));
+  for (const entry of connectionEntries) {
+    const definitionId = typeof entry['definition'] === 'string' ? entry['definition'] : '';
+    const definitionHandle = registry.handleOf('connection', ids.stringId(definitionId));
+    const definitionData =
+      definitionHandle === null
+        ? null
+        : asRecord(registry.definitionDataOf?.('connection', definitionHandle));
+    if (definitionHandle === null || definitionData === null) {
+      diagnostics.push(
+        diag('unknown_world_connection', {
+          definition: world.id,
+          args: { connection: asString(entry['id']) ?? '', definition: definitionId },
+        }),
+      );
+      continue;
+    }
+    const originIndex = locationIndexById.get(asString(entry['origin']) ?? '');
+    const destinationIndex = locationIndexById.get(asString(entry['destination']) ?? '');
+    if (originIndex === undefined || destinationIndex === undefined) continue;
+    const traversal = asRecord(definitionData['traversal']);
+    const instanceDuration = entry['base_duration_ticks'];
+    const baseDuration =
+      typeof instanceDuration === 'number' && Number.isInteger(instanceDuration)
+        ? instanceDuration
+        : typeof traversal?.['base_duration_ticks'] === 'number'
+          ? traversal['base_duration_ticks']
+          : 1;
+    const tags = asArray(definitionData['allowed_transport_tags']).filter(
+      (tag): tag is string => typeof tag === 'string',
+    );
+    connections.push({
+      id: ids.stringId(asString(entry['id']) ?? ''),
+      definition: definitionHandle,
+      originIndex,
+      destinationIndex,
+      direction: definitionData['direction'] === 'one_way' ? 'one_way' : 'bidirectional',
+      baseDurationTicks: baseDuration,
+      enabled: entry['enabled'] !== false,
+      allowedTransportTags: tags.map((tag) => ids.stringId(tag)),
     });
   }
-  return { plan: { owner: ids.ownerHandle(0), locations }, diagnostics };
+
+  const owners: OwnerPlan[] = ownerEntries.map((entry, index) => {
+    const accounts = asArray(entry['initial_resources'])
+      .map((resource) => {
+        const record = asRecord(resource);
+        const resourceId = typeof record?.['resource'] === 'string' ? record['resource'] : '';
+        const handle = registry.handleOf('resource', ids.stringId(resourceId));
+        const quantity = record?.['quantity'];
+        if (handle === null || typeof quantity !== 'number' || !Number.isInteger(quantity)) {
+          return null;
+        }
+        return { resource: handle, amount: quantity };
+      })
+      .filter(
+        (account): account is { resource: DefinitionHandle; amount: number } => account !== null,
+      )
+      .sort((a, b) => a.resource - b.resource);
+    const knowledge: { locationIndex: number; level: 'discovered' | 'established' }[] = [];
+    for (const locationId of asArray(entry['established_locations'])) {
+      const locationIndex = locationIndexById.get(asString(locationId) ?? '');
+      if (locationIndex !== undefined) knowledge.push({ locationIndex, level: 'established' });
+    }
+    for (const locationId of asArray(entry['known_locations'])) {
+      const locationIndex = locationIndexById.get(asString(locationId) ?? '');
+      if (locationIndex !== undefined) knowledge.push({ locationIndex, level: 'discovered' });
+    }
+    return {
+      handle: ids.ownerHandle(index),
+      accounts,
+      knowledge,
+    };
+  });
+
+  return {
+    plan: {
+      owner: ids.ownerHandle(0),
+      ...(owners.length === 0 ? {} : { owners }),
+      locations,
+      ...(connections.length === 0 ? {} : { connections }),
+    },
+    diagnostics,
+  };
 }

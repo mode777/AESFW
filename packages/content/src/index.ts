@@ -37,7 +37,7 @@ export * from './schemas/index.js';
 export * from './composition/index.js';
 export * from './registry/index.js';
 export * from './conditions/index.js';
-export { defaultWorldPlan } from './world/plan.js';
+export { defaultWorldPlan, worldPlan } from './world/plan.js';
 export type { DefaultWorldPlanResult } from './world/plan.js';
 
 export { compareVersions, isValidRange, parseVersion, satisfies } from './semver/semver.js';

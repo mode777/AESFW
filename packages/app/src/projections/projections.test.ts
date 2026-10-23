@@ -481,3 +481,36 @@ describe('[PIC-10.6] owner economy read model', () => {
     expect(delta.owner_updates).toBeUndefined();
   });
 });
+
+describe('[PIC-9.1][GDD-6.3] location connections', () => {
+  it('[PIC-9.1] a connected location exposes its outgoing connection ids', () => {
+    const state = session();
+    const store = state.world.stores.get('location');
+    const location = store.get(ids.entityId(1));
+    if (location === null || typeof location !== 'object' || Array.isArray(location)) {
+      throw new Error('location missing');
+    }
+    store.set(ids.entityId(1), {
+      ...location,
+      connections: [
+        {
+          id: ids.stringId('test.conn.a_b'),
+          definition: ids.definitionHandle(7),
+          origin: ids.entityId(1),
+          destination: ids.entityId(2),
+          direction: 'bidirectional',
+          baseDurationTicks: 100,
+          enabled: true,
+          allowedTransportTags: [],
+        },
+      ],
+    });
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.connections).toEqual(['test.conn.a_b']);
+  });
+
+  it('[PIC-9.1] an unconnected location omits connections', () => {
+    const snapshot = project(session(), ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.connections).toBeUndefined();
+  });
+});

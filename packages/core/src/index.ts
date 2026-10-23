@@ -105,7 +105,13 @@ export {
 } from './policies/inventory-access/index.js';
 export type { InventoryAccessPolicy } from './policies/inventory-access/index.js';
 export { locationOf, locationHubOf } from './sim/location.js';
-export type { Location, LocationHub, LocationProperty, SourceSlot } from './sim/location.js';
+export type {
+  Location,
+  LocationConnection,
+  LocationHub,
+  LocationProperty,
+  SourceSlot,
+} from './sim/location.js';
 export {
   addOccupancy,
   buildableCount,
@@ -152,10 +158,14 @@ export type {
 } from './sim/connectivity.js';
 export { instantiateWorld } from './sim/instantiate.js';
 export type {
+  ConnectionPlan,
   InternalLogisticsPlan,
   InventoryPlan,
   LocationGridPlan,
   LocationPlan,
+  OwnerAccountPlan,
+  OwnerKnowledgePlan,
+  OwnerPlan,
   WorldPlan,
 } from './sim/instantiate.js';
 export {

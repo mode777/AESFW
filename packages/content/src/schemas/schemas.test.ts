@@ -1,12 +1,14 @@
 import { Value } from '@sinclair/typebox/value';
 import { describe, expect, it } from 'vitest';
 
+import { ConnectionDefinitionSchema } from './connection.js';
 import { EntityDefinitionSchema } from './entity.js';
 import { LocationTemplateSchema } from './location.js';
 import { NeedCategorySchema, NeedSchema } from './need.js';
 import { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 import { RecipeSchema } from './recipe.js';
 import { ResourceSchema } from './resource.js';
+import { WorldDefinitionSchema } from './world.js';
 
 const valid = (schema: Parameters<typeof Value.Check>[0], value: unknown) =>
   Value.Check(schema, value);
@@ -483,5 +485,60 @@ describe('[CONT-6.14] growth policy schema', () => {
         increase: { quantity: 1, condition: 'test.condition.grow' },
       }),
     ).toBe(false);
+  });
+});
+
+describe('[CONT-6.5] connection definition schema', () => {
+  const connection = {
+    id: 'test.connection.standard',
+    direction: 'bidirectional',
+    traversal: { base_duration_ticks: 100 },
+    allowed_transport_tags: ['test.transport.standard'],
+  };
+
+  it('[CONT-6.5] a bidirectional connection definition validates', () => {
+    expect(valid(ConnectionDefinitionSchema, connection)).toBe(true);
+  });
+
+  it('[CONT-6.5] a connection definition without a traversal duration is rejected', () => {
+    expect(
+      valid(ConnectionDefinitionSchema, {
+        ...connection,
+        traversal: {},
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('[CONT-6.6] world definition schema', () => {
+  const world = {
+    id: 'test.world.prototype',
+    locations: [
+      { id: 'test.loc.a', template: 'test.location.a' },
+      { id: 'test.loc.b', template: 'test.location.a' },
+    ],
+    connections: [
+      {
+        id: 'test.conn.a_b',
+        definition: 'test.connection.standard',
+        origin: 'test.loc.a',
+        destination: 'test.loc.b',
+      },
+    ],
+    owners: [
+      {
+        id: 'owner.a',
+        initial_resources: [{ resource: 'test.resource.a', quantity: 1000 }],
+        established_locations: ['test.loc.a'],
+      },
+    ],
+  };
+
+  it('[CONT-6.6] a world definition validates', () => {
+    expect(valid(WorldDefinitionSchema, world)).toBe(true);
+  });
+
+  it('[CONT-6.6] a world definition with no locations is rejected', () => {
+    expect(valid(WorldDefinitionSchema, { ...world, locations: [] })).toBe(false);
   });
 });

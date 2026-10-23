@@ -22,6 +22,18 @@ export type SourceSlot = {
   readonly count: Int;
 };
 
+/** One runtime connection instance attached to a location (GDD-6.3, CONT-6.6). */
+export type LocationConnection = {
+  readonly id: StringId;
+  readonly definition: DefinitionHandle;
+  readonly origin: EntityId;
+  readonly destination: EntityId;
+  readonly direction: 'one_way' | 'bidirectional';
+  readonly baseDurationTicks: Int;
+  readonly enabled: boolean;
+  readonly allowedTransportTags: readonly StringId[];
+};
+
 /** A location component (GDD-6.1). */
 export type Location = {
   readonly template: DefinitionHandle;
@@ -36,6 +48,8 @@ export type Location = {
   readonly grid?: LocationGrid;
   /** Finite source slots per type, ascending by type (GDD-9.5, CONT-6.4). */
   readonly sourceSlots?: readonly SourceSlot[];
+  /** Outgoing connection instances, ascending by connection id (GDD-6.3). */
+  readonly connections?: readonly LocationConnection[];
 };
 
 /** The inventories of a location, in ascending entity-ID order. */

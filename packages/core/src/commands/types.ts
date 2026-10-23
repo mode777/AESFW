@@ -55,6 +55,14 @@ export type Command =
   | {
       readonly type: 'ResumeDeficitPausedEntities';
       readonly entities: readonly EntityId[] | 'all';
+    }
+  | {
+      readonly type: 'ActivateLocation';
+      readonly location: EntityId;
+    }
+  | {
+      readonly type: 'DeactivateLocation';
+      readonly location: EntityId;
     };
 
 /** The stable command type names (TDS-16.2). */

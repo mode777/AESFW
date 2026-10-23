@@ -1,0 +1,66 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "direction", "traversal"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "direction": {
+      "anyOf": [
+        {
+          "const": "bidirectional",
+          "type": "string"
+        },
+        {
+          "const": "one_way",
+          "type": "string"
+        }
+      ]
+    },
+    "traversal": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["base_duration_ticks"],
+      "properties": {
+        "base_duration_ticks": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "costs": {
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": ["resource", "quantity"],
+            "properties": {
+              "resource": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "quantity": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "allowed_transport_tags": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    }
+  }
+}

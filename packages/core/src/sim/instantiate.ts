@@ -8,12 +8,18 @@
 import type { Int } from '../fx/index.js';
 import { createStream, nextInt } from '../det/index.js';
 import { ownerHandle } from '../ids/index.js';
-import type { DefinitionHandle, EntityId, OwnerHandle } from '../ids/index.js';
+import type { DefinitionHandle, EntityId, OwnerHandle, StringId } from '../ids/index.js';
 import type { Inventory, InventoryAcceptance, InventoryCapacity } from '../tx/inventory.js';
-import type { OwnerState, World } from '../world/types.js';
+import type { KnowledgeLevel, OwnerState, World } from '../world/types.js';
 import type { ThroughputPool } from './internal-logistics/types.js';
 import { allocateEntity } from '../world/create.js';
-import type { Location, LocationHub, LocationProperty, SourceSlot } from './location.js';
+import type {
+  Location,
+  LocationConnection,
+  LocationHub,
+  LocationProperty,
+  SourceSlot,
+} from './location.js';
 import { buildableMask } from './spatial.js';
 import type { LocationGrid } from './spatial.js';
 
@@ -41,6 +47,37 @@ export type InternalLogisticsPlan = {
   readonly baseThroughputCapability: DefinitionHandle | null;
 };
 
+/** A planned owner account entry. */
+export type OwnerAccountPlan = {
+  readonly resource: DefinitionHandle;
+  readonly amount: Int;
+};
+
+/** A planned owner knowledge entry, indexing the world plan's location list. */
+export type OwnerKnowledgePlan = {
+  readonly locationIndex: Int;
+  readonly level: KnowledgeLevel;
+};
+
+/** A planned owner. */
+export type OwnerPlan = {
+  readonly handle: OwnerHandle;
+  readonly accounts: readonly OwnerAccountPlan[];
+  readonly knowledge: readonly OwnerKnowledgePlan[];
+};
+
+/** A planned connection instance, indexing the world plan's location list. */
+export type ConnectionPlan = {
+  readonly id: StringId;
+  readonly definition: DefinitionHandle;
+  readonly originIndex: Int;
+  readonly destinationIndex: Int;
+  readonly direction: 'one_way' | 'bidirectional';
+  readonly baseDurationTicks: Int;
+  readonly enabled: boolean;
+  readonly allowedTransportTags: readonly StringId[];
+};
+
 /** A planned location. */
 export type LocationPlan = {
   readonly template: DefinitionHandle;
@@ -55,12 +92,16 @@ export type LocationPlan = {
   readonly grid?: LocationGridPlan;
   /** Internal-logistics configuration, present only for a limited location. */
   readonly internalLogistics?: InternalLogisticsPlan;
+  /** The location's owner; defaults to the plan's default owner. */
+  readonly owner?: OwnerHandle;
 };
 
-/** A default world plan: one owner and its locations. */
+/** A world plan: a default owner, optional additional owners, locations, and connections. */
 export type WorldPlan = {
   readonly owner: OwnerHandle;
+  readonly owners?: readonly OwnerPlan[];
   readonly locations: readonly LocationPlan[];
+  readonly connections?: readonly ConnectionPlan[];
 };
 
 const emptyOwner = (handle: OwnerHandle): OwnerState => ({
@@ -111,11 +152,24 @@ const resolveGrid = (world: World, entity: EntityId, plan: LocationGridPlan): Lo
  */
 export function instantiateWorld(world: World, plan: WorldPlan): void {
   ensureOwner(world, plan.owner);
+  for (const ownerPlan of plan.owners ?? []) {
+    ensureOwner(world, ownerPlan.handle);
+    const owner = world.owners.owners[ownerPlan.handle];
+    if (owner === undefined) continue;
+    const accounts = [...ownerPlan.accounts]
+      .sort((a, b) => a.resource - b.resource)
+      .map((entry) => ({ resource: entry.resource, amount: entry.amount }));
+    const owners = [...world.owners.owners];
+    owners[ownerPlan.handle] = { ...owner, accounts };
+    world.owners = { owners };
+  }
   const locationStore = world.stores.get<Location>('location');
   const hubStore = world.stores.get<LocationHub>('locationHub');
   const inventoryStore = world.stores.get<Inventory>('inventory');
+  const locationEntities: EntityId[] = [];
   for (const locationPlan of plan.locations) {
     const locationEntity = allocateEntity(world);
+    locationEntities.push(locationEntity);
     const grid =
       locationPlan.grid === undefined
         ? null
@@ -129,7 +183,7 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
       properties: locationPlan.properties,
       region: locationPlan.region,
       active: locationPlan.active,
-      owner: plan.owner,
+      owner: locationPlan.owner ?? plan.owner,
       ...(grid === null ? {} : { grid }),
       ...(locationPlan.sourceSlots === undefined || locationPlan.sourceSlots.length === 0
         ? {}
@@ -139,7 +193,7 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
     for (const inventoryPlan of locationPlan.inventories) {
       const inventoryEntity = allocateEntity(world);
       inventoryStore.set(inventoryEntity, {
-        owner: plan.owner,
+        owner: locationPlan.owner ?? plan.owner,
         policy: inventoryPlan.policy,
         revision: 0,
         entries: [],
@@ -161,5 +215,52 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
       };
       world.stores.get<ThroughputPool>('throughputPool').set(locationEntity, pool);
     }
+  }
+
+  for (const ownerPlan of plan.owners ?? []) {
+    if (ownerPlan.knowledge.length === 0) continue;
+    const owner = world.owners.owners[ownerPlan.handle];
+    if (owner === undefined) continue;
+    const knowledge = ownerPlan.knowledge
+      .map((entry) => {
+        const location = locationEntities[entry.locationIndex];
+        return location === undefined ? null : { location, level: entry.level };
+      })
+      .filter((entry): entry is { location: EntityId; level: KnowledgeLevel } => entry !== null)
+      .sort((a, b) => a.location - b.location);
+    const owners = [...world.owners.owners];
+    owners[ownerPlan.handle] = { ...owner, knowledge };
+    world.owners = { owners };
+  }
+
+  const byOrigin = new Map<EntityId, LocationConnection[]>();
+  for (const connectionPlan of plan.connections ?? []) {
+    const origin = locationEntities[connectionPlan.originIndex];
+    const destination = locationEntities[connectionPlan.destinationIndex];
+    if (origin === undefined || destination === undefined) continue;
+    const connection: LocationConnection = {
+      id: connectionPlan.id,
+      definition: connectionPlan.definition,
+      origin,
+      destination,
+      direction: connectionPlan.direction,
+      baseDurationTicks: connectionPlan.baseDurationTicks,
+      enabled: connectionPlan.enabled,
+      allowedTransportTags: [...connectionPlan.allowedTransportTags],
+    };
+    const origins = connectionPlan.direction === 'bidirectional' ? [origin, destination] : [origin];
+    for (const endpoint of origins) {
+      const list = byOrigin.get(endpoint) ?? [];
+      list.push(connection);
+      byOrigin.set(endpoint, list);
+    }
+  }
+  for (const [entity, connections] of byOrigin) {
+    const component = locationStore.get(entity);
+    if (component === undefined) continue;
+    locationStore.set(entity, {
+      ...component,
+      connections: [...connections].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
+    });
   }
 }

@@ -31,6 +31,7 @@ export type DefinitionType =
   | 'unlock'
   | 'condition'
   | 'curve'
+  | 'connection'
   | 'world'
   | 'module';
 

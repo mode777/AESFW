@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { definitionHandle, entityId, ownerHandle } from '../ids/index.js';
+import { definitionHandle, entityId, ownerHandle, stringId } from '../ids/index.js';
 import { createEmptyRegistry } from '../registry/types.js';
 import { hashWorld } from '../world/codec.js';
 import { createWorld } from '../world/create.js';
@@ -123,5 +123,80 @@ describe('[CONT-6.4][CONT-6.6][ARCH-3.1] default world instantiation', () => {
     expect(locationOf(first, entityId(1))?.grid?.blocked).toHaveLength(8);
     expect(locationOf(first, entityId(1))?.capacity).toBe(8);
     expect(hashWorld(first, createEmptyRegistry())).toBe(hashWorld(second, createEmptyRegistry()));
+  });
+});
+
+describe('[CONT-6.6][GDD-6.3] multi-location world instantiation', () => {
+  const plan = (): WorldPlan => ({
+    owner: ownerHandle(0),
+    owners: [
+      {
+        handle: ownerHandle(0),
+        accounts: [{ resource: definitionHandle(4), amount: 1000 }],
+        knowledge: [{ locationIndex: 0, level: 'established' }],
+      },
+      { handle: ownerHandle(1), accounts: [], knowledge: [] },
+    ],
+    locations: [
+      {
+        template: definitionHandle(0),
+        spatialPolicy: 'framework.spatial.abstract_capacity',
+        capacity: 100,
+        properties: [],
+        region: null,
+        active: true,
+        inventories: [],
+        owner: ownerHandle(0),
+      },
+      {
+        template: definitionHandle(1),
+        spatialPolicy: 'framework.spatial.abstract_capacity',
+        capacity: 100,
+        properties: [],
+        region: null,
+        active: true,
+        inventories: [],
+        owner: ownerHandle(1),
+      },
+    ],
+    connections: [
+      {
+        id: stringId('test.conn.a_b'),
+        definition: definitionHandle(2),
+        originIndex: 0,
+        destinationIndex: 1,
+        direction: 'bidirectional',
+        baseDurationTicks: 300,
+        enabled: true,
+        allowedTransportTags: [stringId('test.transport.standard')],
+      },
+    ],
+  });
+
+  it('[CONT-6.6] owners and their accounts are instantiated', () => {
+    const world = makeWorld();
+    instantiateWorld(world, plan());
+    expect(world.owners.owners).toHaveLength(2);
+    expect(world.owners.owners[0]?.accounts).toEqual([
+      { resource: definitionHandle(4), amount: 1000 },
+    ]);
+    expect(world.owners.owners[0]?.knowledge).toEqual([
+      { location: entityId(1), level: 'established' },
+    ]);
+  });
+
+  it('[CONT-6.6] each location belongs to its declared owner', () => {
+    const world = makeWorld();
+    instantiateWorld(world, plan());
+    expect(locationOf(world, entityId(1))?.owner).toBe(ownerHandle(0));
+    expect(locationOf(world, entityId(2))?.owner).toBe(ownerHandle(1));
+  });
+
+  it('[GDD-6.3] a bidirectional connection is present at both endpoints', () => {
+    const world = makeWorld();
+    instantiateWorld(world, plan());
+    expect(locationOf(world, entityId(1))?.connections?.[0]?.id).toBe(stringId('test.conn.a_b'));
+    expect(locationOf(world, entityId(2))?.connections?.[0]?.id).toBe(stringId('test.conn.a_b'));
+    expect(locationOf(world, entityId(1))?.connections?.[0]?.baseDurationTicks).toBe(300);
   });
 });

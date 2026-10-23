@@ -6,7 +6,7 @@
  */
 import { cloneWorld, createWorld, instantiateWorld, step } from '@aesfw/core';
 import type { DomainEvent, TickInput } from '@aesfw/core';
-import { defaultWorldPlan } from '@aesfw/content';
+import { worldPlan } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { checkInvariants } from '../harness/invariants.js';
 import { instantiateContentEntities } from '@aesfw/app';
@@ -40,7 +40,7 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
     return { id: scenario.id, checkpoints, events, findings };
   }
   const world = created.value;
-  const plan = defaultWorldPlan(registry as ContentRegistry);
+  const plan = worldPlan(registry as ContentRegistry, scenario.setup.world);
   for (const diagnostic of plan.diagnostics) {
     findings.push({ tick: 0, id: 'content_diagnostic', message: diagnostic.code });
   }

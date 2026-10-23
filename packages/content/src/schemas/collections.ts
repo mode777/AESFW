@@ -11,6 +11,7 @@ import type { TSchema } from '@sinclair/typebox';
 import type { DefinitionType } from '@aesfw/core';
 
 import { ConditionSchema } from './condition.js';
+import { ConnectionDefinitionSchema } from './connection.js';
 import { CurveSchema } from './curve.js';
 import { DeficitPolicySchema } from './deficit.js';
 import { EntityDefinitionSchema } from './entity.js';
@@ -19,6 +20,7 @@ import { NeedCategorySchema, NeedSchema } from './need.js';
 import { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 import { RecipeSchema } from './recipe.js';
 import { ResourceSchema } from './resource.js';
+import { WorldDefinitionSchema } from './world.js';
 
 /** Maps a top-level document key to its core definition type (TDS-7). */
 export const DEFINITION_COLLECTIONS = {
@@ -33,6 +35,8 @@ export const DEFINITION_COLLECTIONS = {
   conditions: 'condition',
   curves: 'curve',
   deficit_policies: 'deficitPolicy',
+  connections: 'connection',
+  worlds: 'world',
 } as const satisfies Readonly<Record<string, DefinitionType>>;
 
 /** A top-level document key of the M1 content set. */
@@ -56,6 +60,8 @@ export const DEFINITION_SCHEMAS = {
   conditions: ConditionSchema,
   curves: CurveSchema,
   deficit_policies: DeficitPolicySchema,
+  connections: ConnectionDefinitionSchema,
+  worlds: WorldDefinitionSchema,
 } as const satisfies Readonly<Record<DefinitionCollection, TSchema>>;
 
 /** True when `key` names a known definition collection. */
