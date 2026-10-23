@@ -1,0 +1,18 @@
+{
+  "algorithm": "fnv1a64-canonical-json-v1",
+  "scenario": "test.scenario.throughput_throttling",
+  "checkpoints": {
+    "10": "41de89475059bc4a",
+    "20": "2581c0da927769e0",
+    "30": "73d41202f2be4c46",
+    "40": "f9291ff40b1b1e00",
+    "50": "9f090a79fcec2d74",
+    "60": "0edf460037763bee",
+    "70": "70f7221a85283d16",
+    "80": "eef95e34709b583a",
+    "90": "ba0f8a36192bb94e",
+    "100": "861971523826d209",
+    "110": "8948f745deb69477",
+    "120": "24e759296addaf2f"
+  }
+}

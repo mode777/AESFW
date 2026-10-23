@@ -1,0 +1,57 @@
+resources:
+  - id: demo.resource.source
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  - id: demo.resource.need
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+location_templates:
+  - id: demo.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 1000
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+
+recipes:
+  - id: demo.recipe.need
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      - { resource: demo.resource.source, quantity: 800 }
+    outputs:
+      - { resource: demo.resource.need, quantity: 800 }
+
+entity_definitions:
+  - id: demo.entity.source_a
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: demo.resource.source, quantity_per_tick: 800 }
+
+  - id: demo.entity.source_b
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: demo.resource.source, quantity_per_tick: 800 }
+
+  - id: demo.entity.refiner
+    components:
+      producer:
+        recipes: [demo.recipe.need]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared

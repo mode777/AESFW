@@ -1,0 +1,15 @@
+scenario:
+  id: test.scenario.throughput_throttling
+  requirements: [GDD-15.1, SCN-10]
+  content:
+    packages: [fixtures/content/demo-throughput]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 120
+    hash_interval: 10
+    invariants: true
+  golden:
+    hashes: fixtures/scenarios/throughput_throttling.hashes.json
