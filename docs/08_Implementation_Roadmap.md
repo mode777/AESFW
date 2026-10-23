@@ -556,3 +556,22 @@ Rows 4.1–4.7 are archived. Exit criteria and their verification:
 **Risks.** R-08's planning currency is retired: supported population is computable for every consumed resource and displayed in the planning view (SCN-18 framework). R-06 has no new browser measurement; the economy/planning views add no per-tick client work beyond selector updates on published projections. R-14 (late specification gaps) added the M11 scenario-command note above.
 
 **Next.** M5 (internal-logistics throughput) is unblocked: 5.1 depends on 1.13 and 3.4 (both archived). M6 remains gated on its own rows (6.1).
+
+### M5 — Internal-Logistics Throughput (completed 2026-10-23)
+
+**Delivered.** 5.1 `add-throughput-allocation` (throughput pools, phase 09 request collection, phase 10 `alloc-v1`, throttled movement in phases 11–20, `ThroughputThrottled`, INV-06), 5.2 `add-storage-providers` (active storage-provider capacity and throughput expansion, effective capacity in transactions/projections/INV-03), 5.3 `add-golden-throughput-throttling` (theme-free SCN-10 fixture and golden), and 5.4 `add-client-throughput-indicators` (location throughput DTO, grid gauge, `T` overlay, throttled-entity highlight, R1 storage module).
+
+**Exit criteria.** SCN-10 passes with invariants after every tick and a committed golden; over-densification is visible in the client through the gauge, the `T` overlay, and the existing `throughput_throttled` inspector row. The framework half of M5 is complete.
+
+- 5.1 stores the pool and allocations in the existing `throughputPool`/`throughputAllocation` store kinds; a location without `internal_logistics` remains unbounded, so existing goldens are unchanged. The CONT-6.4 example's `base_throughput_capability` and an additive numeric `base_throughput` are both accepted (recorded in the 5.1 design).
+- 5.2 stores storage-provider state in the existing `modifierSet` kind under a `storage_provider` discriminator, avoiding a new store kind and a catalogue-wide hash change. Capacity is derived, never mutated; active-provider gating uses the lifecycle state.
+- 5.3's fixture is independent of `ref.tier`; only the new scenario has a golden. The producer throttle path is exercised on the refiner's completion tick alongside the two sources.
+- 5.4 adds the R1 storage module (`1800000` total capacity, `2000` throughput per tick) and a `6000` base throughput on the reference location, following the Appendix-B conversion. The reference content change is not hash-changing for framework goldens.
+
+**Spec reconciliation.** No normative amendment to 01–04 was required. Clarifications recorded in the change designs: the throughput-pool capacity composition and CONT-6.4 field interpretation (5.1), derived effective capacity and `modifierSet` storage-provider representation (5.2), the SCN-10 fixture shape (5.3), and the gauge/overlay pressure calculation (5.4).
+
+**Known gaps.** Transport handling throughput requests remain unimplemented until M6 (phase 09 records none). Explicit internal transport (phases 14–15) and the `connected_graph`/`explicit_logistics` access policies remain M12. The client's per-entity throttle is inferred from `throughput_throttled` block reasons; a per-entity throttle DTO is not part of the current protocol.
+
+**Benchmarks.** No M5 change adds per-tick work beyond the throughput scan and allocation over requesters; `bench.small` is unchanged. The client adds one gauge selector and a per-entity block-reason scan on published projections.
+
+**Next.** M6 (inter-location logistics) is unblocked: 6.1 depends only on 1.8 (archived).
