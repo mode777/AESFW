@@ -574,4 +574,28 @@ Rows 4.1–4.7 are archived. Exit criteria and their verification:
 
 **Benchmarks.** No M5 change adds per-tick work beyond the throughput scan and allocation over requesters; `bench.small` is unchanged. The client adds one gauge selector and a per-entity block-reason scan on published projections.
 
-**Next.** M6 (inter-location logistics) is unblocked: 6.1 depends only on 1.8 (archived).
+**Next.** M7 (progression) is unblocked: 7.1 depends on 1.6 and 2.5 (both archived), and 7.2 depends on 7.1 and 4.1 (archived).
+
+### M6 — Inter-Location Logistics (completed 2026-10-23)
+
+**Delivered.** 6.1 `add-world-definition-and-connections` (connection and world definitions, multiple locations and owners, connection instances, `ActivateLocation`/`DeactivateLocation`), 6.2 `add-transport-units-and-cargo` (transport-unit content, cargo compartments, movement/handling configuration, INV-16), 6.3 `add-route-planning-and-movement` (`shortest_stable`, traversal time, phase 16 movement, `TransportArrived`), 6.4 `add-transport-orders-and-stations` (order entities, station cursors, handling, throughput participation, failure policies, transport commands), 6.5 `add-transport-quantity-rules` (all GDD-15.3 rules), 6.6 `add-transport-read-model` (transport detail DTO and read model), 6.7 `add-golden-logistics-loop` (SCN-02 fixture and golden), 6.8 `add-client-world-map` (world map, connection details, transport dots, R2 content), and 6.9 `add-client-route-editor` (logistics drawer, route editor, order list read model).
+
+**Exit criteria.** SCN-02 passes with invariants after every tick and a committed golden (`fixtures/scenarios/logistics_loop` and `packages/host-node/src/logistics-loop.test.ts`). The world map and route editor are implemented; the route editor issues `CreateTransportOrder` and `AssignTransport`, so a browser-created route supplies the second location. The live browser flow is exercised by CI's L7/L10 stages and the client selector/type-check tests in this workspace; it was not launched in this Alpine container (see AGENTS.md browser limitation).
+
+- 6.1 stores connection instances in an optional `location.connections` field rather than a new store kind, so existing goldens are unchanged. World owners map to handles by ascending owner id; a location belongs to the owner that lists it in `established_locations`.
+- 6.2 interprets `per_resource` cargo as a per-resource capacity over every accepted resource and resolves `transportable_resources` to the transportable resource handles at instantiation. World `initial_entities` now instantiate at their declared location and owner.
+- 6.3 uses integer Dijkstra with lexicographic connection-id tie-breaking. Abstract and physical units share traversal and arrival behaviour; only presentation differs.
+- 6.4 treats order entities as ordinary entities with `transportOrder`, `transportAssignment`, `stationCursor`, and `route` components. Handling uses the M5 throughput pool; phase 16 stages transfers and phase 19 commits them. `retry_interval_ticks` is stored but not yet enforced.
+- 6.5 interprets rules from the acting side: load measures the origin inventory and cargo space, unload measures cargo and the destination inventory. `priority_list` is first-fit.
+- 6.6 adds the transport detail read model and stores the last failure on the station cursor. 6.8 adds snapshot connection details and a transport summary so the map needs no per-unit query.
+- 6.7 makes the scenario runner apply scenario commands through the real command gateway. Existing scenarios have no commands and their goldens are unchanged.
+- 6.8 adds R2 content with two connected locations: the p2 extractor starts at `ref.tier.loc.b`, while the p1 extractor, refiner, combiner, connector, storage, residence, and transport start at `ref.tier.loc.a`.
+- 6.9 adds the order-list read model, the logistics drawer (`L`), and a structured route editor with every quantity rule and a price-limit field.
+
+**Spec reconciliation.** No normative amendment to 01–04 was required. Clarifications recorded in the change designs: the bidirectional connection representation (6.1), the `per_resource` and `transportable_resources` interpretations (6.2), abstract/physical parity (6.3), the order/assignment component split and the `retain` policy from CONT-9 (6.4), acting-side quantity rules and first-fit priority lists (6.5), the current-leg connection path (6.6), scenario command scheduling (6.7), the id-grid map layout (6.8), and client-local route drafts (6.9).
+
+**Known gaps.** Explicit internal transport (phase 15) and the `connected_graph`/`explicit_logistics` access policies remain M12. Region clustering (8.1) and fog filtering (8.2) are not implemented; the map draws the knowledge field it receives. `explore`, `establish`, and `trade` orders are accepted but not executed (M8/M9). `buy`/`sell` actions carry a price limit but execute as load/unload until the exchange rows. `retry_interval_ticks` is not enforced. Scenario `expect` evaluation remains M11, and scenario command ids collide if two commands of the same type share a tick. R2 reference balancing is M11 work.
+
+**Benchmarks.** M6 adds a throughput request scan over transport units and a per-tick movement/order scan; `bench.small` is unchanged and no budget regression was recorded. The client world map and logistics view do per-projection selector work only when visible.
+
+**Next.** M7 (progression) is unblocked: 7.1 depends on 1.6 and 2.5 (both archived), and 7.2 depends on 7.1 and 4.1 (archived).
