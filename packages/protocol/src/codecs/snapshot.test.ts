@@ -131,3 +131,57 @@ describe('[PIC-9] snapshot delta codec', () => {
     if (decoded.ok) expect(decoded.value.to_revision).toBe(2);
   });
 });
+
+describe('[PIC-10.6] owner economy wire fields', () => {
+  const base = {
+    session_id: 's1',
+    from_revision: 1,
+    to_revision: 2,
+    tick: 3,
+    entity_updates: [],
+    inventory_updates: [],
+  };
+
+  it('[PIC-9.2] a delta with owner updates decodes', () => {
+    const decoded = decodeSnapshotDelta({
+      ...base,
+      owner_updates: [
+        {
+          owner_id: 'owner.0',
+          resources: { 'test.resource.credits': 500 },
+          balance: {
+            revenue_per_interval: 10,
+            expenses_per_interval: 50,
+            net_per_interval: -40,
+            deficit_paused_entities: [3],
+            revenue_by_source: { 'tier.9': 10 },
+            expenses_by_source: { 'entity.3': 50 },
+            idle_paying_entities: [3],
+          },
+        },
+      ],
+    });
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok) {
+      expect(decoded.value.owner_updates).toHaveLength(1);
+      expect(decoded.value.owner_updates?.[0]?.balance?.net_per_interval).toBe(-40);
+      expect(decoded.value.owner_updates?.[0]?.balance?.revenue_by_source).toEqual({
+        'tier.9': 10,
+      });
+    }
+  });
+
+  it('[PIC-9.2] a delta without owner updates decodes', () => {
+    const decoded = decodeSnapshotDelta(base);
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok) expect(decoded.value.owner_updates).toBeUndefined();
+  });
+
+  it('[PIC-9.2] a malformed owner update is rejected', () => {
+    const decoded = decodeSnapshotDelta({
+      ...base,
+      owner_updates: [{ resources: {} }],
+    });
+    expect(decoded.ok).toBe(false);
+  });
+});

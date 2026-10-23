@@ -9,6 +9,7 @@ import type {
   EntityUpdateDto,
   InventoryUpdateDto,
   JsonObject,
+  OwnerDto,
   SnapshotDeltaDto,
   SnapshotDto,
 } from '@aesfw/protocol';
@@ -87,6 +88,18 @@ export function diffProjection(prev: SnapshotDto, next: SnapshotDto): SnapshotDe
     }
   }
 
+  const previousOwners = new Map<string, OwnerDto>(
+    prev.owners.map((owner) => [owner.owner_id, owner]),
+  );
+  const ownerUpdates: OwnerDto[] = [];
+  for (const owner of next.owners) {
+    const previous = previousOwners.get(owner.owner_id);
+    if (previous === undefined) continue;
+    if (JSON.stringify(previous) !== JSON.stringify(owner)) {
+      ownerUpdates.push(owner);
+    }
+  }
+
   return {
     session_id: next.session_id,
     from_revision: prev.revision,
@@ -94,5 +107,6 @@ export function diffProjection(prev: SnapshotDto, next: SnapshotDto): SnapshotDe
     tick: next.tick,
     entity_updates: entityUpdates,
     inventory_updates: inventoryUpdates,
+    ...(ownerUpdates.length === 0 ? {} : { owner_updates: ownerUpdates }),
   };
 }

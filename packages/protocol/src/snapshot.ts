@@ -13,6 +13,9 @@ export interface OwnerBalanceDto {
   readonly expenses_per_interval: WireInt;
   readonly net_per_interval: WireInt;
   readonly deficit_paused_entities: readonly WireInt[];
+  readonly revenue_by_source?: Readonly<Record<string, WireInt>>;
+  readonly expenses_by_source?: Readonly<Record<string, WireInt>>;
+  readonly idle_paying_entities?: readonly WireInt[];
 }
 
 /** An owner entry in a snapshot (PIC-9.1). */
@@ -148,4 +151,5 @@ export interface SnapshotDeltaDto {
   readonly tick: WireInt;
   readonly entity_updates: readonly EntityUpdateDto[];
   readonly inventory_updates: readonly InventoryUpdateDto[];
+  readonly owner_updates?: readonly OwnerDto[];
 }

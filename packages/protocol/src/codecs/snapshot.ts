@@ -15,6 +15,7 @@ import type {
   InventoryUpdateDto,
   LocationDto,
   LocationGridDto,
+  OwnerBalanceDto,
   OwnerDto,
   SnapshotDeltaDto,
   SnapshotDto,
@@ -23,6 +24,7 @@ import type {
 import {
   invalidField,
   isBoolean,
+  isInteger,
   isIntegerArray,
   isJsonObject,
   isNonNegativeInteger,
@@ -30,6 +32,61 @@ import {
   isString,
   isStringArray,
 } from './guards.js';
+
+function decodeOwnerBalance(
+  value: unknown,
+  path: string,
+  errors: ProtocolError[],
+): OwnerBalanceDto | null {
+  if (!isObject(value)) {
+    errors.push(invalidField(path));
+    return null;
+  }
+  const revenue = value['revenue_per_interval'];
+  const expenses = value['expenses_per_interval'];
+  const net = value['net_per_interval'];
+  const paused = value['deficit_paused_entities'];
+  if (!isNonNegativeInteger(revenue)) errors.push(invalidField(`${path}.revenue_per_interval`));
+  if (!isNonNegativeInteger(expenses)) errors.push(invalidField(`${path}.expenses_per_interval`));
+  if (!isInteger(net)) errors.push(invalidField(`${path}.net_per_interval`));
+  if (!isIntegerArray(paused)) errors.push(invalidField(`${path}.deficit_paused_entities`));
+  if (
+    !isNonNegativeInteger(revenue) ||
+    !isNonNegativeInteger(expenses) ||
+    !isInteger(net) ||
+    !isIntegerArray(paused)
+  ) {
+    return null;
+  }
+  const revenueBySource = value['revenue_by_source'];
+  if (revenueBySource !== undefined && !isJsonObject(revenueBySource)) {
+    errors.push(invalidField(`${path}.revenue_by_source`));
+    return null;
+  }
+  const expensesBySource = value['expenses_by_source'];
+  if (expensesBySource !== undefined && !isJsonObject(expensesBySource)) {
+    errors.push(invalidField(`${path}.expenses_by_source`));
+    return null;
+  }
+  const idlePaying = value['idle_paying_entities'];
+  if (idlePaying !== undefined && !isIntegerArray(idlePaying)) {
+    errors.push(invalidField(`${path}.idle_paying_entities`));
+    return null;
+  }
+  return {
+    revenue_per_interval: revenue,
+    expenses_per_interval: expenses,
+    net_per_interval: net,
+    deficit_paused_entities: paused,
+    ...(revenueBySource === undefined
+      ? {}
+      : { revenue_by_source: revenueBySource as Readonly<Record<string, number>> }),
+    ...(expensesBySource === undefined
+      ? {}
+      : { expenses_by_source: expensesBySource as Readonly<Record<string, number>> }),
+    ...(idlePaying === undefined ? {} : { idle_paying_entities: idlePaying }),
+  };
+}
 
 function decodeOwner(value: unknown, path: string, errors: ProtocolError[]): OwnerDto | null {
   if (!isObject(value)) {
@@ -41,7 +98,15 @@ function decodeOwner(value: unknown, path: string, errors: ProtocolError[]): Own
   const resources = value['resources'];
   if (!isJsonObject(resources)) errors.push(invalidField(`${path}.resources`));
   if (!isString(ownerId) || !isJsonObject(resources)) return null;
-  return { owner_id: ownerId, resources: resources as Readonly<Record<string, number>> };
+  const ownerBase: OwnerDto = {
+    owner_id: ownerId,
+    resources: resources as Readonly<Record<string, number>>,
+  };
+  const balance = value['balance'];
+  if (balance === undefined) return ownerBase;
+  const decoded = decodeOwnerBalance(balance, `${path}.balance`, errors);
+  if (decoded === null) return null;
+  return { ...ownerBase, balance: decoded };
 }
 
 function decodeInventoryEntry(
@@ -410,6 +475,19 @@ export function decodeSnapshotDelta(value: unknown): DecodeResult<SnapshotDeltaD
     });
   }
 
+  const ownerUpdates: OwnerDto[] = [];
+  const rawOwnerUpdates = value['owner_updates'];
+  if (rawOwnerUpdates !== undefined) {
+    if (!Array.isArray(rawOwnerUpdates)) {
+      errors.push(invalidField('owner_updates'));
+    } else {
+      rawOwnerUpdates.forEach((raw, index) => {
+        const decoded = decodeOwner(raw, `owner_updates[${index}]`, errors);
+        if (decoded !== null) ownerUpdates.push(decoded);
+      });
+    }
+  }
+
   if (errors.length > 0) return err(errors);
   return ok({
     session_id: sessionId as string,
@@ -418,5 +496,6 @@ export function decodeSnapshotDelta(value: unknown): DecodeResult<SnapshotDeltaD
     tick: tick as number,
     entity_updates: entityUpdates,
     inventory_updates: inventoryUpdates,
+    ...(rawOwnerUpdates === undefined ? {} : { owner_updates: ownerUpdates }),
   });
 }

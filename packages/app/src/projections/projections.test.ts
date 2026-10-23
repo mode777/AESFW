@@ -4,6 +4,7 @@ import type {
   ConnectivityNode,
   Footprint,
   LogicalTransform,
+  Maintenance,
   Producer,
   Registry,
 } from '@aesfw/core';
@@ -31,6 +32,10 @@ const registry: Registry = {
     const value = IDS[id as string];
     return value === undefined ? null : ids.definitionHandle(value);
   },
+  definitionDataOf: (type, handle) =>
+    type === 'resource' && handle === ids.definitionHandle(6)
+      ? { id: 'test.resource.credits', storage: { policy: 'normal', scope: 'owner' } }
+      : null,
 };
 
 const content: CompiledContent = {
@@ -294,5 +299,134 @@ describe('[PIC-9.2] connectivity delta', () => {
     const after = project(state, ids.ownerHandle(0));
     const delta = diffProjection(before, after);
     expect(delta.entity_updates.some((update) => update.component === 'connectivity')).toBe(true);
+  });
+});
+
+describe('[PIC-10.6] owner economy read model', () => {
+  const economySession = () => {
+    const state = session();
+    const credits = ids.definitionHandle(6);
+    state.world.owners = {
+      owners: [
+        {
+          handle: ids.ownerHandle(0),
+          knowledge: [],
+          accounts: [{ resource: credits, amount: 1000 }],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: [ids.entityId(5), ids.entityId(4)],
+        },
+      ],
+    };
+    const addOwner = (entity: number): void => {
+      state.world.stores
+        .get<{ owner: ids.OwnerHandle }>('owner')
+        .set(ids.entityId(entity), { owner: ids.ownerHandle(0) });
+    };
+    // Residence (entity 10) of tier 9 producing 10 credits per population per tick.
+    addOwner(10);
+    state.world.stores.get('residence').set(ids.entityId(10), {
+      tier: ids.definitionHandle(9),
+      capacity: 10,
+      location: null,
+      growthPolicy: null,
+      consumptionFactor: 1000,
+      outputs: [
+        {
+          resource: credits,
+          ratePerPopulationPerTick: 10,
+          scope: 'owner',
+          satisfactionCurve: null,
+        },
+      ],
+    });
+    state.world.stores
+      .get('populationGroup')
+      .set(ids.entityId(10), { tier: ids.definitionHandle(9), count: 1, capacity: 10 });
+    // High-maintenance producer (entity 3): 500 per 10 ticks, idle.
+    addOwner(3);
+    state.world.stores.get<Maintenance>('maintenance').set(ids.entityId(3), {
+      intervalTicks: 10,
+      inputs: [{ resource: credits, quantity: 500 }],
+      chargePolicy: 'while_enabled',
+      shortagePolicy: 'ignore',
+      arrears: [],
+    });
+    // Low-maintenance entity (entity 4): 100 per 10 ticks.
+    addOwner(4);
+    state.world.stores.get<Maintenance>('maintenance').set(ids.entityId(4), {
+      intervalTicks: 10,
+      inputs: [{ resource: credits, quantity: 100 }],
+      chargePolicy: 'while_enabled',
+      shortagePolicy: 'ignore',
+      arrears: [],
+    });
+    return { state, credits };
+  };
+
+  it('[PIC-10.6] the balance carries revenue, expenses, and pause order', () => {
+    const { state } = economySession();
+    const snapshot = project(state, ids.ownerHandle(0));
+    const balance = snapshot.owners[0]?.balance;
+    expect(balance?.revenue_per_interval).toBe(10);
+    expect(balance?.expenses_per_interval).toBe(50);
+    expect(balance?.net_per_interval).toBe(-40);
+    expect(balance?.deficit_paused_entities).toEqual([ids.entityId(5), ids.entityId(4)]);
+  });
+
+  it('[PIC-10.6] revenue by source names the tier and expenses name entities', () => {
+    const { state } = economySession();
+    const snapshot = project(state, ids.ownerHandle(0));
+    const balance = snapshot.owners[0]?.balance;
+    expect(balance?.revenue_by_source).toEqual({ 'tier.9': 10 });
+    expect(balance?.expenses_by_source).toEqual({ 'entity.3': 50 });
+  });
+
+  it('[PIC-10.6] an idle producer that still pays is listed', () => {
+    const { state } = economySession();
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.owners[0]?.balance?.idle_paying_entities).toEqual([ids.entityId(3)]);
+  });
+
+  it('[PIC-10.6] a processing producer is not idle-paying', () => {
+    const { state } = economySession();
+    const producer = state.world.stores.get<Producer>('producer').get(ids.entityId(3));
+    if (producer === undefined) throw new Error('producer missing');
+    state.world.stores
+      .get<Producer>('producer')
+      .set(ids.entityId(3), { ...producer, state: 'processing' });
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.owners[0]?.balance?.idle_paying_entities).toEqual([]);
+  });
+
+  it('[PIC-9.2] a balance change appears in the delta', () => {
+    const { state } = economySession();
+    const before = project(state, ids.ownerHandle(0));
+    const current = state.world.owners.owners[0];
+    if (current === undefined) throw new Error('owner missing');
+    state.world.owners = {
+      owners: [
+        {
+          handle: current.handle,
+          knowledge: current.knowledge,
+          accounts: [],
+          purposeLocks: current.purposeLocks,
+          unlocks: current.unlocks,
+          deficitPaused: current.deficitPaused,
+        },
+      ],
+    };
+    state.revision = 1;
+    const after = project(state, ids.ownerHandle(0));
+    const delta = diffProjection(before, after);
+    expect(delta.owner_updates).toHaveLength(1);
+    expect(delta.owner_updates?.[0]?.owner_id).toBe('owner.0');
+  });
+
+  it('[PIC-9.2] an unchanged owner is omitted', () => {
+    const { state } = economySession();
+    const before = project(state, ids.ownerHandle(0));
+    const delta = diffProjection(before, before);
+    expect(delta.owner_updates).toBeUndefined();
   });
 });

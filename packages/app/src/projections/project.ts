@@ -4,7 +4,13 @@
  *
  * Source: TDS-18.4, PIC-9.1, ARCH-8.2
  */
-import { isConnected, readWorld } from '@aesfw/core';
+import {
+  curveMultiplier,
+  isCharging,
+  isConnected,
+  readWorld,
+  resourceStoragePolicy,
+} from '@aesfw/core';
 import type {
   ConnectivityNode,
   DefinitionHandle,
@@ -12,15 +18,20 @@ import type {
   EntityId,
   Footprint,
   LogicalTransform,
+  Maintenance,
   OwnerHandle,
+  PopulationGroup,
+  Producer,
   Registry,
   Residence,
+  Satisfaction,
   World,
   WorldReader,
 } from '@aesfw/core';
 import type {
   ConnectivityDto,
   EntityDto,
+  OwnerBalanceDto,
   InventoryDto,
   InventoryEntryDto,
   LocationDto,
@@ -40,12 +51,78 @@ const definitionId = (
   handle: DefinitionHandle,
 ): string | null => registry.stringIdOf(type, handle);
 
-const ownerDto = (reader: WorldReader, registry: Registry, handle: OwnerHandle): OwnerDto => {
+const balanceDto = (world: World, registry: Registry, handle: OwnerHandle): OwnerBalanceDto => {
+  const residenceStore = world.stores.get<Residence>('residence');
+  const groupStore = world.stores.get<PopulationGroup>('populationGroup');
+  const satisfactionStore = world.stores.get<Satisfaction>('satisfaction');
+  const maintenanceStore = world.stores.get<Maintenance>('maintenance');
+  const ownerOf = (entity: EntityId): OwnerHandle | null =>
+    world.stores.get<{ owner: OwnerHandle }>('owner').get(entity)?.owner ?? null;
+
+  const revenueBySource: Record<string, number> = {};
+  for (const entity of residenceStore.ids()) {
+    if (ownerOf(entity) !== handle) continue;
+    const residence = residenceStore.get(entity);
+    if (residence === undefined) continue;
+    const group = groupStore.get(entity);
+    if (group === undefined || group.count <= 0) continue;
+    const z = satisfactionStore.get(entity)?.z ?? 1000;
+    for (const output of residence.outputs) {
+      if (resourceStoragePolicy(registry, output.resource) !== 'normal') continue;
+      const multiplier =
+        output.satisfactionCurve === null
+          ? 1000
+          : curveMultiplier(registry, output.satisfactionCurve, z);
+      const amount = Math.floor(
+        (group.count * output.ratePerPopulationPerTick * multiplier) / 1000,
+      );
+      if (amount === 0) continue;
+      const tierId = registry.stringIdOf('tier', residence.tier) ?? String(residence.tier);
+      revenueBySource[`tier.${tierId}`] = (revenueBySource[`tier.${tierId}`] ?? 0) + amount;
+    }
+  }
+
+  const expensesBySource: Record<string, number> = {};
+  const idlePaying: number[] = [];
+  for (const entity of maintenanceStore.ids()) {
+    if (ownerOf(entity) !== handle) continue;
+    const maintenance = maintenanceStore.get(entity);
+    if (maintenance === undefined) continue;
+    if (!isCharging(world, entity, maintenance.chargePolicy)) continue;
+    let perTick = 0;
+    for (const line of maintenance.inputs) {
+      perTick += Math.floor(line.quantity / maintenance.intervalTicks);
+    }
+    if (perTick > 0) {
+      expensesBySource[`entity.${entity as number}`] = perTick;
+    }
+    const producer = world.stores.get<Producer>('producer').get(entity);
+    if (producer !== undefined && producer.state !== 'processing') {
+      idlePaying.push(entity);
+    }
+  }
+
+  const revenue = Object.values(revenueBySource).reduce((total, value) => total + value, 0);
+  const expenses = Object.values(expensesBySource).reduce((total, value) => total + value, 0);
+  const paused = world.owners.owners.find((entry) => entry.handle === handle)?.deficitPaused ?? [];
+
+  return {
+    revenue_per_interval: revenue,
+    expenses_per_interval: expenses,
+    net_per_interval: revenue - expenses,
+    deficit_paused_entities: paused,
+    revenue_by_source: revenueBySource,
+    expenses_by_source: expensesBySource,
+    idle_paying_entities: idlePaying,
+  };
+};
+
+const ownerDto = (world: World, registry: Registry, handle: OwnerHandle): OwnerDto => {
   const resources: Record<string, number> = {};
-  for (const account of reader.accounts(handle)) {
+  for (const account of world.owners.owners[handle]?.accounts ?? []) {
     resources[resourceId(registry, account.resource)] = account.amount;
   }
-  return { owner_id: `owner.${handle}`, resources };
+  return { owner_id: `owner.${handle}`, resources, balance: balanceDto(world, registry, handle) };
 };
 
 const inventoryDto = (reader: WorldReader, registry: Registry, id: EntityId): InventoryDto => {
@@ -200,7 +277,7 @@ export function project(session: SessionState, actor: OwnerHandle): SnapshotDto 
     tick: world.tick,
     revision: session.revision,
     configuration_checksum: session.content.checksum,
-    owners: reader.ownerHandles.map((handle) => ownerDto(reader, registry, handle)),
+    owners: reader.ownerHandles.map((handle) => ownerDto(world, registry, handle)),
     locations: reader.locationIds.map((id) => locationDto(reader, registry, id, actor)),
     entities: reader.entityIds.map((id) => entityDto(reader, world, registry, id)),
   };

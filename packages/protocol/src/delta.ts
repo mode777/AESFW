@@ -16,8 +16,25 @@ const cloneSnapshot = (snapshot: SnapshotDto): SnapshotDto => ({
   revision: snapshot.revision,
   configuration_checksum: snapshot.configuration_checksum,
   owners: snapshot.owners.map((owner) => ({
-    owner_id: owner.owner_id,
+    ...owner,
     resources: { ...owner.resources },
+    ...(owner.balance === undefined
+      ? {}
+      : {
+          balance: {
+            ...owner.balance,
+            deficit_paused_entities: [...owner.balance.deficit_paused_entities],
+            ...(owner.balance.revenue_by_source === undefined
+              ? {}
+              : { revenue_by_source: { ...owner.balance.revenue_by_source } }),
+            ...(owner.balance.expenses_by_source === undefined
+              ? {}
+              : { expenses_by_source: { ...owner.balance.expenses_by_source } }),
+            ...(owner.balance.idle_paying_entities === undefined
+              ? {}
+              : { idle_paying_entities: [...owner.balance.idle_paying_entities] }),
+          },
+        }),
   })),
   locations: snapshot.locations.map((location) => ({
     ...location,
@@ -70,6 +87,17 @@ export function applyDelta(base: SnapshotDto, delta: SnapshotDeltaDto): Snapshot
     if (entry === undefined) continue;
     entry['stored'] = update.stored;
     entry['reserved'] = update.reserved;
+  }
+
+  if (delta.owner_updates !== undefined) {
+    const owners = clone.owners as unknown as MutableRecord[];
+    const byOwnerId = new Map<string, number>();
+    owners.forEach((owner, index) => byOwnerId.set(owner['owner_id'] as string, index));
+    for (const update of delta.owner_updates) {
+      const index = byOwnerId.get(update.owner_id);
+      if (index === undefined) continue;
+      owners[index] = update as unknown as MutableRecord;
+    }
   }
 
   return { ...clone, revision: delta.to_revision, tick: delta.tick };

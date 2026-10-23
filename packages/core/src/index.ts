@@ -202,7 +202,13 @@ export type {
   WorkingAreaClaim,
 } from './sim/production/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
-export { applyMaintenance, dueLines, isCharging } from './sim/economy/index.js';
+export {
+  applyMaintenance,
+  curveMultiplier,
+  dueLines,
+  isCharging,
+  resourceStoragePolicy,
+} from './sim/economy/index.js';
 export {
   applyDeficitPolicy,
   compareBalance,
