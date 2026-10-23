@@ -10,6 +10,7 @@ import type {
   ConnectionPlan,
   DefinitionHandle,
   Diagnostic,
+  GeneratedAttributesPlan,
   InitialEntityPlan,
   InternalLogisticsPlan,
   InventoryPlan,
@@ -22,8 +23,12 @@ import type {
 } from '@aesfw/core';
 
 import { diag } from '../diagnostics/diagnostics.js';
+import { matchesGlob } from '../registry/references.js';
 import type { ContentRegistry } from '../registry/types.js';
 import type { JsonValue } from '../types.js';
+
+/** The default seed stream of a seeded distribution rule (CONT-6.18). */
+export const DEFAULT_GENERATION_STREAM = 'world_generation';
 
 /** The outcome of deriving a default world plan. */
 export interface DefaultWorldPlanResult {
@@ -151,6 +156,27 @@ const templatePlan = (
       }
     }
   }
+  // The effective region: an explicit world override (possibly clearing the
+  // template's) wins, else the template's region field (CONT-6.18).
+  const templateRegionId = typeof data['region'] === 'string' ? data['region'] : null;
+  const overrideRegion =
+    overrides !== null && Object.prototype.hasOwnProperty.call(overrides, 'region')
+      ? typeof overrides['region'] === 'string'
+        ? overrides['region']
+        : null
+      : undefined;
+  const regionId = overrideRegion !== undefined ? overrideRegion : templateRegionId;
+  const regionHandle =
+    regionId === null ? null : registry.handleOf('region', ids.stringId(regionId));
+  if (regionId !== null && regionHandle === null) {
+    diagnostics.push(
+      diag('unresolved_reference', {
+        definition: definition.id,
+        path: `/location_templates/${definition.id}/region`,
+        args: { reference: regionId, expected: 'region' },
+      }),
+    );
+  }
   const activation = asRecord(merged['activation']);
   const active = activation?.['initial'] !== false;
   const spatialPolicy =
@@ -174,7 +200,7 @@ const templatePlan = (
       capacity: grid.width * grid.height,
       properties: mapProperties(merged['properties']),
       sourceSlots: mapSourceSlots(merged['source_slots']),
-      region: null,
+      region: regionHandle,
       active,
       inventories: mapInventories(merged['inventories']),
       grid,
@@ -197,11 +223,96 @@ const templatePlan = (
     capacity: totalCapacity,
     properties: mapProperties(merged['properties']),
     sourceSlots: mapSourceSlots(merged['source_slots']),
-    region: null,
+    region: regionHandle,
     active,
     inventories: mapInventories(merged['inventories']),
     ...(internalLogistics === undefined ? {} : { internalLogistics }),
   };
+};
+
+/**
+ * Attaches seeded generation descriptors (CONT-6.18) to the plan's locations.
+ * The matched-name universes are the property names and slot types authored on
+ * the catalogue's location templates plus the selected world's location
+ * entries; each rule assigns them to its regions at instantiation time.
+ *
+ * Source: GDD-6.5, CONT-6.18
+ */
+const attachGeneration = (
+  registry: ContentRegistry,
+  plan: WorldPlan,
+  worldData: Record<string, JsonValue> | null,
+): WorldPlan => {
+  const rules = registry.definitionsOf('distributionRule');
+  if (rules.length === 0) return plan;
+  const propertyUniverse = new Set<string>();
+  const slotUniverse = new Set<string>();
+  const absorb = (data: Record<string, JsonValue> | null): void => {
+    if (data === null) return;
+    const properties = asRecord(data['properties']);
+    if (properties !== null) {
+      for (const name of Object.keys(properties)) propertyUniverse.add(name);
+    }
+    for (const raw of asArray(data['source_slots'])) {
+      const slot = asRecord(raw);
+      const type = typeof slot?.['type'] === 'string' ? slot['type'] : null;
+      if (type !== null) slotUniverse.add(type);
+    }
+  };
+  for (const definition of registry.definitionsOf('location')) {
+    absorb(definition.data as Record<string, JsonValue>);
+  }
+  if (worldData !== null) {
+    for (const raw of asArray(worldData['locations'])) {
+      const entry = asRecord(raw);
+      if (entry !== null) absorb(entry);
+    }
+  }
+  const descriptors = new Map<DefinitionHandle, GeneratedAttributesPlan>();
+  const sortedRules = [...rules].sort((a, b) => det.compareStrings(a.id, b.id));
+  for (const rule of sortedRules) {
+    const data = asRecord(rule.data);
+    if (data === null) continue;
+    const generation = asRecord(data['generation']);
+    if (generation?.['mode'] !== 'seeded') continue;
+    const disjoint = asRecord(data['disjoint']);
+    const globs = asArray(disjoint?.['properties']).filter(
+      (entry): entry is string => typeof entry === 'string',
+    );
+    const wantSlots = disjoint?.['source_slot_types'] === true;
+    const stream =
+      typeof generation['seed_stream'] === 'string'
+        ? generation['seed_stream']
+        : DEFAULT_GENERATION_STREAM;
+    const regions = asArray(data['regions'])
+      .map((entry) =>
+        typeof entry === 'string' ? registry.handleOf('region', ids.stringId(entry)) : null,
+      )
+      .filter((handle): handle is DefinitionHandle => handle !== null)
+      .sort((a, b) => a - b);
+    if (regions.length < 2) continue;
+    const propertyNames = [...propertyUniverse]
+      .filter((name) => globs.some((pattern) => matchesGlob(name, pattern)))
+      .sort(det.compareStrings)
+      .map((name) => ids.stringId(name));
+    const slotTypes = wantSlots
+      ? [...slotUniverse].sort(det.compareStrings).map((type) => ids.stringId(type))
+      : [];
+    const descriptor: GeneratedAttributesPlan = {
+      streamName: stream,
+      regions,
+      propertyNames,
+      slotTypes,
+    };
+    for (const handle of regions) descriptors.set(handle, descriptor);
+  }
+  if (descriptors.size === 0) return plan;
+  const locations = plan.locations.map((location) => {
+    if (location.region === null) return location;
+    const generated = descriptors.get(location.region);
+    return generated === undefined ? location : { ...location, generated };
+  });
+  return { ...plan, locations };
 };
 
 /**
@@ -224,7 +335,8 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
     const plan = templatePlan(registry, definition, null, diagnostics);
     if (plan !== null) locations.push(plan);
   }
-  return { plan: { owner: ids.ownerHandle(0), locations }, diagnostics };
+  const result: WorldPlan = { owner: ids.ownerHandle(0), locations };
+  return { plan: attachGeneration(registry, result, null), diagnostics };
 }
 
 /**
@@ -397,14 +509,12 @@ export function worldPlan(
     };
   });
 
-  return {
-    plan: {
-      owner: ids.ownerHandle(0),
-      ...(owners.length === 0 ? {} : { owners }),
-      locations,
-      ...(connections.length === 0 ? {} : { connections }),
-      ...(initialEntities.length === 0 ? {} : { initialEntities }),
-    },
-    diagnostics,
+  const plan: WorldPlan = {
+    owner: ids.ownerHandle(0),
+    ...(owners.length === 0 ? {} : { owners }),
+    locations,
+    ...(connections.length === 0 ? {} : { connections }),
+    ...(initialEntities.length === 0 ? {} : { initialEntities }),
   };
+  return { plan: attachGeneration(registry, plan, data), diagnostics };
 }

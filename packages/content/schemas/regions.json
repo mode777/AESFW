@@ -1,0 +1,18 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    }
+  }
+}

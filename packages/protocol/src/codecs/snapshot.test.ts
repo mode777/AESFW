@@ -117,6 +117,52 @@ describe('[PIC-9] snapshot codec', () => {
   });
 });
 
+it('[PIC-9.1][CONT-6.18] a location with region and property values decodes', () => {
+  const decoded = decodeSnapshot({
+    session_id: 's1',
+    tick: 0,
+    revision: 0,
+    configuration_checksum: 'abc',
+    owners: [],
+    locations: [
+      {
+        entity_id: 1,
+        properties: {
+          tags: [],
+          region: 'test.region.alpha',
+          values: { 'test.property.suitability_c': 1000 },
+        },
+      },
+    ],
+    entities: [],
+  });
+  expect(decoded.ok).toBe(true);
+  if (decoded.ok) {
+    expect(decoded.value.locations[0]?.properties?.region).toBe('test.region.alpha');
+    expect(decoded.value.locations[0]?.properties?.values?.['test.property.suitability_c']).toBe(
+      1000,
+    );
+  }
+});
+
+it('[PIC-9.1][CONT-6.18] a malformed location property value is rejected', () => {
+  const decoded = decodeSnapshot({
+    session_id: 's1',
+    tick: 0,
+    revision: 0,
+    configuration_checksum: 'abc',
+    owners: [],
+    locations: [
+      {
+        entity_id: 1,
+        properties: { tags: [], values: { 'test.property.suitability_c': 'high' } },
+      },
+    ],
+    entities: [],
+  });
+  expect(decoded.ok).toBe(false);
+});
+
 describe('[PIC-9] snapshot delta codec', () => {
   it('[PIC-9] a delta decodes', () => {
     const decoded = decodeSnapshotDelta({

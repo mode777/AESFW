@@ -161,6 +161,7 @@ export type {
 export { instantiateWorld } from './sim/instantiate.js';
 export type {
   ConnectionPlan,
+  GeneratedAttributesPlan,
   InitialEntityPlan,
   InternalLogisticsPlan,
   InventoryPlan,

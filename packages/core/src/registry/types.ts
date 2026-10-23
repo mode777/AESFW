@@ -34,7 +34,9 @@ export type DefinitionType =
   | 'curve'
   | 'connection'
   | 'world'
-  | 'module';
+  | 'module'
+  | 'region'
+  | 'distributionRule';
 
 /** Resolves definition handles to string IDs and back (TDS-7, TDS-8.5). */
 export interface Registry {

@@ -9,6 +9,8 @@
  */
 import type { DefinitionType, Diagnostic } from '@aesfw/core';
 
+import { det } from '@aesfw/core';
+
 import { diag } from '../diagnostics/diagnostics.js';
 import { COLLECTION_ORDER, DEFINITION_COLLECTIONS } from '../schemas/collections.js';
 import type { RawDefinitions } from '../schemas/validate.js';
@@ -554,5 +556,219 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
     }
     policyResources.set(resource, policy.id);
   }
+  diagnostics.push(...validateDistributionRules(definitions, exists));
   return diagnostics;
 }
+
+/** Matches a name against a glob whose `*` wildcards span any characters. */
+export const matchesGlob = (name: string, pattern: string): boolean => {
+  const segments = pattern.split('*');
+  const first = segments[0];
+  const last = segments[segments.length - 1];
+  if (first === undefined || last === undefined) return false;
+  if (!name.startsWith(first)) return false;
+  if (!name.endsWith(last)) return false;
+  let cursor = first.length;
+  for (let index = 1; index < segments.length - 1; index += 1) {
+    const segment = segments[index];
+    if (segment === undefined || segment === '') continue;
+    const found = name.indexOf(segment, cursor);
+    if (found < 0) return false;
+    cursor = found + segment.length;
+  }
+  return cursor + last.length <= name.length;
+};
+
+/** The authored attributes of one location shape: property values and slot types. */
+type AuthoredAttributes = {
+  readonly propertyCounts: ReadonlyMap<string, number>;
+  readonly slotTypes: ReadonlySet<string>;
+};
+
+const attributesOf = (definition: { readonly [key: string]: JsonValue }): AuthoredAttributes => {
+  const propertyCounts = new Map<string, number>();
+  const properties = asRecord(definition['properties']);
+  if (properties !== null) {
+    for (const name of Object.keys(properties)) {
+      const value = properties[name];
+      propertyCounts.set(name, typeof value === 'number' ? value : 0);
+    }
+  }
+  const slotTypes = new Set<string>();
+  for (const raw of asArray(definition['source_slots'])) {
+    const slot = asRecord(raw);
+    const type = asString(slot?.['type']);
+    const count = slot?.['count'];
+    if (type !== null && typeof count === 'number' && count > 0) slotTypes.add(type);
+  }
+  return { propertyCounts, slotTypes };
+};
+
+/** The world location's effective attributes: template values with world overrides. */
+const effectiveWorldLocation = (
+  worldLocation: { readonly [key: string]: JsonValue },
+  template: { readonly [key: string]: JsonValue } | null,
+): AuthoredAttributes => {
+  const propertyCounts = new Map<string, number>();
+  const base = template === null ? null : asRecord(template['properties']);
+  if (base !== null) {
+    for (const name of Object.keys(base)) {
+      const value = base[name];
+      propertyCounts.set(name, typeof value === 'number' ? value : 0);
+    }
+  }
+  const overrides = asRecord(worldLocation['properties']);
+  if (overrides !== null) {
+    for (const name of Object.keys(overrides)) {
+      const value = overrides[name];
+      propertyCounts.set(name, typeof value === 'number' ? value : 0);
+    }
+  }
+  const slots = asArray(worldLocation['source_slots']);
+  if (worldLocation['source_slots'] !== undefined) {
+    const slotTypes = new Set<string>();
+    for (const raw of slots) {
+      const slot = asRecord(raw);
+      const type = asString(slot?.['type']);
+      const count = slot?.['count'];
+      if (type !== null && typeof count === 'number' && count > 0) slotTypes.add(type);
+    }
+    return { propertyCounts, slotTypes };
+  }
+  const templateSlots = template === null ? new Set<string>() : attributesOf(template).slotTypes;
+  return { propertyCounts, slotTypes: templateSlots };
+};
+
+/** The world location's effective region ID: the world override, else the template's. */
+const effectiveWorldRegion = (
+  worldLocation: { readonly [key: string]: JsonValue },
+  template: { readonly [key: string]: JsonValue } | null,
+): string | null => {
+  const override = asString(worldLocation['region']);
+  if (override !== null) return override;
+  return template === null ? null : asString(template['region']);
+};
+
+/**
+ * Validates distribution rules (CONT-6.18): structure, region references, and
+ * disjointness of the authored property and slot supply between the rule's
+ * regions. Applies in both modes; seeded generation fills gaps only.
+ *
+ * Source: GDD-3.3, GDD-6.4, CONT-6.18
+ */
+const validateDistributionRules = (
+  definitions: RawDefinitions,
+  exists: (type: DefinitionType, id: string) => boolean,
+): readonly Diagnostic[] => {
+  const diagnostics: Diagnostic[] = [];
+  const templates = new Map<string, { readonly [key: string]: JsonValue }>();
+  for (const template of definitions['location_templates'] ?? []) {
+    templates.set(template.id, template);
+  }
+
+  for (const rule of definitions['distribution_rules'] ?? []) {
+    const regionIds = asArray(rule['regions']).filter(
+      (entry): entry is string => asString(entry) !== null,
+    ) as readonly string[];
+    const unique = new Set(regionIds);
+    const disjoint = asRecord(rule['disjoint']);
+    const propertyGlobs = asArray(disjoint?.['properties']).filter(
+      (entry): entry is string => asString(entry) !== null,
+    ) as readonly string[];
+    const slotTypes = disjoint?.['source_slot_types'] === true;
+    if (
+      unique.size !== regionIds.length ||
+      regionIds.length < 2 ||
+      (propertyGlobs.length === 0 && !slotTypes)
+    ) {
+      diagnostics.push(
+        diag('invalid_distribution_rule', {
+          definition: rule.id,
+          path: `/distribution_rules/${rule.id}`,
+        }),
+      );
+      continue;
+    }
+    for (const [index, regionId] of regionIds.entries()) {
+      if (!exists('region', regionId)) {
+        diagnostics.push(
+          diag('unresolved_reference', {
+            definition: rule.id,
+            path: `/distribution_rules/${rule.id}/regions/${index}`,
+            args: { reference: regionId, expected: 'region' },
+          }),
+        );
+      }
+    }
+
+    const suppliedProperties = new Map<string, Set<string>>();
+    const suppliedSlots = new Map<string, Set<string>>();
+    const absorb = (regionId: string | null, attributes: AuthoredAttributes): void => {
+      if (regionId === null || !unique.has(regionId)) return;
+      const props = suppliedProperties.get(regionId) ?? new Set<string>();
+      for (const [name, count] of attributes.propertyCounts) {
+        if (count > 0) props.add(name);
+      }
+      suppliedProperties.set(regionId, props);
+      const slots = suppliedSlots.get(regionId) ?? new Set<string>();
+      for (const type of attributes.slotTypes) slots.add(type);
+      suppliedSlots.set(regionId, slots);
+    };
+    for (const template of definitions['location_templates'] ?? []) {
+      absorb(asString(template['region']), attributesOf(template));
+    }
+    for (const world of definitions['worlds'] ?? []) {
+      for (const raw of asArray(world['locations'])) {
+        const entry = asRecord(raw);
+        if (entry === null) continue;
+        const templateId = asString(entry['template']);
+        const template = templateId === null ? null : (templates.get(templateId) ?? null);
+        absorb(effectiveWorldRegion(entry, template), effectiveWorldLocation(entry, template));
+      }
+    }
+
+    const universe = new Set<string>();
+    for (const props of suppliedProperties.values()) {
+      for (const name of props) {
+        if (propertyGlobs.some((pattern) => matchesGlob(name, pattern))) universe.add(name);
+      }
+    }
+    for (const name of universe) {
+      const regions = [...suppliedProperties.entries()]
+        .filter(([, props]) => props.has(name))
+        .map(([regionId]) => regionId)
+        .sort(det.compareStrings);
+      if (regions.length > 1) {
+        diagnostics.push(
+          diag('distribution_not_disjoint', {
+            definition: rule.id,
+            path: `/distribution_rules/${rule.id}/disjoint/properties`,
+            args: { property: name, regions: regions.join(',') },
+          }),
+        );
+      }
+    }
+    if (slotTypes) {
+      const slotUniverse = new Set<string>();
+      for (const slots of suppliedSlots.values()) {
+        for (const type of slots) slotUniverse.add(type);
+      }
+      for (const type of slotUniverse) {
+        const regions = [...suppliedSlots.entries()]
+          .filter(([, entry]) => entry.has(type))
+          .map(([regionId]) => regionId)
+          .sort(det.compareStrings);
+        if (regions.length > 1) {
+          diagnostics.push(
+            diag('distribution_not_disjoint', {
+              definition: rule.id,
+              path: `/distribution_rules/${rule.id}/disjoint/source_slot_types`,
+              args: { slot_type: type, regions: regions.join(',') },
+            }),
+          );
+        }
+      }
+    }
+  }
+  return diagnostics;
+};

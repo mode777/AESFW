@@ -274,7 +274,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 
 | # | Change ID | Capability | Scope | Sources | Depends on | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 8.1 | `add-regions-and-distribution-rules` | sim/world | regions; fixed and seeded property vectors and slots; disjoint distribution rules (generation and validation) | GDD-3.3, GDD-6.4, GDD-6.5, CONT-6.18 | 6.1, 3.5 | M |
+| 8.1 | `add-regions-and-distribution-rules` | sim/world | regions; fixed and seeded property vectors and slots; disjoint distribution rules (generation and validation) ✓ archived 2026-10-23 | GDD-3.3, GDD-6.4, GDD-6.5, CONT-6.18 | 6.1, 3.5 | M |
 | 8.2 | `add-knowledge-and-exploration` | sim/exploration | owner knowledge state, discovery on arrival (phase 18), explore mode; INV-14 | GDD-16.1, GDD-16.2, ARCH-14.4 | 6.4 | M |
 | 8.3 | `add-location-establishment` | sim/exploration | establish mode, establishment transaction, hub creation, exclusive ownership | GDD-16.3, CONT-6.20 | 8.2 | M |
 | 8.4 | `add-fog-filtered-projections` | app/projections | per-actor filtering of all projections, read models, and events; INV-19; P-09 | ARCH-8.3, PIC-9.3 | 8.2, 2.3 | M |

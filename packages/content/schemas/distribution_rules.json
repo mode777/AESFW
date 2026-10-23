@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "regions", "disjoint", "generation"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "regions": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "disjoint": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["properties", "source_slot_types"],
+      "properties": {
+        "properties": {
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "source_slot_types": {
+          "type": "boolean"
+        }
+      }
+    },
+    "generation": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "const": "fixed",
+              "type": "string"
+            },
+            {
+              "const": "seeded",
+              "type": "string"
+            }
+          ]
+        },
+        "seed_stream": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    }
+  }
+}

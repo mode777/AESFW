@@ -1,0 +1,64 @@
+# Theme-free region and distribution-rule fixture (roadmap 8.1, CONT-6.18).
+regions:
+  - id: demo.region.east
+    tags: [demo.region.group]
+  - id: demo.region.west
+    tags: [demo.region.group]
+
+location_templates:
+  - id: demo.location.east_a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    region: demo.region.east
+    properties:
+      demo.property.suitability_c: 1000
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 10000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+  - id: demo.location.west_a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    region: demo.region.west
+    properties:
+      demo.property.suitability_d: 1000
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 10000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+  - id: demo.location.west_b
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    region: demo.region.west
+    source_slots:
+      - { type: demo.slot.deposit_w, count: 2 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 10000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: false }
+
+distribution_rules:
+  - id: demo.distribution.seeded
+    regions: [demo.region.east, demo.region.west]
+    disjoint:
+      properties: [demo.property.suitability_*]
+      source_slot_types: true
+    generation:
+      mode: seeded
+      seed_stream: demo.generation
+
+worlds:
+  - id: demo.world.regions
+    locations:
+      - id: demo.loc.east
+        template: demo.location.east_a
+      - id: demo.loc.west_a
+        template: demo.location.west_a
+      - id: demo.loc.west_b
+        template: demo.location.west_b
+    owners:
+      - id: owner.a
+        established_locations: [demo.loc.east]

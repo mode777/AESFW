@@ -64,10 +64,13 @@ export function locationSummary(
   }
 
   const pool = world.stores.get<ThroughputPool>('throughputPool').get(location as never);
+  const region =
+    loc.region === null ? undefined : (registry.stringIdOf('region', loc.region) ?? undefined);
   return {
     entity_id: location,
     knowledge: reader.knowledge(actor, location as never),
     active: loc.active,
+    ...(region === undefined ? {} : { region }),
     ...(pool === undefined
       ? {}
       : {

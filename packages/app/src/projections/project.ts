@@ -198,6 +198,11 @@ const locationDto = (
       ...(location.owner === null ? {} : { owner_id: `owner.${location.owner}` }),
       properties: {
         tags: [],
+        ...(() => {
+          const region =
+            location.region === null ? null : definitionId(registry, 'region', location.region);
+          return region === null ? {} : { region };
+        })(),
         values: Object.fromEntries(
           location.properties.map((property) => [property.property, property.value]),
         ),

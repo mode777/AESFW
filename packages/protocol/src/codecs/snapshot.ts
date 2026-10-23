@@ -274,6 +274,39 @@ function decodeLocation(value: unknown, path: string, errors: ProtocolError[]): 
     if (isBoolean(active)) location['active'] = active;
     else errors.push(invalidField(`${path}.active`));
   }
+  const rawProperties = value['properties'];
+  if (rawProperties !== undefined) {
+    if (!isObject(rawProperties)) {
+      errors.push(invalidField(`${path}.properties`));
+    } else {
+      const properties: { tags: string[]; region?: string; values?: Record<string, number> } = {
+        tags: [],
+      };
+      const region = rawProperties['region'];
+      if (region !== undefined) {
+        if (isString(region)) properties.region = region;
+        else errors.push(invalidField(`${path}.properties.region`));
+      }
+      const rawValues = rawProperties['values'];
+      if (rawValues !== undefined) {
+        if (!isObject(rawValues)) {
+          errors.push(invalidField(`${path}.properties.values`));
+        } else {
+          const values: Record<string, number> = {};
+          for (const key of Object.keys(rawValues)) {
+            const entry = rawValues[key];
+            if (!isNonNegativeInteger(entry)) {
+              errors.push(invalidField(`${path}.properties.values.${key}`));
+              continue;
+            }
+            values[key] = entry;
+          }
+          if (Object.keys(values).length > 0) properties.values = values;
+        }
+      }
+      location['properties'] = properties;
+    }
+  }
   const rawInventories = value['inventories'];
   if (rawInventories !== undefined) {
     if (!Array.isArray(rawInventories)) {

@@ -92,11 +92,20 @@ export function decodeLocationSummary(value: unknown): DecodeResult<LocationSumm
   if (!isBoolean(active)) errors.push(invalidField('active'));
 
   if (errors.length > 0) return err(errors);
-  return ok({
+  let region: string | undefined;
+  const rawRegion = value['region'];
+  if (rawRegion !== undefined) {
+    if (isString(rawRegion)) region = rawRegion;
+    else errors.push(invalidField('region'));
+  }
+  if (errors.length > 0) return err(errors);
+  const summary: LocationSummaryDto = {
     entity_id: entityId as number,
     knowledge: knowledge as string,
     active: active as boolean,
-  });
+    ...(region === undefined ? {} : { region }),
+  };
+  return ok(summary);
 }
 
 /** Decodes the need breakdown read model (PIC-10.3). */

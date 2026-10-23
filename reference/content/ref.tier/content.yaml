@@ -321,6 +321,10 @@ connections:
       base_duration_ticks: 300
     allowed_transport_tags: [ref.tier.transport.standard]
 
+regions:
+  - id: ref.tier.region.core
+    tags: [ref.tier.region.start]
+
 transport_units:
   - id: ref.tier.transport.basic
     tags: [ref.tier.transport.standard]

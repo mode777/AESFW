@@ -85,6 +85,18 @@ export type ConnectionPlan = {
   readonly allowedTransportTags: readonly StringId[];
 };
 
+/**
+ * A seeded generation descriptor attached to locations of a seeded
+ * distribution rule (CONT-6.18, GDD-6.5). The lists are in ascending order;
+ * instantiation assigns each name to one region through the seed stream.
+ */
+export type GeneratedAttributesPlan = {
+  readonly streamName: string;
+  readonly regions: readonly DefinitionHandle[];
+  readonly propertyNames: readonly StringId[];
+  readonly slotTypes: readonly StringId[];
+};
+
 /** A planned location. */
 export type LocationPlan = {
   readonly template: DefinitionHandle;
@@ -99,6 +111,8 @@ export type LocationPlan = {
   readonly grid?: LocationGridPlan;
   /** Internal-logistics configuration, present only for a limited location. */
   readonly internalLogistics?: InternalLogisticsPlan;
+  /** Seeded distribution-rule generation, present for seeded-rule regions. */
+  readonly generated?: GeneratedAttributesPlan;
   /** The location's owner; defaults to the plan's default owner. */
   readonly owner?: OwnerHandle;
 };
@@ -154,6 +168,88 @@ const resolveGrid = (world: World, entity: EntityId, plan: LocationGridPlan): Lo
 };
 
 /**
+ * Assigns each generated name to one of the descriptor's regions: a name
+ * authored with a non-zero value or slot count on a location of the rule keeps
+ * its authoring region, the remaining names are drawn from the named seed
+ * stream in ascending name order (CONT-6.18). Respecting authored supply keeps
+ * the disjoint guarantee intact after generation.
+ *
+ * Source: GDD-3.3, GDD-6.5, TDS-15
+ */
+const generatedOwners = (
+  world: World,
+  plan: WorldPlan,
+  descriptor: GeneratedAttributesPlan,
+  names: readonly StringId[],
+  authored: (location: LocationPlan, name: StringId) => boolean,
+): Map<StringId, DefinitionHandle> => {
+  const owners = new Map<StringId, DefinitionHandle>();
+  const nameSet = new Set(names);
+  for (const locationPlan of plan.locations) {
+    if (locationPlan.generated !== descriptor || locationPlan.region === null) continue;
+    for (const name of names) {
+      if (owners.has(name) || !authored(locationPlan, name) || !nameSet.has(name)) continue;
+      owners.set(name, locationPlan.region);
+    }
+  }
+  for (const name of names) {
+    if (owners.has(name)) continue;
+    const draw = nextInt(
+      createStream(world.rng.seed, `${descriptor.streamName}.${name}`),
+      descriptor.regions.length,
+    ).value;
+    const region = descriptor.regions[draw];
+    if (region !== undefined) owners.set(name, region);
+  }
+  return owners;
+};
+
+const applyGeneratedAttributes = (
+  world: World,
+  plan: WorldPlan,
+  descriptor: GeneratedAttributesPlan,
+  location: Location,
+): Location => {
+  const ownerByProperty = generatedOwners(
+    world,
+    plan,
+    descriptor,
+    descriptor.propertyNames,
+    (locationPlan, name) =>
+      locationPlan.properties.some((entry) => entry.property === name && entry.value > 0),
+  );
+  const present = new Set(location.properties.map((entry) => entry.property));
+  const filled: LocationProperty[] = [];
+  for (const name of descriptor.propertyNames) {
+    if (present.has(name)) continue;
+    const owner = ownerByProperty.get(name);
+    if (owner === undefined) continue;
+    filled.push({ property: name, value: owner === location.region ? 1000 : 0 });
+  }
+  const properties = [...location.properties, ...filled].sort((a, b) =>
+    a.property < b.property ? -1 : a.property > b.property ? 1 : 0,
+  );
+  let sourceSlots = location.sourceSlots;
+  if (sourceSlots === undefined || sourceSlots.length === 0) {
+    const ownerBySlot = generatedOwners(
+      world,
+      plan,
+      descriptor,
+      descriptor.slotTypes,
+      (locationPlan, type) =>
+        (locationPlan.sourceSlots ?? []).some((slot) => slot.type === type && slot.count > 0),
+    );
+    const slots: SourceSlot[] = [];
+    for (const type of descriptor.slotTypes) {
+      if (ownerBySlot.get(type) !== location.region) continue;
+      slots.push({ type, count: 1 });
+    }
+    sourceSlots = slots;
+  }
+  return { ...location, properties, ...(sourceSlots.length === 0 ? {} : { sourceSlots }) };
+};
+
+/**
  * Instantiates the locations and inventories of `plan` on `world`.
  *
  * Source: CONT-6.4, CONT-6.6, ARCH-3.1
@@ -182,7 +278,7 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
       locationPlan.grid === undefined
         ? null
         : resolveGrid(world, locationEntity, locationPlan.grid);
-    locationStore.set(locationEntity, {
+    let component: Location = {
       template: locationPlan.template,
       spatialPolicy: locationPlan.spatialPolicy,
       capacity:
@@ -196,7 +292,11 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
       ...(locationPlan.sourceSlots === undefined || locationPlan.sourceSlots.length === 0
         ? {}
         : { sourceSlots: locationPlan.sourceSlots }),
-    });
+    };
+    if (locationPlan.generated !== undefined) {
+      component = applyGeneratedAttributes(world, plan, locationPlan.generated, component);
+    }
+    locationStore.set(locationEntity, component);
     const inventories: EntityId[] = [];
     for (const inventoryPlan of locationPlan.inventories) {
       const inventoryEntity = allocateEntity(world);

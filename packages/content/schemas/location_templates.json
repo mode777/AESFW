@@ -24,6 +24,10 @@
         "type": "string"
       }
     },
+    "region": {
+      "minLength": 1,
+      "type": "string"
+    },
     "properties": {
       "type": "object",
       "patternProperties": {

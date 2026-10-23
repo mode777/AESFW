@@ -156,6 +156,28 @@ describe('[PIC-9.1] project', () => {
     expect(snapshot.entities[0]?.production?.recipe_id).toBe('test.recipe.a');
   });
 
+  it('[PIC-9.1][CONT-6.18] a regionful location exposes its region and a regionless one omits it', () => {
+    IDS['test.region.alpha'] = 20;
+    const state = session();
+    const location = state.world.stores
+      .get<{ region: number | null }>('location')
+      .get(ids.entityId(1));
+    if (location === undefined) throw new Error('location missing');
+    state.world.stores.get<{ region: number | null }>('location').set(ids.entityId(1), {
+      ...location,
+      region: ids.definitionHandle(20),
+    });
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.properties?.region).toBe('test.region.alpha');
+    state.world.stores.get<{ region: number | null }>('location').set(ids.entityId(1), {
+      ...location,
+      region: null,
+    });
+    const withoutRegion = project(state, ids.ownerHandle(0));
+    expect(withoutRegion.locations[0]?.properties?.region).toBeUndefined();
+    delete IDS['test.region.alpha'];
+  });
+
   it('[PIC-9.1][GDD-9.7] an inventory exposes its effective capacity', () => {
     const state = session();
     state.world.stores.get<Inventory>('inventory').set(ids.entityId(2), {

@@ -251,3 +251,81 @@ describe('[CONT-6.6] world definition plan', () => {
     expect(result.plan.locations).toEqual([]);
   });
 });
+
+describe('[CONT-6.18][GDD-6.4] regions and distribution rules', () => {
+  const region = (id: string): RawDefinition => ({ id });
+  const rule = (overrides: Record<string, unknown> = {}): RawDefinition => ({
+    id: 'test.distribution.disjoint',
+    regions: ['test.region.alpha', 'test.region.beta'],
+    disjoint: { properties: ['test.property.suitability_*'], source_slot_types: true },
+    generation: { mode: 'fixed' },
+    ...overrides,
+  });
+  const regionRegistry = (
+    templates: readonly RawDefinition[],
+    extras: Record<string, readonly RawDefinition[]> = {},
+  ) =>
+    buildRegistry({
+      location_templates: templates,
+      regions: [region('test.region.alpha'), region('test.region.beta')],
+      distribution_rules: [rule()],
+      ...extras,
+    }).registry;
+
+  it('[GDD-6.4] a template region resolves onto the location plan', () => {
+    const alpha = template('test.location.a', { region: 'test.region.alpha' });
+    const result = defaultWorldPlan(regionRegistry([alpha]));
+    expect(result.diagnostics).toEqual([]);
+    expect(result.plan.locations[0]?.region).not.toBeNull();
+  });
+
+  it('[CONT-6.18] a world-location override replaces the template region', () => {
+    const base = template('test.location.a', { region: 'test.region.alpha' });
+    const world = {
+      id: 'test.world.regions',
+      locations: [{ id: 'test.loc.a', template: 'test.location.a', region: 'test.region.beta' }],
+    };
+    const registry = buildRegistry({
+      location_templates: [base],
+      regions: [region('test.region.alpha'), region('test.region.beta')],
+      worlds: [world],
+    }).registry;
+    const result = worldPlan(registry, 'test.world.regions');
+    expect(result.diagnostics).toEqual([]);
+    const beta = registry.handleOf('region', ids.stringId('test.region.beta'));
+    expect(result.plan.locations[0]?.region).toBe(beta);
+  });
+
+  it('[CONT-6.18] an unknown region is reported at plan time', () => {
+    const base = template('test.location.a', { region: 'test.region.missing' });
+    const registry = buildRegistry({ location_templates: [base] }).registry;
+    const result = defaultWorldPlan(registry);
+    expect(codes(result.diagnostics)).toContain('unresolved_reference');
+    expect(result.plan.locations[0]?.region).toBeNull();
+  });
+
+  it('[CONT-6.18] a fixed rule attaches no generation descriptor', () => {
+    const alpha = template('test.location.a', { region: 'test.region.alpha' });
+    const result = defaultWorldPlan(regionRegistry([alpha]));
+    expect(result.plan.locations[0]?.generated).toBeUndefined();
+  });
+
+  it('[GDD-6.5] a seeded rule attaches the generation descriptor', () => {
+    const alpha = template('test.location.a', {
+      region: 'test.region.alpha',
+      properties: { 'test.property.suitability_c': 1000 },
+    });
+    const beta = template('test.location.b', { region: 'test.region.beta' });
+    const seeded = regionRegistry([alpha, beta], {
+      distribution_rules: [
+        rule({ generation: { mode: 'seeded', seed_stream: 'test.generation' } }),
+      ],
+    });
+    const result = defaultWorldPlan(seeded);
+    expect(result.diagnostics).toEqual([]);
+    const generated = result.plan.locations[0]?.generated;
+    expect(generated?.streamName).toBe('test.generation');
+    expect(generated?.propertyNames).toEqual([ids.stringId('test.property.suitability_c')]);
+    expect(generated?.regions).toHaveLength(2);
+  });
+});

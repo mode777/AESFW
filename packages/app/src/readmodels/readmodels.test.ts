@@ -24,6 +24,7 @@ const IDS: Record<string, number> = {
   'test.tier.a': 3,
   'test.need.a': 6,
   'test.need_category.a': 7,
+  'test.region.alpha': 20,
 };
 
 const stringIdOf: Registry['stringIdOf'] = (type, handle) => {
@@ -206,6 +207,17 @@ describe('[PIC-10.2] locationSummary', () => {
 
   it('[PIC-10.2] omits throughput when the location is unbounded', () => {
     expect(locationSummary(session(), ids.ownerHandle(0), 1)?.throughput).toBeUndefined();
+  });
+
+  it('[PIC-10.2][CONT-6.18] a regionful location reports its region', () => {
+    const state = session();
+    const store = state.world.stores.get<{ region: number | null }>('location');
+    const location = store.get(ids.entityId(1));
+    if (location === undefined) throw new Error('location missing');
+    store.set(ids.entityId(1), { ...location, region: ids.definitionHandle(20) });
+    expect(locationSummary(state, ids.ownerHandle(0), 1)?.region).toBe('test.region.alpha');
+    store.set(ids.entityId(1), { ...location, region: null });
+    expect(locationSummary(state, ids.ownerHandle(0), 1)?.region).toBeUndefined();
   });
 });
 

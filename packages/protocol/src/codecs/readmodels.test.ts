@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   decodeEntityDetail,
+  decodeLocationSummary,
   decodeNeedBreakdown,
   decodePlanning,
   decodeTransportDetail,
@@ -102,5 +103,24 @@ describe('[PIC-10.4] transport detail codec', () => {
 
   it('[PIC-10.4] rejects a malformed transport detail', () => {
     expect(decodeTransportDetail({ entity_id: 5 }).ok).toBe(false);
+  });
+});
+
+describe('[PIC-10.2] location summary codec', () => {
+  it('[PIC-10.2][CONT-6.18] a summary with a region decodes', () => {
+    const decoded = decodeLocationSummary({
+      entity_id: 1,
+      knowledge: 'discovered',
+      active: true,
+      region: 'test.region.alpha',
+    });
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok) expect(decoded.value.region).toBe('test.region.alpha');
+  });
+
+  it('[PIC-10.2][CONT-6.18] a summary without a region omits the field', () => {
+    const decoded = decodeLocationSummary({ entity_id: 1, knowledge: 'unknown', active: false });
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok) expect(decoded.value.region).toBeUndefined();
   });
 });

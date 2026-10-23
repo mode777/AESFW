@@ -236,6 +236,8 @@ describe('[TDS-7] definition collection catalogue', () => {
       'worlds',
       'transport_units',
       'transport_order_templates',
+      'regions',
+      'distribution_rules',
     ]);
     expect(DEFINITION_COLLECTIONS.resources).toBe('resource');
     expect(DEFINITION_COLLECTIONS.location_templates).toBe('location');

@@ -49,6 +49,7 @@ export const LocationTemplateSchema = Type.Object(
     spatial_policy: IdSchema,
     spatial_parameters: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
     tags: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
+    region: Type.Optional(IdSchema),
     properties: Type.Optional(Type.Record(Type.String(), Type.Integer())),
     source_slots: Type.Optional(Type.Array(SourceSlotSchema)),
     internal_logistics: Type.Optional(InternalLogisticsSchema),
