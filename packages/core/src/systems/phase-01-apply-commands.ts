@@ -278,6 +278,103 @@ const applyOne = (ctx: TickContext, scheduled: ScheduledCommand): CommandOutcome
       });
       return emitApplied(command.location, command.location);
     }
+    case 'SetResourcePurposeLock': {
+      const inventoryStore = world.stores.get<{ owner: number | null }>('inventory');
+      const inventory = inventoryStore.get(command.inventory);
+      if (inventory === undefined) {
+        return reject(
+          [
+            {
+              code: 'unknown_inventory',
+              arguments: { inventory: command.inventory },
+            },
+          ],
+          [command.inventory],
+        );
+      }
+      if (ctx.registry.stringIdOf('resource', command.resource) === null) {
+        return reject(
+          [
+            {
+              code: 'unknown_resource',
+              arguments: { resource: command.resource },
+            },
+          ],
+          [command.inventory],
+        );
+      }
+      const PURPOSES: readonly string[] = [
+        'production_input',
+        'population_need',
+        'construction',
+        'population_transition',
+        'transport_load',
+        'exchange_sale',
+        'maintenance',
+        'establishment',
+      ];
+      if (!PURPOSES.includes(command.purpose)) {
+        return reject(
+          [{ code: 'invalid_purpose', arguments: { purpose: command.purpose } }],
+          [command.inventory],
+        );
+      }
+      if (inventory.owner === null || inventory.owner !== scheduled.actor) {
+        return reject(
+          [{ code: 'not_owner', arguments: { actor: scheduled.actor } }],
+          [command.inventory],
+          command.inventory,
+        );
+      }
+      const ownerIndex = world.owners.owners.findIndex((entry) => entry.handle === scheduled.actor);
+      if (ownerIndex < 0) {
+        return reject(
+          [{ code: 'not_owner', arguments: { actor: scheduled.actor } }],
+          [command.inventory],
+          command.inventory,
+        );
+      }
+      const ownerState = world.owners.owners[ownerIndex];
+      if (ownerState === undefined) {
+        return reject(
+          [{ code: 'not_owner', arguments: { actor: scheduled.actor } }],
+          [command.inventory],
+          command.inventory,
+        );
+      }
+      const withoutLock = ownerState.purposeLocks.filter(
+        (lock) =>
+          !(
+            lock.inventory === command.inventory &&
+            lock.resource === command.resource &&
+            lock.purpose === command.purpose
+          ),
+      );
+      const locks = command.locked
+        ? [
+            ...withoutLock,
+            { inventory: command.inventory, resource: command.resource, purpose: command.purpose },
+          ]
+        : withoutLock;
+      locks.sort(
+        (left, right) =>
+          left.inventory - right.inventory ||
+          left.resource - right.resource ||
+          (left.purpose < right.purpose ? -1 : left.purpose > right.purpose ? 1 : 0),
+      );
+      const owners = [...world.owners.owners];
+      owners[ownerIndex] = { ...ownerState, purposeLocks: locks };
+      world.owners = { owners };
+      stampRevision(world, command.inventory, ctx.tick);
+      ctx.events.emit({
+        type: 'CommandApplied',
+        subjects: [command.inventory],
+        owner: scheduled.actor,
+        location: null,
+        payload: { command_id: scheduled.commandId, command_type: command.type },
+      });
+      return applied(scheduled.commandId, ctx.tick, command.inventory);
+    }
     case 'ResumeDeficitPausedEntities': {
       const targets =
         command.entities === 'all' ? null : ([...command.entities] as readonly EntityId[]);

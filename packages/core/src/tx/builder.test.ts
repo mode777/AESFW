@@ -668,3 +668,80 @@ describe('[ARCH-6.2][TDS-12.2] atomic composites', () => {
     expect(world.ledger.reservations[0]?.quantity).toBe(200);
   });
 });
+
+describe('[GDD-8.5][TDS-12.3] purpose locks gate every purposeful access', () => {
+  it('[GDD-8.5] a locked-purpose withdraw is rejected and another purpose withdraws', () => {
+    const owner = makeOwner(0, [
+      { inventory: ent(1), resource: res(0), purpose: 'transport_load' },
+    ]);
+    const world = makeWorld({ 1: makeInventory(0, [{ resource: res(0), quantity: 5000 }]) }, [
+      owner,
+    ]);
+    const writer = writerFor(world);
+    const locked = writer.atomic((b) =>
+      b.withdraw({
+        inventory: ent(1),
+        resource: res(0),
+        quantity: 2000,
+        purpose: 'transport_load',
+        sink: ent(1),
+      }),
+    );
+    expect(locked.ok).toBe(false);
+    if (!locked.ok) expect(locked.error.code).toBe('purpose_locked');
+    const allowed = writer.atomic((b) =>
+      b.withdraw({
+        inventory: ent(1),
+        resource: res(0),
+        quantity: 2000,
+        purpose: 'population_need',
+        sink: ent(1),
+      }),
+    );
+    expect(allowed.ok).toBe(true);
+  });
+
+  it('[GDD-8.5] clearing the lock restores access', () => {
+    const owner = makeOwner(0, [
+      { inventory: ent(1), resource: res(0), purpose: 'transport_load' },
+    ]);
+    const world = makeWorld({ 1: makeInventory(0, [{ resource: res(0), quantity: 5000 }]) }, [
+      owner,
+    ]);
+    world.owners = { owners: [{ ...owner, purposeLocks: [] }] };
+    const result = writerFor(world).atomic((b) =>
+      b.withdraw({
+        inventory: ent(1),
+        resource: res(0),
+        quantity: 2000,
+        purpose: 'transport_load',
+        sink: ent(1),
+      }),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('[GDD-8.5] a locked-purpose transfer from the source is rejected', () => {
+    const owner = makeOwner(0, [
+      { inventory: ent(1), resource: res(0), purpose: 'production_input' },
+    ]);
+    const world = makeWorld(
+      {
+        1: makeInventory(0, [{ resource: res(0), quantity: 5000 }]),
+        2: makeInventory(0, [], { total: 5000, perResource: null }),
+      },
+      [owner],
+    );
+    const result = writerFor(world).atomic((b) =>
+      b.transfer({
+        from: ent(1),
+        to: ent(2),
+        resource: res(0),
+        quantity: 1000,
+        purpose: 'production_input',
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('purpose_locked');
+  });
+});

@@ -11,6 +11,7 @@ import type { Int } from '../fx/index.js';
 import type { DefinitionHandle, EntityId, Tick } from '../ids/index.js';
 import type { LogicalTransform } from '../sim/spatial.js';
 import type { TransportOrderSpec } from '../sim/transport/types.js';
+import type { Purpose } from '../world/types.js';
 
 /** A scheduled command the kernel can apply (TDS-16.2). */
 export type Command =
@@ -56,6 +57,13 @@ export type Command =
   | {
       readonly type: 'ResumeDeficitPausedEntities';
       readonly entities: readonly EntityId[] | 'all';
+    }
+  | {
+      readonly type: 'SetResourcePurposeLock';
+      readonly inventory: EntityId;
+      readonly resource: DefinitionHandle;
+      readonly purpose: Purpose;
+      readonly locked: boolean;
     }
   | {
       readonly type: 'ActivateLocation';

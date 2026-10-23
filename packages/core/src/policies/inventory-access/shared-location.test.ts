@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { definitionHandle, entityId, ownerHandle } from '../../ids/index.js';
+import type { OwnerState } from '../../world/types.js';
+
+const makeOwner = (handle: number, purposeLocks: OwnerState['purposeLocks']): OwnerState => ({
+  handle: ownerHandle(handle),
+  knowledge: [],
+  accounts: [],
+  purposeLocks,
+  unlocks: [],
+  deficitPaused: [],
+});
 import { createEmptyRegistry } from '../../registry/types.js';
 import { stores } from '../../testing.js';
 import { createWorld } from '../../world/create.js';
@@ -63,7 +73,12 @@ describe('[ARCH-12][GDD-8.2] shared-location access', () => {
     store.set(entityId(2), makeInventory([0]));
     store.set(entityId(3), makeInventory([1]));
     expect(
-      sharedLocationPolicy.accessibleInventories(world, entityId(1), definitionHandle(0)),
+      sharedLocationPolicy.accessibleInventories(
+        world,
+        entityId(1),
+        definitionHandle(0),
+        'population_need',
+      ),
     ).toEqual([2]);
   });
 
@@ -72,14 +87,57 @@ describe('[ARCH-12][GDD-8.2] shared-location access', () => {
     setLocation(world, 1, [2]);
     stores(world).get<Inventory>('inventory').set(entityId(2), makeInventory([]));
     expect(
-      sharedLocationPolicy.accessibleInventories(world, entityId(1), definitionHandle(5)),
+      sharedLocationPolicy.accessibleInventories(
+        world,
+        entityId(1),
+        definitionHandle(5),
+        'population_need',
+      ),
     ).toEqual([2]);
   });
 
   it('[ARCH-12] an unknown location has no accessible inventory', () => {
     const world = makeWorld();
     expect(
-      sharedLocationPolicy.accessibleInventories(world, entityId(9), definitionHandle(0)),
+      sharedLocationPolicy.accessibleInventories(
+        world,
+        entityId(9),
+        definitionHandle(0),
+        'population_need',
+      ),
     ).toEqual([]);
+  });
+});
+
+describe('[GDD-8.5] purpose-aware access filtering', () => {
+  it('[GDD-8.5] a locked inventory contributes no stock for the locked purpose', () => {
+    const world = makeWorld();
+    setLocation(world, 1, [2, 3]);
+    const store = stores(world).get<Inventory>('inventory');
+    store.set(entityId(2), makeInventory([0]));
+    store.set(entityId(3), makeInventory([0]));
+    world.owners = {
+      owners: [
+        makeOwner(0, [
+          { inventory: entityId(2), resource: definitionHandle(0), purpose: 'population_need' },
+        ]),
+      ],
+    };
+    expect(
+      sharedLocationPolicy.accessibleInventories(
+        world,
+        entityId(1),
+        definitionHandle(0),
+        'population_need',
+      ),
+    ).toEqual([3]);
+    expect(
+      sharedLocationPolicy.accessibleInventories(
+        world,
+        entityId(1),
+        definitionHandle(0),
+        'transport_load',
+      ),
+    ).toEqual([2, 3]);
   });
 });

@@ -444,6 +444,21 @@ const applyOp = (state: TxState, op: StagedOp): TxError | null => {
       if (component === undefined) {
         return txError('unknown_inventory', { inventory: request.inventory });
       }
+      if (
+        purposeLocked(
+          state.world,
+          request.inventory,
+          component.owner,
+          request.resource,
+          request.purpose,
+        )
+      ) {
+        return txError('purpose_locked', {
+          inventory: request.inventory,
+          resource: request.resource,
+          purpose: request.purpose,
+        });
+      }
       const available =
         stored(state, request.inventory, request.resource) -
         quantityReservedIn(state, request.inventory, request.resource);
@@ -480,6 +495,13 @@ const applyOp = (state: TxState, op: StagedOp): TxError | null => {
       const from = inventoryOf(state, request.from);
       if (from === undefined) {
         return txError('unknown_inventory', { inventory: request.from });
+      }
+      if (purposeLocked(state.world, request.from, from.owner, request.resource, request.purpose)) {
+        return txError('purpose_locked', {
+          inventory: request.from,
+          resource: request.resource,
+          purpose: request.purpose,
+        });
       }
       const to = inventoryOf(state, request.to);
       if (to === undefined) {

@@ -8,16 +8,34 @@ import type { DefinitionHandle, EntityId } from '../../ids/index.js';
 import { locationHubOf } from '../../sim/location.js';
 import { accepts } from '../../tx/inventory.js';
 import type { Inventory } from '../../tx/inventory.js';
-import type { World } from '../../world/types.js';
+import type { Purpose, World } from '../../world/types.js';
 import type { InventoryAccessPolicy } from './types.js';
 
 /** The string id of the shared-location policy. */
 export const SHARED_LOCATION_POLICY_ID = 'framework.inventory.shared_location';
 
+/** True when the inventory's owner locked `(resource, purpose)` on it (GDD-8.5). */
+const lockedFor = (
+  world: World,
+  inventory: EntityId,
+  owner: number | null,
+  resource: DefinitionHandle,
+  purpose: Purpose,
+): boolean => {
+  if (owner === null) return false;
+  const state = world.owners.owners[owner];
+  if (state === undefined) return false;
+  return state.purposeLocks.some(
+    (lock) =>
+      lock.inventory === inventory && lock.resource === resource && lock.purpose === purpose,
+  );
+};
+
 const accessibleInventories = (
   world: World,
   location: EntityId,
   resource: DefinitionHandle,
+  purpose: Purpose,
 ): readonly EntityId[] => {
   const hub = locationHubOf(world, location);
   if (hub === undefined) return [];
@@ -25,7 +43,9 @@ const accessibleInventories = (
   const result: EntityId[] = [];
   for (const inventoryId of hub.inventories) {
     const inventory = store.get(inventoryId);
-    if (inventory !== undefined && accepts(inventory, resource)) result.push(inventoryId);
+    if (inventory === undefined || !accepts(inventory, resource)) continue;
+    if (lockedFor(world, inventoryId, inventory.owner, resource, purpose)) continue;
+    result.push(inventoryId);
   }
   result.sort((left, right) => left - right);
   return result;

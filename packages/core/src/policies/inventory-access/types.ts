@@ -5,7 +5,7 @@
  * Source: ARCH-12
  */
 import type { DefinitionHandle, EntityId } from '../../ids/index.js';
-import type { World } from '../../world/types.js';
+import type { Purpose, World } from '../../world/types.js';
 
 /** An inventory-access policy implementation (ARCH-12). */
 export interface InventoryAccessPolicy {
@@ -14,5 +14,6 @@ export interface InventoryAccessPolicy {
     world: World,
     location: EntityId,
     resource: DefinitionHandle,
+    purpose: Purpose,
   ): readonly EntityId[];
 }

@@ -17,6 +17,7 @@ import type {
   FailurePolicy,
   LogicalTransform,
   Orientation,
+  Purpose,
   QuantityRule,
   Result,
   ScheduledCommand,
@@ -369,6 +370,29 @@ const mapCommand = (
     }
     return { ok: false, error: { code: 'unknown_command', arguments: { type } } };
   }
+  if (type === 'SetResourcePurposeLock') {
+    const inventory = entityOf({ entity_id: payload['inventory_id'] });
+    const resource = payload['resource'];
+    const purpose = payload['purpose'];
+    const locked = payload['locked'];
+    if (inventory === null || typeof resource !== 'string' || typeof purpose !== 'string') {
+      return { ok: false, error: { code: 'unknown_command', arguments: { type } } };
+    }
+    if (typeof locked !== 'boolean') {
+      return { ok: false, error: { code: 'unknown_command', arguments: { type } } };
+    }
+    const handle = content.registry.handleOf('resource', ids.stringId(resource));
+    if (handle === null) {
+      return { ok: false, error: { code: 'unknown_resource', arguments: { resource } } };
+    }
+    return ok({
+      type: 'SetResourcePurposeLock',
+      inventory,
+      resource: handle,
+      purpose: purpose as Purpose,
+      locked,
+    });
+  }
   const entity = entityOf(payload);
   if (entity === null) {
     return { ok: false, error: { code: 'unknown_entity', arguments: { entity: -1 } } };
@@ -454,6 +478,7 @@ const referencedEntities = (command: Command): readonly EntityId[] => {
   if (command.type === 'ResumeDeficitPausedEntities') {
     return command.entities === 'all' ? [] : command.entities;
   }
+  if (command.type === 'SetResourcePurposeLock') return [command.inventory];
   return [command.entity];
 };
 

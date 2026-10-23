@@ -50,6 +50,7 @@ export function deliverNeeds(world: World, tx: TransactionWriter, events: EventW
           world,
           residence.location,
           spec.resource,
+          'population_need',
         );
         let available = 0;
         for (const inventory of inventories) available += stock(world, inventory, spec.resource);
