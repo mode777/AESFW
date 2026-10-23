@@ -11,6 +11,7 @@ import { ownerHandle } from '../ids/index.js';
 import type { DefinitionHandle, EntityId, OwnerHandle } from '../ids/index.js';
 import type { Inventory, InventoryAcceptance, InventoryCapacity } from '../tx/inventory.js';
 import type { OwnerState, World } from '../world/types.js';
+import type { ThroughputPool } from './internal-logistics/types.js';
 import { allocateEntity } from '../world/create.js';
 import type { Location, LocationHub, LocationProperty, SourceSlot } from './location.js';
 import { buildableMask } from './spatial.js';
@@ -33,6 +34,13 @@ export type LocationGridPlan = {
   readonly buildableRatio: { readonly min: Int; readonly max: Int } | null;
 };
 
+/** A planned internal-logistics configuration. */
+export type InternalLogisticsPlan = {
+  readonly policy: string;
+  readonly baseThroughput: Int;
+  readonly baseThroughputCapability: DefinitionHandle | null;
+};
+
 /** A planned location. */
 export type LocationPlan = {
   readonly template: DefinitionHandle;
@@ -45,6 +53,8 @@ export type LocationPlan = {
   readonly inventories: readonly InventoryPlan[];
   /** Grid geometry, present only for a grid-policy location. */
   readonly grid?: LocationGridPlan;
+  /** Internal-logistics configuration, present only for a limited location. */
+  readonly internalLogistics?: InternalLogisticsPlan;
 };
 
 /** A default world plan: one owner and its locations. */
@@ -139,5 +149,17 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
       inventories.push(inventoryEntity);
     }
     hubStore.set(locationEntity, { inventories });
+    if (locationPlan.internalLogistics !== undefined) {
+      const logistics = locationPlan.internalLogistics;
+      const pool: ThroughputPool = {
+        policy: logistics.policy,
+        baseCapacity: logistics.baseThroughput,
+        baseThroughputCapability: logistics.baseThroughputCapability,
+        capacity: logistics.baseThroughput,
+        requested: 0,
+        throttlePermille: 1000,
+      };
+      world.stores.get<ThroughputPool>('throughputPool').set(locationEntity, pool);
+    }
   }
 }

@@ -10,7 +10,7 @@ import type { SystemDescriptor } from '../pipeline/types.js';
 export const phase20AllocateServicesAndConsumeNeeds: SystemDescriptor = {
   phase: 20,
   name: 'allocateServicesAndConsumeNeeds',
-  reads: ['residence', 'needStates', 'inventory'],
+  reads: ['residence', 'needStates', 'inventory', 'throughputAllocation'],
   writes: ['needStates', 'inventory', 'ledger'],
   run: (ctx) => {
     deliverNeeds(ctx.world, ctx.tx, ctx.events);

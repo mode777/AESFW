@@ -152,6 +152,7 @@ export type {
 } from './sim/connectivity.js';
 export { instantiateWorld } from './sim/instantiate.js';
 export type {
+  InternalLogisticsPlan,
   InventoryPlan,
   LocationGridPlan,
   LocationPlan,
@@ -173,6 +174,22 @@ export type {
   CapabilityScope,
   CapabilitySupply,
 } from './sim/capabilities/index.js';
+export {
+  allocateThroughput,
+  collectThroughputRequests,
+  readThroughputRequests,
+  throttlePermilleOf,
+  throttleQuantity,
+  throughputCapacity,
+  throughputPoolOf,
+  THROUGHPUT_LIMITED_POLICY,
+  THROUGHPUT_REQUESTS_KEY,
+} from './sim/internal-logistics/index.js';
+export type {
+  ThroughputAllocation,
+  ThroughputPool,
+  ThroughputRequest,
+} from './sim/internal-logistics/index.js';
 export {
   PENDING_OUTPUT_KEY,
   advanceProcesses,

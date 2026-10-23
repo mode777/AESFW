@@ -8,6 +8,7 @@
 import { GRID_POLICY_ID, det, ids } from '@aesfw/core';
 import type {
   Diagnostic,
+  InternalLogisticsPlan,
   InventoryPlan,
   LocationGridPlan,
   LocationPlan,
@@ -76,6 +77,27 @@ const mapInventories = (value: JsonValue | undefined): InventoryPlan[] => {
   return result;
 };
 
+const mapInternalLogistics = (
+  registry: ContentRegistry,
+  value: JsonValue | undefined,
+): InternalLogisticsPlan | undefined => {
+  const record = asRecord(value);
+  if (record === null) return undefined;
+  const policy = record['policy'];
+  if (typeof policy !== 'string') return undefined;
+  const base = record['base_throughput'];
+  const capabilityId = record['base_throughput_capability'];
+  const capability =
+    typeof capabilityId === 'string'
+      ? registry.handleOf('resource', ids.stringId(capabilityId))
+      : null;
+  return {
+    policy,
+    baseThroughput: typeof base === 'number' && Number.isInteger(base) && base >= 0 ? base : 0,
+    baseThroughputCapability: capability,
+  };
+};
+
 const isPositiveInt = (value: JsonValue | undefined): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value > 0;
 
@@ -117,6 +139,7 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
     if (activation?.['initial'] !== true) continue;
     const spatialPolicy = typeof data['spatial_policy'] === 'string' ? data['spatial_policy'] : '';
     const params = asRecord(data['spatial_parameters']);
+    const internalLogistics = mapInternalLogistics(registry, data['internal_logistics']);
     if (spatialPolicy === GRID_POLICY_ID) {
       const grid = mapGrid(params);
       if (grid === null) {
@@ -138,6 +161,7 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
         active: true,
         inventories: mapInventories(data['inventories']),
         grid,
+        ...(internalLogistics === undefined ? {} : { internalLogistics }),
       });
       continue;
     }
@@ -164,6 +188,7 @@ export function defaultWorldPlan(registry: ContentRegistry): DefaultWorldPlanRes
       region: null,
       active: true,
       inventories: mapInventories(data['inventories']),
+      ...(internalLogistics === undefined ? {} : { internalLogistics }),
     });
   }
   return { plan: { owner: ids.ownerHandle(0), locations }, diagnostics };

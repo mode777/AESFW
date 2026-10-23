@@ -75,9 +75,9 @@ Source: GDD-4.3, GDD-10.2, ARCH-6.2, INV-15
 - **THEN** its state is `blocked` with `missing_capability`
 
 ### Requirement: Process advancement
-Phase 12 SHALL increase the progress of every `processing` producer by one. It SHALL compute each source's pending output and reduce a finite or regenerating source's remaining amount; it SHALL replenish a regenerating source by its regeneration rate up to its maximum. It SHALL skip a source that carries any block reason. It SHALL scale an area-dependent source's output by `floor(rate × propertyValue / 1000)`, where `propertyValue` is the referenced location property value in permille, or `0` when the location does not carry the property.
+Phase 12 SHALL increase the progress of every `processing` producer by one, clamped to its effective completion duration. It SHALL compute each source's pending output and reduce a finite or regenerating source's remaining amount; it SHALL replenish a regenerating source by its regeneration rate up to its maximum. It SHALL skip a source that carries any block reason. It SHALL scale an area-dependent source's output by `floor(rate × propertyValue / 1000)`, where `propertyValue` is the referenced location property value in permille, or `0` when the location does not carry the property. It SHALL scale a source's output by the requester's granted throttle permille, or `1000` when the source is unbounded.
 
-Source: GDD-10.2, GDD-10.4, GDD-9.5, GDD-6.5
+Source: GDD-10.2, GDD-10.4, GDD-9.5, GDD-6.5, GDD-15.1
 
 #### Scenario: A processing producer advances
 - **WHEN** a `processing` producer with progress `3` advances
@@ -95,10 +95,18 @@ Source: GDD-10.2, GDD-10.4, GDD-9.5, GDD-6.5
 - **WHEN** an area-dependent source with rate `66` and `scale_by_property` `test.property.suitability` at a location without that property advances
 - **THEN** it deposits nothing
 
-### Requirement: Atomic production completion
-Phase 13 SHALL, for a batch producer whose progress reached its duration and for a continuous producer each tick, atomically commit the reserved inputs, deposit the outputs, and release the capacity reservations; it SHALL set the producer to `idle` with progress `0`. It SHALL deposit a source's pending output. A completion SHALL commit all inputs and deposit all outputs, or neither (INV-15).
+#### Scenario: A throttled source reduces its deposit
+- **WHEN** a source plans `1000` output and its throughput allocation is `250` permille
+- **THEN** phase 12 computes `250` pending output and reduces a finite deposit by `250`
 
-Source: GDD-10.4, ARCH-6.2, TDS-12.2, INV-15
+#### Scenario: An unbounded source is not scaled
+- **WHEN** a source is at a location without throughput limiting
+- **THEN** phase 12 computes its full planned output
+
+### Requirement: Atomic production completion
+Phase 13 SHALL, for a batch producer whose progress reached its duration and for a continuous producer each tick, atomically commit the reserved inputs, deposit the outputs, and release the capacity reservations; it SHALL set the producer to `idle` with progress `0`. A throttled completion SHALL commit `floor(input × throttle_permille / 1000)` and deposit `floor(output × throttle_permille / 1000)`, releasing the uncommitted remainder of each input reservation. A producer granted zero throughput SHALL NOT complete: it SHALL remain `processing` at its completion duration with its reservations held. It SHALL deposit a source's pending output. A completion SHALL commit all scaled inputs and deposit all scaled outputs, or neither (INV-15).
+
+Source: GDD-10.4, ARCH-6.2, TDS-12.2, INV-15, TDS-11.3
 
 #### Scenario: A batch producer completes
 - **WHEN** a batch producer with duration `10` and progress `10` completes
@@ -111,6 +119,18 @@ Source: GDD-10.4, ARCH-6.2, TDS-12.2, INV-15
 #### Scenario: A source's pending output is deposited
 - **WHEN** a source has pending output from phase 12
 - **THEN** phase 13 deposits it into the source's inventory
+
+#### Scenario: An unthrottled completion is unchanged
+- **WHEN** a producer completes with input `600`, output `400`, and throttle `1000` permille
+- **THEN** it commits `600` and deposits `400`
+
+#### Scenario: A throttled completion scales both sides
+- **WHEN** a producer completes with input `600`, output `400`, and throttle `500` permille
+- **THEN** it commits `300` and deposits `200`
+
+#### Scenario: Zero throttle defers completion
+- **WHEN** a batch producer reaches its duration with throttle `0` permille
+- **THEN** it remains `processing` and no input is committed
 
 ### Requirement: Block reasons are consistent with processing
 A producer with a non-empty block-reason list SHALL NOT be `processing`, and a `processing` producer SHALL have no block reasons other than `throughput_throttled` (INV-22). A source with a non-empty block-reason list SHALL NOT extract and SHALL NOT hold a slot binding or a working-area claim (INV-22).

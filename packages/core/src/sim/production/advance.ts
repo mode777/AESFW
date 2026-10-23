@@ -9,6 +9,7 @@ import type { EntityId } from '../../ids/index.js';
 import type { World } from '../../world/types.js';
 import type { TickScratch } from '../../pipeline/types.js';
 import { locationOf } from '../location.js';
+import { throttlePermilleOf } from '../internal-logistics/throttle.js';
 import { advanceSource } from './sources.js';
 import { isProducer, isResourceSource } from './plan.js';
 import { PENDING_OUTPUT_KEY } from './types.js';
@@ -16,7 +17,7 @@ import type { ItemAmount, Producer, ResourceSource } from './types.js';
 
 const isBlocked = (source: ResourceSource): boolean => (source.blockReasons?.length ?? 0) > 0;
 
-const scalePermilleOf = (world: World, source: ResourceSource): number => {
+export const sourceScalePermille = (world: World, source: ResourceSource): number => {
   if (
     source.policy !== 'area_dependent' ||
     source.scaleByProperty === undefined ||
@@ -39,7 +40,13 @@ export function advanceProcesses(world: World, scratch: TickScratch): void {
   for (const entity of producerStore.ids()) {
     const producer = producerStore.get(entity);
     if (!isProducer(producer) || producer.state !== 'processing') continue;
-    producerStore.set(entity, { ...producer, progress: producer.progress + 1 });
+    const recipe =
+      producer.recipe === null
+        ? null
+        : (producer.recipes.find((entry) => entry.recipe === producer.recipe) ?? null);
+    const duration = recipe === null ? 1 : recipe.mode === 'batch' ? recipe.duration : 1;
+    const progress = producer.progress + 1 > duration ? duration : producer.progress + 1;
+    producerStore.set(entity, { ...producer, progress });
   }
 
   const sourceStore = world.stores.get<ResourceSource>('resourceSource');
@@ -47,7 +54,11 @@ export function advanceProcesses(world: World, scratch: TickScratch): void {
   for (const entity of sourceStore.ids()) {
     const source = sourceStore.get(entity);
     if (!isResourceSource(source) || isBlocked(source)) continue;
-    const tick = advanceSource(source, scalePermilleOf(world, source));
+    const tick = advanceSource(
+      source,
+      sourceScalePermille(world, source),
+      throttlePermilleOf(world, entity),
+    );
     if (tick.amounts.length > 0) pending.set(entity, tick.amounts);
     sourceStore.set(entity, tick.source);
   }

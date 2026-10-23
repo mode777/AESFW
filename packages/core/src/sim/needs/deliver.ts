@@ -12,6 +12,7 @@ import type { Inventory } from '../../tx/inventory.js';
 import { sharedLocationPolicy } from '../../policies/inventory-access/index.js';
 import type { World } from '../../world/types.js';
 import { isResidence } from '../population/types.js';
+import { throttlePermilleOf, throttleQuantity } from '../internal-logistics/throttle.js';
 import type { Residence } from '../population/types.js';
 import { isNeedStates } from './types.js';
 import type { NeedRuntime, NeedStates } from './types.js';
@@ -35,6 +36,7 @@ export function deliverNeeds(world: World, tx: TransactionWriter, events: EventW
     const states = needStore.get(entity);
     if (!isNeedStates(states)) continue;
     const specs = residence.needs ?? [];
+    const throttle = throttlePermilleOf(world, entity);
     const updated: NeedRuntime[] = [];
     for (const state of states.needs) {
       const spec = specs.find((entry) => entry.need === state.need);
@@ -52,6 +54,9 @@ export function deliverNeeds(world: World, tx: TransactionWriter, events: EventW
         let available = 0;
         for (const inventory of inventories) available += stock(world, inventory, spec.resource);
         delivered = state.demanded < available ? state.demanded : available;
+        if (spec.type === 'resource_consumption') {
+          delivered = throttleQuantity(delivered, throttle);
+        }
         if (spec.type === 'resource_consumption' && delivered > 0) {
           let remaining = delivered;
           for (const inventory of inventories) {

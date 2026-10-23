@@ -21,7 +21,14 @@ import {
 import type { Inventory, Registry, TickOutput } from '@aesfw/core';
 import type { CapabilityConsumer, CapabilityProvider } from '@aesfw/core';
 import type { Location } from '@aesfw/core';
-import type { Producer, ResourceSource, SourceSlotBinding, WorkingAreaClaim } from '@aesfw/core';
+import type {
+  Producer,
+  ResourceSource,
+  SourceSlotBinding,
+  ThroughputAllocation,
+  ThroughputPool,
+  WorkingAreaClaim,
+} from '@aesfw/core';
 import type { PopulationGroup } from '@aesfw/core';
 
 type World = core.World;
@@ -402,6 +409,65 @@ const checkOwnerBalanceConservation = (
   }
 };
 
+const checkThroughputAllocation = (world: World, findings: InvariantFinding[]): void => {
+  const poolStore = world.stores.get<ThroughputPool>('throughputPool');
+  const allocationStore = world.stores.get<ThroughputAllocation>('throughputAllocation');
+  const byLocation = new Map<number, ThroughputAllocation[]>();
+  for (const id of allocationStore.ids()) {
+    const allocation = allocationStore.get(id) as ThroughputAllocation | null | undefined;
+    if (allocation == null) continue;
+    const list = byLocation.get(allocation.location);
+    if (list === undefined) byLocation.set(allocation.location, [allocation]);
+    else list.push(allocation);
+  }
+  for (const location of poolStore.ids()) {
+    const pool = poolStore.get(location) as ThroughputPool | null | undefined;
+    if (pool == null) continue;
+    const allocations = byLocation.get(location) ?? [];
+    let requested = 0;
+    let granted = 0;
+    for (const allocation of allocations) {
+      requested += allocation.requested;
+      granted += allocation.granted;
+    }
+    if (granted > pool.capacity) {
+      findings.push({
+        id: 'INV-06',
+        message: `location ${location} grants ${granted} above capacity ${pool.capacity}`,
+      });
+    }
+    for (const allocation of allocations) {
+      if (allocation.granted > allocation.requested) {
+        findings.push({
+          id: 'INV-06',
+          message: `entity at location ${location} is granted ${allocation.granted} above request ${allocation.requested}`,
+        });
+        continue;
+      }
+      if (requested <= pool.capacity) {
+        if (allocation.granted !== allocation.requested) {
+          findings.push({
+            id: 'INV-06',
+            message: `entity at location ${location} is under-granted ${allocation.granted} of ${allocation.requested}`,
+          });
+        }
+        continue;
+      }
+      if (allocation.requested === 0) continue;
+      const product = BigInt(pool.capacity) * BigInt(allocation.requested);
+      const denominator = BigInt(requested);
+      const lower = Number(product / denominator);
+      const upper = Number((product + denominator - 1n) / denominator);
+      if (allocation.granted < lower || allocation.granted > upper) {
+        findings.push({
+          id: 'INV-06',
+          message: `entity at location ${location} is granted ${allocation.granted}, outside [${lower}, ${upper}]`,
+        });
+      }
+    }
+  }
+};
+
 /**
  * Evaluates the invariant catalogue over a completed tick (VER-6).
  *
@@ -418,6 +484,7 @@ export function checkInvariants(
   checkReservationsWithinStored(output.world, findings);
   checkCapacity(output.world, findings);
   checkCapabilityAllocation(output.world, findings);
+  checkThroughputAllocation(output.world, findings);
   checkProducerConsistency(output.world, findings);
   checkSourceConsistency(output.world, findings);
   checkPopulationBounds(output.world, findings);

@@ -1,6 +1,15 @@
 import { cloneWorld, createEmptyRegistry, ids, step, world as core } from '@aesfw/core';
+import { runPhases } from '@aesfw/core/testing';
 import { createTransactionWriter } from '@aesfw/core';
-import type { Inventory, Registry, TickInput, TickOutput, Transaction } from '@aesfw/core';
+import type {
+  Inventory,
+  Registry,
+  ThroughputAllocation,
+  ThroughputPool,
+  TickInput,
+  TickOutput,
+  Transaction,
+} from '@aesfw/core';
 import { describe, expect, it } from 'vitest';
 import { content, expectContentOk } from './content-builder.js';
 import { checkInvariants, expectInvariants } from './invariants.js';
@@ -559,5 +568,58 @@ describe('[GDD-20.2][INV-23] owner balance conservation', () => {
     expect(
       checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
     ).toContain('INV-23');
+  });
+});
+
+describe('[VER-6][INV-06] throughput invariants', () => {
+  const throughputWorld = (
+    capacity: number,
+    allocations: readonly { entity: number; requested: number; granted: number }[],
+  ): { before: core.World; output: TickOutput } => {
+    const working = world(resourceRegistry()).build();
+    const pool: ThroughputPool = {
+      policy: 'framework.inventory.throughput_limited',
+      baseCapacity: capacity,
+      baseThroughputCapability: null,
+      capacity,
+      requested: allocations.reduce((total, entry) => total + entry.requested, 0),
+      throttlePermille: 1000,
+    };
+    working.stores.get<ThroughputPool>('throughputPool').set(ids.entityId(1), pool);
+    for (const entry of allocations) {
+      const allocation: ThroughputAllocation = {
+        location: ids.entityId(1),
+        requested: entry.requested,
+        granted: entry.granted,
+        throttlePermille:
+          entry.requested === 0 ? 1000 : Math.floor((1000 * entry.granted) / entry.requested),
+      };
+      working.stores
+        .get<ThroughputAllocation>('throughputAllocation')
+        .set(ids.entityId(entry.entity), allocation);
+    }
+    const before = cloneWorld(working);
+    const output = runPhases(working, resourceRegistry(), [], input);
+    return { before, output };
+  };
+
+  it('[INV-06] an over-capacity grant is reported', () => {
+    const { before, output } = throughputWorld(1000, [
+      { entity: 2, requested: 600, granted: 600 },
+      { entity: 3, requested: 600, granted: 600 },
+    ]);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-06');
+  });
+
+  it('[INV-06] an exact allocation passes', () => {
+    const { before, output } = throughputWorld(1000, [
+      { entity: 2, requested: 600, granted: 600 },
+      { entity: 3, requested: 400, granted: 400 },
+    ]);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).not.toContain('INV-06');
   });
 });

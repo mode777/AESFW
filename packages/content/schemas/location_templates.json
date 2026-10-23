@@ -50,6 +50,25 @@
         }
       }
     },
+    "internal_logistics": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["policy"],
+      "properties": {
+        "policy": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "base_throughput": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "base_throughput_capability": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
     "inventories": {
       "type": "array",
       "items": {

@@ -25,6 +25,15 @@ const InventorySchema = Type.Object(
   { additionalProperties: false },
 );
 
+const InternalLogisticsSchema = Type.Object(
+  {
+    policy: IdSchema,
+    base_throughput: Type.Optional(Type.Integer({ minimum: 0 })),
+    base_throughput_capability: Type.Optional(IdSchema),
+  },
+  { additionalProperties: false },
+);
+
 const SourceSlotSchema = Type.Object(
   {
     type: IdSchema,
@@ -42,6 +51,7 @@ export const LocationTemplateSchema = Type.Object(
     tags: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
     properties: Type.Optional(Type.Record(Type.String(), Type.Integer())),
     source_slots: Type.Optional(Type.Array(SourceSlotSchema)),
+    internal_logistics: Type.Optional(InternalLogisticsSchema),
     inventories: Type.Array(InventorySchema),
     activation: Type.Object({ initial: Type.Boolean() }, { additionalProperties: false }),
   },

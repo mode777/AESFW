@@ -10,7 +10,7 @@ import type { SystemDescriptor } from '../pipeline/types.js';
 export const phase13CommitProduction: SystemDescriptor = {
   phase: 13,
   name: 'commitProduction',
-  reads: ['producer', 'resourceSource', 'inventory'],
+  reads: ['producer', 'resourceSource', 'inventory', 'throughputAllocation'],
   writes: ['producer', 'resourceSource', 'inventory', 'ledger'],
   run: (ctx) => {
     commitProduction(ctx.world, ctx.tx, ctx.scratch);

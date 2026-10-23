@@ -265,7 +265,6 @@ Source: CONT-6, CONT-7, CONT-8, CONT-6.22, TDS-7
 - **WHEN** the catalogue is read
 - **THEN** its keys are the ten M1 collections plus `deficit_policies`, each mapping to its core definition type
 
-
 ### Requirement: Published JSON Schema
 
 `@aesfw/content` SHALL export each definition schema as a JSON Schema file under `packages/content/schemas/<collection>.json` (TDS-20.4), generated from the TypeBox schemas. The committed files SHALL equal the schemas the code produces.
@@ -318,3 +317,20 @@ Source: CONT-6.8
 #### Scenario: An entity definition with tags validates
 - **WHEN** an entity definition declares `tags: [test.tag.hub]`
 - **THEN** it validates with no diagnostics
+
+### Requirement: Location internal-logistics schema
+The location-template schema SHALL accept an optional `internal_logistics` object containing a `policy`, an optional non-negative integer `base_throughput`, and an optional `base_throughput_capability` definition reference, and SHALL reject unknown fields inside it.
+
+Source: CONT-6.4
+
+#### Scenario: A location template accepts internal logistics
+- **WHEN** a location template declares `internal_logistics: { policy: framework.inventory.throughput_limited, base_throughput: 6000 }`
+- **THEN** the schema accepts the template
+
+#### Scenario: A negative base throughput is rejected
+- **WHEN** a location template declares `internal_logistics.base_throughput: -1`
+- **THEN** the schema rejects the template
+
+#### Scenario: An unknown internal-logistics field is rejected
+- **WHEN** a location template declares `internal_logistics: { policy: framework.inventory.throughput_limited, bonus: 1 }`
+- **THEN** the schema rejects the template

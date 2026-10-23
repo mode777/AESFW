@@ -10,7 +10,7 @@ import type { SystemDescriptor } from '../pipeline/types.js';
 export const phase12AdvanceProcesses: SystemDescriptor = {
   phase: 12,
   name: 'advanceProcesses',
-  reads: ['producer', 'resourceSource'],
+  reads: ['producer', 'resourceSource', 'throughputAllocation'],
   writes: ['producer', 'resourceSource'],
   run: (ctx) => {
     advanceProcesses(ctx.world, ctx.scratch);

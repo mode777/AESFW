@@ -38,9 +38,9 @@ Source: GDD-12.4, GDD-4.2
 - **THEN** its demand is `40`
 
 ### Requirement: Need delivery
-Phase 20 SHALL, for each residence in ascending entity ID, deliver each need from the inventories accessible through `shared_location`. A `resource_consumption` need SHALL consume the delivered amount from those inventories; a `resource_availability` need SHALL test availability without consuming. The delivered amount SHALL NOT exceed the demand. It SHALL append the delivered amount to the need window and trim the window to its length.
+Phase 20 SHALL, for each residence in ascending entity ID, deliver each need from the inventories accessible through `shared_location`. A `resource_consumption` need SHALL consume the delivered amount from those inventories; a `resource_availability` need SHALL test availability without consuming. The delivered amount SHALL NOT exceed the demand. When the residence is at a throughput-limited location, the delivered amount SHALL be `floor(availableDelivery × throttle_permille / 1000)`, using the residence's granted throughput. It SHALL append the delivered amount to the need window and trim the window to its length.
 
-Source: GDD-12.2, GDD-12.4, ARCH-12
+Source: GDD-12.2, GDD-12.4, ARCH-12, GDD-15.1
 
 #### Scenario: A consumption need consumes its resource
 - **WHEN** a residence demands `20` and its location holds `50`
@@ -53,6 +53,14 @@ Source: GDD-12.2, GDD-12.4, ARCH-12
 #### Scenario: An availability need does not consume
 - **WHEN** an availability need is delivered
 - **THEN** the inventory quantity is unchanged
+
+#### Scenario: A throttled need delivery consumes less
+- **WHEN** a residence can receive `400` and its throughput throttle is `250` permille
+- **THEN** phase 20 delivers and consumes `100`
+
+#### Scenario: An unthrottled need delivery is unchanged
+- **WHEN** a residence is at a location without throughput limiting and can receive `400`
+- **THEN** phase 20 delivers and consumes `400`
 
 ### Requirement: Fulfillment and category aggregation
 Phase 21 SHALL compute each need's fulfillment as `min(1000, floor(1000 × Σwindow / (demand × window length)))`, or `1000` when the demand or window is empty. It SHALL aggregate each active category under its mode: `all` takes the minimum member fulfillment, `any` the maximum, `average` the mean, `minimum` the minimum, `count` the proportion of members at or above the target ratio up to `required_score`, and `weighted_score` the weighted sum divided by the required score, capped at `1000`.

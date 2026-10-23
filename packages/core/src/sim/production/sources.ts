@@ -21,13 +21,19 @@ export interface SourceTick {
  *
  * Source: GDD-9.5, GDD-10.4, GDD-6.5
  */
-export function advanceSource(source: ResourceSource, scalePermille = 1000): SourceTick {
+export function advanceSource(
+  source: ResourceSource,
+  scalePermille = 1000,
+  throttlePermille = 1000,
+): SourceTick {
   const amounts: ItemAmount[] = [];
   const outputs = source.outputs.map((output) => {
-    const rate =
+    const scaled =
       source.policy === 'area_dependent'
         ? mulDiv(output.rate, scalePermille, 1000, 'floor')
         : output.rate;
+    const rate =
+      throttlePermille >= 1000 ? scaled : mulDiv(scaled, throttlePermille, 1000, 'floor');
     if (output.remaining === null) {
       if (rate > 0) amounts.push({ resource: output.resource, quantity: rate });
       return output;

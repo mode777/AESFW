@@ -117,7 +117,6 @@ Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, I
 - **WHEN** the journal is present and a maintenance charge of `-500` for the owner matches the journal's account delta
 - **THEN** the findings contain no INV-23
 
-
 ### Requirement: Clone-run harness
 `cloneRun(world, registry, input)` SHALL clone the world, step the original and the clone with the same input, and report success only when their state hashes, events, and outcomes are identical (INV-17).
 
@@ -201,3 +200,15 @@ Source: VER-5.2
 - **WHEN** `diagnosticCodes` is called on a result with diagnostics
 - **THEN** it returns their codes in order
 
+### Requirement: Throughput allocation invariant
+`checkInvariants` SHALL evaluate INV-06 for every throughput-limited location: the sum of its grants SHALL NOT exceed the location's capacity, each grant SHALL NOT exceed its request, and each grant SHALL differ from its exact proportional share by less than one unit. A missing pool or allocation SHALL produce no finding.
+
+Source: INV-06, VER-6, GDD-15.1, TDS-6.3
+
+#### Scenario: INV-06 reports an over-capacity grant
+- **WHEN** a throughput-limited location has capacity `1000` and its allocations sum to `1001`
+- **THEN** `checkInvariants` returns an INV-06 finding
+
+#### Scenario: INV-06 accepts an exact allocation
+- **WHEN** a throughput-limited location has capacity `1000` and grants `600` and `400` for requests `600` and `400`
+- **THEN** `checkInvariants` returns no INV-06 finding
