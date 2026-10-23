@@ -8,6 +8,8 @@ import {
   shapeGrammar,
   stateEncoding,
   suitabilityOverlay,
+  throughputGauge,
+  throughputOverlay,
 } from './grid.js';
 import type { ShapeArchetype } from './grid.js';
 
@@ -215,6 +217,47 @@ describe('[REF-12.2] overlays', () => {
       properties: { tags: [], values: { 'test.property.suitability': 1000 } },
     });
     expect(suitabilityOverlay(value, 'test.property.suitability')).toBe(1000);
+  });
+
+  it('[REF-12.2] a throughput gauge reports capacity, demand, and pressure', () => {
+    const gauge = throughputGauge(
+      location({ throughput: { capacity: 1000, requested: 1600, throttle_permille: 625 } }),
+    );
+    expect(gauge).toEqual({
+      capacity: 1000,
+      requested: 1600,
+      throttlePermille: 625,
+      pressurePermille: 1600,
+      throttled: true,
+    });
+  });
+
+  it('[REF-12.2] a location without throughput has no gauge', () => {
+    expect(throughputGauge(location())).toBeNull();
+  });
+
+  it('[REF-12.2] zero capacity with demand is full pressure', () => {
+    expect(
+      throughputGauge(
+        location({ throughput: { capacity: 0, requested: 100, throttle_permille: 0 } }),
+      )?.pressurePermille,
+    ).toBe(1000);
+  });
+
+  it('[REF-12.2] the throughput overlay lists throttled entities ascending', () => {
+    const throttled = (id: number): EntityDto =>
+      entity({
+        entity_id: id,
+        production: {
+          state: 'processing',
+          progress: 0,
+          progress_scale: 1000,
+          block_reasons: ['throughput_throttled'],
+        },
+      });
+    expect(throughputOverlay([throttled(5), entity({ entity_id: 4 }), throttled(3)])).toEqual([
+      3, 5,
+    ]);
   });
 
   it('[REF-12.2] a missing property returns null', () => {

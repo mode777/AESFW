@@ -224,7 +224,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 5.1 | `add-throughput-allocation` | sim/internal-logistics | throughput pools, request collection (phase 09), `alloc-v1` (phase 10), throttling semantics for phases 11–20, `throughput_throttled`; INV-06 ✓ archived 2026-10-23 | GDD-6.6, GDD-15.1, ARCH-5.2, TDS-11.3 | 1.13, 3.4 | M |
 | 5.2 | `add-storage-providers` | sim/internal-logistics | capacity and throughput expansion by storage entities ✓ archived 2026-10-23 | GDD-9.7 | 5.1 | S |
 | 5.3 | `add-golden-throughput-throttling` | testkit/scenarios | SCN-10 ✓ archived 2026-10-23 | VER-9.3 | 5.1 | S |
-| 5.4 | `add-client-throughput-indicators` | reference/client | throughput gauge, overlay, throttle display; R1 storage module | REF-12.2 | 5.2, 3.7 | S |
+| 5.4 | `add-client-throughput-indicators` | reference/client | throughput gauge, overlay, throttle display; R1 storage module ✓ archived 2026-10-23 | REF-12.2 | 5.2, 3.7 | S |
 
 **Exit criteria:** SCN-10 passes; over-densification is visible in the client.
 

@@ -4,7 +4,13 @@
  * Source: PIC-10.2, TDS-18.4
  */
 import { readWorld } from '@aesfw/core';
-import type { OwnerHandle, PopulationGroup, Registry, Residence } from '@aesfw/core';
+import type {
+  OwnerHandle,
+  PopulationGroup,
+  Registry,
+  Residence,
+  ThroughputPool,
+} from '@aesfw/core';
 import type { LocationSummaryDto } from '@aesfw/protocol';
 import type { SessionState } from '../session/types.js';
 
@@ -57,10 +63,20 @@ export function locationSummary(
     }
   }
 
+  const pool = world.stores.get<ThroughputPool>('throughputPool').get(location as never);
   return {
     entity_id: location,
     knowledge: reader.knowledge(actor, location as never),
     active: loc.active,
+    ...(pool === undefined
+      ? {}
+      : {
+          throughput: {
+            capacity: pool.capacity,
+            requested: pool.requested,
+            throttle_permille: pool.throttlePermille,
+          },
+        }),
     inventory_totals: inventoryTotals,
     population_by_tier: populationByTier,
     entity_counts: { entities: entityCount },

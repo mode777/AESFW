@@ -10,8 +10,13 @@ describe('[REF-12.2] grid overlay view state', () => {
     expect(toggleOverlay(null, 's')).toBe('suitability');
   });
 
+  it('[REF-12.2] the throughput key selects the throughput overlay', () => {
+    expect(toggleOverlay(null, 't')).toBe('throughput');
+  });
+
   it('[REF-12.2] the same key clears the overlay', () => {
     expect(toggleOverlay('connectivity', 'c')).toBeNull();
+    expect(toggleOverlay('throughput', 'T')).toBeNull();
   });
 
   it('[REF-12.2] the selected location is client-local state', () => {

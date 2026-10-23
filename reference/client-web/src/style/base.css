@@ -308,3 +308,32 @@ body {
   height: 32px;
   color: var(--ink-2);
 }
+
+.throughput-gauge .gauge-track {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 0.05;
+}
+
+.throughput-gauge .gauge-fill {
+  fill: var(--focus);
+  stroke: none;
+}
+
+.throughput-gauge.throttled .gauge-fill {
+  fill: var(--accent);
+}
+
+.throughput-gauge .gauge-label {
+  fill: var(--ink-2);
+  stroke: none;
+  font-family: var(--font-num);
+  font-size: 0.45px;
+}
+
+.grid-throughput-throttled {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.08;
+  stroke-dasharray: 0.2 0.15;
+}

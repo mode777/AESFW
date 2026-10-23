@@ -54,6 +54,7 @@ const CLIENT_STRINGS: Readonly<Record<string, string>> = {
   'grid.no_grid': 'No grid',
   'overlay.connectivity': 'Connectivity',
   'overlay.suitability': 'Suitability',
+  'overlay.throughput': 'Throughput',
   'palette.title': 'Build',
   'mode.inspect': 'inspect',
   'mode.place': 'place',

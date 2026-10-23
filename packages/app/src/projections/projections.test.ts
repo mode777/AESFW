@@ -9,6 +9,7 @@ import type {
   Producer,
   Registry,
   StorageProvider,
+  ThroughputPool,
 } from '@aesfw/core';
 import { applyDelta } from '@aesfw/protocol';
 import type { CompiledContent } from '@aesfw/content';
@@ -177,6 +178,30 @@ describe('[PIC-9.1] project', () => {
     const snapshot = project(state, ids.ownerHandle(0));
     const entry = snapshot.locations[0]?.inventories?.[0]?.entries[0];
     expect(entry?.capacity).toBe(1500);
+  });
+
+  it('[PIC-9.1][GDD-15.1] a throughput-limited location exposes its pool', () => {
+    const state = session();
+    const pool: ThroughputPool = {
+      policy: 'framework.inventory.throughput_limited',
+      baseCapacity: 8000,
+      baseThroughputCapability: null,
+      capacity: 8000,
+      requested: 1600,
+      throttlePermille: 625,
+    };
+    state.world.stores.get<ThroughputPool>('throughputPool').set(ids.entityId(1), pool);
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.throughput).toEqual({
+      capacity: 8000,
+      requested: 1600,
+      throttle_permille: 625,
+    });
+  });
+
+  it('[PIC-9.1] an unbounded location omits throughput', () => {
+    const snapshot = project(session(), ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.throughput).toBeUndefined();
   });
 
   it('[PIC-9.1] projection order is ascending entity ID', () => {

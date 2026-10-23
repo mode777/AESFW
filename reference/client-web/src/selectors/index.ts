@@ -21,6 +21,8 @@ export {
   shapeGrammar,
   stateEncoding,
   suitabilityOverlay,
+  throughputGauge,
+  throughputOverlay,
 } from './grid.js';
 export type {
   ConnectivityMarker,
@@ -33,6 +35,7 @@ export type {
   ShapeDescriptor,
   ShapeKind,
   StateEncoding,
+  ThroughputGauge,
 } from './grid.js';
 export {
   economyView,

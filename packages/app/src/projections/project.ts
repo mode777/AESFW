@@ -26,6 +26,7 @@ import type {
   Registry,
   Residence,
   Satisfaction,
+  ThroughputPool,
   World,
   WorldReader,
 } from '@aesfw/core';
@@ -39,6 +40,7 @@ import type {
   OwnerDto,
   ProductionDto,
   SnapshotDto,
+  ThroughputDto,
   SpatialDto,
 } from '@aesfw/protocol';
 import type { SessionState } from '../session/types.js';
@@ -157,6 +159,16 @@ const inventoryDto = (
   return { inventory_id: id, entries };
 };
 
+const throughputDto = (world: World, location: EntityId): ThroughputDto | null => {
+  const pool = world.stores.get<ThroughputPool>('throughputPool').get(location);
+  if (pool === undefined) return null;
+  return {
+    capacity: pool.capacity,
+    requested: pool.requested,
+    throttle_permille: pool.throttlePermille,
+  };
+};
+
 const locationDto = (
   reader: WorldReader,
   world: World,
@@ -172,6 +184,7 @@ const locationDto = (
   const dto: LocationDto = { entity_id: id, knowledge: reader.knowledge(actor, id), inventories };
   if (location !== undefined) {
     const template = definitionId(registry, 'location', location.template);
+    const throughput = throughputDto(world, id);
     return {
       ...dto,
       ...(template === null ? {} : { definition_id: template }),
@@ -183,6 +196,7 @@ const locationDto = (
           location.properties.map((property) => [property.property, property.value]),
         ),
       },
+      ...(throughput === null ? {} : { throughput }),
       ...(location.grid === undefined
         ? {}
         : {

@@ -7,6 +7,7 @@ import type {
   Registry,
   Residence,
   Satisfaction,
+  ThroughputPool,
 } from '@aesfw/core';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { createSession } from '../session/session.js';
@@ -176,6 +177,29 @@ describe('[PIC-10.2] locationSummary', () => {
     expect(summary?.active).toBe(true);
     expect(summary?.population_by_tier?.['test.tier.a']).toBe(50);
     expect(summary?.entity_counts?.['entities']).toBe(1);
+  });
+
+  it('[PIC-10.2] reports the throughput pool when present', () => {
+    const state = session();
+    const pool: ThroughputPool = {
+      policy: 'framework.inventory.throughput_limited',
+      baseCapacity: 8000,
+      baseThroughputCapability: null,
+      capacity: 8000,
+      requested: 1600,
+      throttlePermille: 625,
+    };
+    state.world.stores.get<ThroughputPool>('throughputPool').set(ids.entityId(1), pool);
+    const summary = locationSummary(state, ids.ownerHandle(0), 1);
+    expect(summary?.throughput).toEqual({
+      capacity: 8000,
+      requested: 1600,
+      throttle_permille: 625,
+    });
+  });
+
+  it('[PIC-10.2] omits throughput when the location is unbounded', () => {
+    expect(locationSummary(session(), ids.ownerHandle(0), 1)?.throughput).toBeUndefined();
   });
 });
 

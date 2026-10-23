@@ -12,7 +12,7 @@ import type { Signal } from './signals.js';
 export type ClientMode = 'inspect' | 'place' | 'route-edit';
 
 /** The grid overlays of REF-12.2. */
-export type GridOverlay = 'connectivity' | 'suitability' | null;
+export type GridOverlay = 'connectivity' | 'suitability' | 'throughput' | null;
 
 /** The placement ghost cursor and its latest authoritative result (REF-13.3). */
 export interface PlacementCursor {
@@ -36,7 +36,7 @@ export interface ViewState {
 
 /**
  * Toggles a grid overlay from an overlay key (REF-12.2, REF-13.2): `C` selects
- * connectivity, `S` selects suitability, and re-pressing the active key clears
+ * connectivity, `S` selects suitability, `T` selects throughput, and re-pressing the active key clears
  * it. Other keys leave the overlay unchanged.
  *
  * Source: REF-12.2, REF-13.2
@@ -45,6 +45,7 @@ export function toggleOverlay(current: GridOverlay, key: string): GridOverlay {
   const normalized = key.toLowerCase();
   if (normalized === 'c') return current === 'connectivity' ? null : 'connectivity';
   if (normalized === 's') return current === 'suitability' ? null : 'suitability';
+  if (normalized === 't') return current === 'throughput' ? null : 'throughput';
   return current;
 }
 

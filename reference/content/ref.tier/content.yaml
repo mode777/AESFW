@@ -54,6 +54,9 @@ location_templates:
       ref.tier.property.suitability_p1: 1000
     source_slots:
       - { type: ref.tier.slot.v_a, count: 2 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 6000
     inventories:
       - id: shared
         capacity: { mode: per_resource, quantity: 3000000 }
@@ -207,6 +210,25 @@ entity_definitions:
         footprint: [1, 1]
       connectivity:
         provides: ref.tier.connectivity.hub_network
+
+  - id: ref.tier.entity.storage_module
+    components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - resource: ref.tier.resource.credits
+            quantity: 6000
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+      placement:
+        footprint: [2, 2]
+      storage_provider:
+        inventory: location.shared
+        capacity:
+          total: 1800000
+        throughput: 2000
+      connectivity:
+        requires: ref.tier.connectivity.hub_network
 
   - id: ref.tier.entity.residence
     components:

@@ -106,6 +106,7 @@ export function archetypeOf(metadata: DefinitionMetadataDto): ShapeArchetype {
   const connectivity = asObject(components['connectivity']);
   if (connectivity !== undefined && connectivity['provides'] !== undefined) return 'connector';
   if (components['storage_access'] !== undefined) return 'storage_module';
+  if (components['storage_provider'] !== undefined) return 'storage_module';
   return 'unknown';
 }
 
@@ -282,4 +283,50 @@ export function connectivityOverlay(entities: readonly EntityDto[]): readonly Co
  */
 export function suitabilityOverlay(location: LocationDto, propertyId: string): number | null {
   return location.properties?.values?.[propertyId] ?? null;
+}
+
+/** The throughput gauge model (REF-12.2). */
+export interface ThroughputGauge {
+  readonly capacity: number;
+  readonly requested: number;
+  readonly throttlePermille: number;
+  readonly pressurePermille: number;
+  readonly throttled: boolean;
+}
+
+/**
+ * Derives the throughput gauge from a location snapshot, or `null` when the
+ * location has no throughput pool (REF-12.2).
+ *
+ * Source: REF-12.2, PIC-9.1
+ */
+export function throughputGauge(location: LocationDto): ThroughputGauge | null {
+  const throughput = location.throughput;
+  if (throughput === undefined) return null;
+  const pressurePermille =
+    throughput.capacity > 0
+      ? Math.floor((throughput.requested * 1000) / throughput.capacity)
+      : throughput.requested > 0
+        ? 1000
+        : 0;
+  return {
+    capacity: throughput.capacity,
+    requested: throughput.requested,
+    throttlePermille: throughput.throttle_permille,
+    pressurePermille,
+    throttled: throughput.throttle_permille < 1000,
+  };
+}
+
+/**
+ * The entity IDs whose production reports `throughput_throttled`, ascending
+ * (REF-12.2).
+ *
+ * Source: REF-12.2, PIC-9.1
+ */
+export function throughputOverlay(entities: readonly EntityDto[]): readonly number[] {
+  return entities
+    .filter((entity) => entity.production?.block_reasons.includes('throughput_throttled') ?? false)
+    .map((entity) => entity.entity_id)
+    .sort((a, b) => a - b);
 }

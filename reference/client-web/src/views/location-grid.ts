@@ -16,6 +16,8 @@ import {
   gridCells,
   reasonLabels,
   suitabilityOverlay,
+  throughputGauge,
+  throughputOverlay,
 } from '../selectors/index.js';
 import type { EntityShape, Footprint, GhostShape, ShapeArchetype } from '../selectors/index.js';
 import type { Mirror } from '../store/mirror.js';
@@ -123,18 +125,20 @@ const geometry = (shape: EntityShape): SVGElement[] => {
   return nodes;
 };
 
-const renderShape = (shape: EntityShape): SVGElement => {
+const renderShape = (shape: EntityShape, throttled = false): SVGElement => {
   const classes = [
     'grid-entity',
     `shape-${shape.shape.kind}`,
     `state-${shape.state.state}`,
     ...(shape.state.dashed === true ? ['dashed'] : []),
+    ...(throttled ? ['throughput-throttled'] : []),
   ].join(' ');
   const group = svg('g', {
     class: classes,
     'data-testid': `grid-entity-${shape.entityId}`,
     'data-state': shape.state.state,
     'data-shape': shape.shape.kind,
+    ...(throttled ? { 'data-throttled': 'true' } : {}),
     role: 'img',
     'aria-label': shape.label,
   });
@@ -215,6 +219,36 @@ export function createLocationGrid(
     );
 
     const overlay = view.overlay();
+    const gauge = throughputGauge(location);
+    const gaugeNodes: SVGElement[] = [];
+    if (gauge !== null) {
+      const gaugeWidth = model.width * 0.4;
+      const filled = Math.min(
+        gaugeWidth,
+        (gaugeWidth * Math.min(1000, gauge.pressurePermille)) / 1000,
+      );
+      gaugeNodes.push(
+        svg(
+          'g',
+          {
+            class: gauge.throttled ? 'throughput-gauge throttled' : 'throughput-gauge',
+            'data-testid': 'throughput-gauge',
+            'data-capacity': String(gauge.capacity),
+            'data-requested': String(gauge.requested),
+            'data-throttle': String(gauge.throttlePermille),
+            'data-throttled': String(gauge.throttled),
+          },
+          svg('rect', { x: 0.2, y: 0.2, width: gaugeWidth, height: 0.5, class: 'gauge-track' }),
+          svg('rect', { x: 0.2, y: 0.2, width: filled, height: 0.5, class: 'gauge-fill' }),
+          svg('text', {
+            x: 0.4,
+            y: 1.1,
+            class: 'gauge-label',
+            text: `${gauge.requested}/${gauge.capacity} · ${gauge.throttlePermille}‰`,
+          }),
+        ),
+      );
+    }
     const overlayNodes: SVGElement[] = [];
     if (overlay === 'suitability') {
       const value = suitabilityOverlay(location, deps.propertyId);
@@ -252,6 +286,22 @@ export function createLocationGrid(
         );
       }
       legend.textContent = `${i18n.t('overlay.connectivity')}: ${overlayNodes.length}`;
+    } else if (overlay === 'throughput') {
+      const throttled = new Set(throughputOverlay(entities));
+      for (const entityId of throttled) {
+        const shape = shapes.find((entry) => entry.entityId === entityId);
+        if (shape === undefined) continue;
+        overlayNodes.push(
+          svg('circle', {
+            cx: shape.x + shape.width / 2,
+            cy: shape.y + shape.height / 2,
+            r: Math.max(shape.width, shape.height) / 2 + 0.2,
+            class: 'grid-throughput-throttled',
+            'data-testid': `throughput-throttled-${entityId}`,
+          }),
+        );
+      }
+      legend.textContent = `${i18n.t('overlay.throughput')}: ${throttled.size}`;
     } else {
       legend.textContent = '';
     }
@@ -282,11 +332,17 @@ export function createLocationGrid(
       ghostStatus.textContent = '';
     }
 
+    const throttledIds = new Set(throughputOverlay(entities));
     replaceChildren(
       svgRoot,
       background,
+      svg('g', { class: 'grid-gauge' }, ...gaugeNodes),
       svg('g', { class: 'grid-overlay' }, ...overlayNodes),
-      svg('g', { class: 'grid-entities' }, ...shapes.map(renderShape)),
+      svg(
+        'g',
+        { class: 'grid-entities' },
+        ...shapes.map((shape) => renderShape(shape, throttledIds.has(shape.entityId))),
+      ),
       svg('g', { class: 'grid-ghost' }, ...ghostNodes),
     );
     status.textContent = `${model.width}×${model.height} · ${shapes.length}`;
