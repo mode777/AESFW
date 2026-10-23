@@ -46,10 +46,22 @@ export function buildConditionEvaluator(content: CompiledContent): PlacementCond
       subject: { kind: 'location', id: subject },
       query: (query) => queryValue(world, subject, query),
       aggregate: () => 0,
+      timer: (slot) => timerTicks(world, condition, slot, subject),
     };
     return evaluate(compiled.condition.root, context) === true;
   };
 }
+
+/** Reads a sustained timer's consecutive true ticks (TDS-14.3). */
+const timerTicks = (
+  world: World,
+  condition: DefinitionHandle,
+  slot: number,
+  subject: EntityId,
+): number =>
+  world.timers.timers.find(
+    (entry) => entry.condition === condition && entry.slot === slot && entry.subject === subject,
+  )?.consecutiveTrueTicks ?? 0;
 
 /** The logical transform of a placement command or query payload. */
 export function placementTransformOf(

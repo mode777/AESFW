@@ -53,6 +53,8 @@ const AGG_OPS: Readonly<Record<string, AggOp>> = {
 interface CompileContext {
   readonly diagnostics: Diagnostic[];
   readonly definition: string | null;
+  /** Pre-order counter for `sustained` timer-slot assignment (TDS-14.3). */
+  readonly sustainedSlots: { next: number };
 }
 
 interface CompiledExpr {
@@ -143,6 +145,28 @@ const compileExpr = (
   if (keys.length !== 1) return fail(context, 'invalid_condition_shape', path);
   const op = keys[0] ?? '';
   const value = raw[op];
+
+  if (op === 'sustained') {
+    const record = isRecord(value) ? value : null;
+    if (record === null || record['ticks'] === undefined || record['condition'] === undefined) {
+      return fail(context, 'invalid_condition_shape', path);
+    }
+    const ticks = record['ticks'];
+    if (typeof ticks !== 'number' || !Number.isSafeInteger(ticks) || ticks < 1) {
+      return fail(context, 'condition_ticks_invalid', `${path}/ticks`, {
+        ticks: typeof ticks === 'number' ? ticks : 'invalid',
+      });
+    }
+    const slot = context.sustainedSlots.next;
+    context.sustainedSlots.next += 1;
+    const inner = compileExpr(record['condition'] ?? null, context, `${path}/condition`);
+    if (inner === null) return null;
+    if (inner.type !== 'bool') return typeError(context, `${path}/condition`, 'bool', inner.type);
+    return {
+      expr: { t: 'sustained', ticks, slot, inner: inner.expr },
+      type: 'bool',
+    };
+  }
 
   if (op === 'all' || op === 'any') {
     if (!Array.isArray(value)) return fail(context, 'invalid_condition_shape', path);
@@ -264,7 +288,11 @@ export function compileCondition(
   }
   const compiled = compileExpr(
     record['expression'] ?? null,
-    { diagnostics, definition: id },
+    {
+      diagnostics,
+      definition: id,
+      sustainedSlots: { next: 0 },
+    },
     '/expression',
   );
   if (compiled === null) return { condition: null, diagnostics };

@@ -103,4 +103,15 @@ export function finalizeLifecycle(
   for (const entity of removed) removeEntity(world, entity);
   if (removed.length > 0) world.caches.dirty = true;
   compactStores(world);
+  // Timer instances of removed subjects are deleted (TDS-14.3).
+  if (removed.length > 0) {
+    const alive = (subject: EntityId): boolean => {
+      for (const kind of world.stores.kinds) {
+        if (world.stores.get(kind).has(subject)) return true;
+      }
+      return false;
+    };
+    const timers = world.timers.timers.filter((timer) => alive(timer.subject));
+    if (timers.length !== world.timers.timers.length) world.timers = { timers };
+  }
 }

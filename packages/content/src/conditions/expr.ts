@@ -1,6 +1,5 @@
 /**
- * The compiled expression tree (TDS-14.1). `sustained` is added by
- * `add-sustained-conditions` (7.1) and is intentionally absent here.
+ * The compiled expression tree (TDS-14.1).
  *
  * Source: TDS-14.1
  */
@@ -41,7 +40,56 @@ export type Expr =
   | { readonly t: 'arith'; readonly op: ArithOp; readonly args: readonly Expr[] }
   | { readonly t: 'clamp'; readonly v: Expr; readonly lo: Expr; readonly hi: Expr }
   | { readonly t: 'agg'; readonly op: AggOp; readonly selector: Selector; readonly query: QueryRef }
-  | { readonly t: 'query'; readonly query: QueryRef };
+  | { readonly t: 'query'; readonly query: QueryRef }
+  | {
+      readonly t: 'sustained';
+      readonly ticks: number;
+      readonly slot: number;
+      readonly inner: Expr;
+    };
+
+/**
+ * Returns the timer slots of every `sustained` node in the tree, in pre-order
+ * (TDS-14.3).
+ *
+ * Source: TDS-14.3
+ */
+export function sustainedSlots(root: Expr): readonly number[] {
+  const slots: number[] = [];
+  const walk = (expr: Expr): void => {
+    switch (expr.t) {
+      case 'int':
+      case 'bool':
+      case 'query':
+        return;
+      case 'all':
+      case 'any':
+      case 'arith':
+        expr.args.forEach(walk);
+        return;
+      case 'not':
+        walk(expr.arg);
+        return;
+      case 'cmp':
+        walk(expr.l);
+        walk(expr.r);
+        return;
+      case 'clamp':
+        walk(expr.v);
+        walk(expr.lo);
+        walk(expr.hi);
+        return;
+      case 'agg':
+        return;
+      case 'sustained':
+        slots.push(expr.slot);
+        walk(expr.inner);
+        return;
+    }
+  };
+  walk(root);
+  return slots;
+}
 
 /** A compiled condition (TDS-14.1). */
 export interface CompiledCondition {

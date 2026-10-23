@@ -21,6 +21,7 @@ import { createTickScratch, readCommandOutcomes } from './scratch.js';
 import type {
   PhaseId,
   PolicySet,
+  SustainedTimerUpdater,
   SystemDescriptor,
   TickContext,
   TickInput,
@@ -34,6 +35,7 @@ import type { PlacementConditionEvaluator } from '../sim/placement/types.js';
 import { guardStores } from './write-set.js';
 
 const ALWAYS_TRUE_CONDITION: PlacementConditionEvaluator = () => true;
+const NOOP_TIMER_UPDATER: SustainedTimerUpdater = () => undefined;
 
 interface RunnerState {
   readonly registry: Registry;
@@ -44,6 +46,7 @@ interface RunnerState {
   readonly scratch: TickScratch;
   readonly policies: PolicySet;
   readonly conditionEvaluator: PlacementConditionEvaluator;
+  readonly sustainedTimerUpdater: SustainedTimerUpdater;
 }
 
 const mergeScheduledCommands = (world: World, commands: readonly ScheduledCommand[]): void => {
@@ -67,6 +70,7 @@ const runOne = (descriptor: SystemDescriptor, state: RunnerState): void => {
       scratch: state.scratch,
       policies: state.policies,
       conditionEvaluator: state.conditionEvaluator,
+      sustainedTimerUpdater: state.sustainedTimerUpdater,
     };
     descriptor.run(context);
   } finally {
@@ -92,6 +96,7 @@ const execute = (
     scratch: createTickScratch(),
     policies: EMPTY_POLICY_SET,
     conditionEvaluator: input.conditionEvaluator ?? ALWAYS_TRUE_CONDITION,
+    sustainedTimerUpdater: input.sustainedTimerUpdater ?? NOOP_TIMER_UPDATER,
   };
 
   mergeScheduledCommands(world, input.commands);

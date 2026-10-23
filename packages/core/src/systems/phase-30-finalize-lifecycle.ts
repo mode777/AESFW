@@ -12,8 +12,8 @@ import type { SystemDescriptor } from '../pipeline/types.js';
 export const phase30FinalizeLifecycle: SystemDescriptor = {
   phase: 30,
   name: 'finalizeLifecycle',
-  reads: ['ledger', 'lifecycle', 'constructionPlan', 'constructionProgress', 'inventory'],
-  writes: [...COMPONENT_KINDS, 'ledger'],
+  reads: ['ledger', 'lifecycle', 'constructionPlan', 'constructionProgress', 'inventory', 'timers'],
+  writes: [...COMPONENT_KINDS, 'ledger', 'timers'],
   run: (ctx) => {
     finalizeLifecycle(ctx.world, ctx.tx, ctx.events, ctx.tick);
   },

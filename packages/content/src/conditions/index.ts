@@ -21,3 +21,6 @@ export { QUERY_TABLE, isKnownQuery } from './queries.js';
 export type { QueryName } from './queries.js';
 export { compileCurve, evaluateCurve } from './curves.js';
 export type { CompiledCurve, CompileCurveResult, CurveType, Extrapolation } from './curves.js';
+export { buildSustainedTimerUpdater } from './timers.js';
+export type { SustainedQueryResolver } from './timers.js';
+export { sustainedSlots } from './expr.js';

@@ -16,6 +16,7 @@ export type {
   PhaseId,
   PolicySet,
   StoreKey,
+  SustainedTimerUpdater,
   SystemDescriptor,
   SystemStores,
   TickContext,

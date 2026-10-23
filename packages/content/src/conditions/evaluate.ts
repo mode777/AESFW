@@ -20,6 +20,12 @@ export interface EvalContext {
   readonly subject: EvalSubject;
   readonly query: (query: QueryRef) => number;
   readonly aggregate: (op: AggOp, selector: Selector, query: QueryRef) => number;
+  /**
+   * The consecutive true ticks of the evaluating condition's `sustained` timer
+   * for a slot (TDS-14.3). The context builder closes over the condition
+   * handle and subject; absent timers read `0`.
+   */
+  readonly timer: (slot: number) => number;
 }
 
 const toInt = (value: number): number => value;
@@ -99,5 +105,7 @@ export function evaluate(expr: Expr, context: EvalContext): number | boolean {
       return context.query(expr.query);
     case 'agg':
       return context.aggregate(expr.op, expr.selector, expr.query);
+    case 'sustained':
+      return context.timer(expr.slot) >= expr.ticks;
   }
 }

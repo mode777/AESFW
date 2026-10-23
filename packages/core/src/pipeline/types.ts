@@ -73,6 +73,13 @@ export interface TickScratch {
 /** Resolved policy implementations (TDS-13); empty until the policy rows. */
 export type PolicySet = Readonly<Record<string, never>>;
 
+/**
+ * Updates sustained-condition timers for one tick (TDS-14.3, design D4).
+ * `@aesfw/content` builds the implementation from compiled content; core
+ * cannot interpret compiled expressions.
+ */
+export type SustainedTimerUpdater = (ctx: TickContext) => void;
+
 /** Re-exported transaction types (TDS-12); implemented by `../tx`. */
 export type { AtomicBuilder, Transaction, TransactionWriter, TxError };
 
@@ -87,6 +94,8 @@ export interface TickContext {
   readonly policies: PolicySet;
   /** Evaluates placement content conditions (design D4). */
   readonly conditionEvaluator: PlacementConditionEvaluator;
+  /** Updates sustained timers in phase 22 (TDS-14.3, design D4). */
+  readonly sustainedTimerUpdater: SustainedTimerUpdater;
 }
 
 /** A registered system (TDS-11.2). */
@@ -114,6 +123,8 @@ export interface TickInput {
   readonly options: { readonly journal: boolean; readonly hash: boolean };
   /** Optional placement-condition evaluator (design D4). Defaults to `true`. */
   readonly conditionEvaluator?: PlacementConditionEvaluator;
+  /** Optional sustained-timer updater (TDS-14.3, design D4). Defaults to no-op. */
+  readonly sustainedTimerUpdater?: SustainedTimerUpdater;
 }
 
 /** Output of one tick (TDS-10.1). */

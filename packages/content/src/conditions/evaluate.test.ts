@@ -9,6 +9,7 @@ const context = (query: (name: string) => number): EvalContext => ({
   subject: { kind: 'entity', id: 1 },
   query: (queryRef) => query(queryRef.name),
   aggregate: () => 0,
+  timer: () => 0,
 });
 
 const int = (v: number): Expr => ({ t: 'int', v });
@@ -55,5 +56,50 @@ describe('[CONT-7.2][TDS-14.2] query table', () => {
   it('[CONT-7.2] a known query is recognised', () => {
     expect(isKnownQuery('aggregate_need_fulfillment')).toBe(true);
     expect(QUERY_TABLE).toContain('population_count');
+  });
+});
+
+describe('[TDS-14.3] sustained evaluation', () => {
+  it('[TDS-14.3] a timer at or above the threshold holds', () => {
+    let queries = 0;
+    const ctx: EvalContext = {
+      subject: { kind: 'entity', id: 1 },
+      query: () => {
+        queries += 1;
+        return 1;
+      },
+      aggregate: () => 0,
+      timer: (slot) => (slot === 0 ? 60 : 0),
+    };
+    const expr: Expr = {
+      t: 'sustained',
+      ticks: 60,
+      slot: 0,
+      inner: { t: 'query', query: { name: 'population_count', args: {}, subject: 'x' } },
+    };
+    expect(evaluate(expr, ctx)).toBe(true);
+    expect(queries).toBe(0);
+  });
+
+  it('[TDS-14.3] a timer below the threshold does not hold', () => {
+    const ctx: EvalContext = {
+      subject: { kind: 'entity', id: 1 },
+      query: () => 0,
+      aggregate: () => 0,
+      timer: (slot) => (slot === 0 ? 59 : 0),
+    };
+    const expr: Expr = { t: 'sustained', ticks: 60, slot: 0, inner: bool(true) };
+    expect(evaluate(expr, ctx)).toBe(false);
+  });
+
+  it('[TDS-14.3] a missing timer reads zero consecutive ticks', () => {
+    const ctx: EvalContext = {
+      subject: { kind: 'entity', id: 1 },
+      query: () => 0,
+      aggregate: () => 0,
+      timer: () => 0,
+    };
+    const expr: Expr = { t: 'sustained', ticks: 1, slot: 3, inner: bool(true) };
+    expect(evaluate(expr, ctx)).toBe(false);
   });
 });

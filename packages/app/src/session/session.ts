@@ -29,6 +29,7 @@ import type {
 import { decodeCommandEnvelope } from '@aesfw/protocol';
 import type { CommandEnvelopeDto } from '@aesfw/protocol';
 import type { CompiledContent } from '@aesfw/content';
+import { buildSustainedTimerUpdater } from '@aesfw/content';
 import { buildConditionEvaluator } from './placement.js';
 import type {
   AdvanceResult,
@@ -574,6 +575,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
   const hashLog = [...session.hashLog];
   const hashing = session.settings.hashInterval > 0;
   const conditionEvaluator = buildConditionEvaluator(session.content);
+  const sustainedTimerUpdater = buildSustainedTimerUpdater(session.content);
   let revision = session.revision;
   for (let index = 0; index < ticks; index += 1) {
     const due = session.world.commandQueue.filter(
@@ -583,6 +585,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
       commands: due,
       options: { journal: session.settings.journal, hash: hashing },
       conditionEvaluator,
+      sustainedTimerUpdater,
     });
     revision += 1;
     if (
