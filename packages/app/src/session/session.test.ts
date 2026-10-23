@@ -158,3 +158,36 @@ describe('[TDS-18.1] advance', () => {
     expect(next.revision).toBe(0);
   });
 });
+
+describe('[TDS-16.1] ResumeDeficitPausedEntities mapping', () => {
+  it('[TDS-16.1] an entity list maps to the command', () => {
+    const session = sessionWithProducer();
+    session.world.stores
+      .get<{ definition: number }>('definition')
+      .set(ids.entityId(1), { definition: 1 });
+    const { result } = submitCommand(
+      session,
+      envelope({ type: 'ResumeDeficitPausedEntities', payload: { entities: [1] } }),
+    );
+    expect(result.status).toBe('accepted');
+  });
+
+  it('[TDS-16.1] the all form maps to the command', () => {
+    const session = sessionWithProducer();
+    const { result } = submitCommand(
+      session,
+      envelope({ type: 'ResumeDeficitPausedEntities', payload: { entities: 'all' } }),
+    );
+    expect(result.status).toBe('accepted');
+  });
+
+  it('[TDS-16.1] a malformed payload is rejected', () => {
+    const session = sessionWithProducer();
+    const { result } = submitCommand(
+      session,
+      envelope({ type: 'ResumeDeficitPausedEntities', payload: { entities: 5 } }),
+    );
+    expect(result.status).toBe('rejected');
+    if (result.status === 'rejected') expect(result.errors[0]?.code).toBe('unknown_command');
+  });
+});

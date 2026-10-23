@@ -16,7 +16,7 @@ Source: VER-5.2
 - **THEN** the world has seed `[3, 4]`, tick `10`, the owner in its table, and `value` in the `producer` store for entity `1`
 
 ### Requirement: checkInvariants framework
-`checkInvariants(before, output, registry)` SHALL return the list of violated invariants among INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-21, INV-22, and INV-24 as data, and `expectInvariants` SHALL throw an `InvariantViolation` naming the first finding when the list is non-empty. It SHALL cover:
+`checkInvariants(before, output, registry)` SHALL return the list of violated invariants among INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-21, INV-22, INV-23, and INV-24 as data, and `expectInvariants` SHALL throw an `InvariantViolation` naming the first finding when the list is non-empty. It SHALL cover:
 - INV-01: no inventory stores a negative quantity, and no owner account entry is negative unless its resource declares `allow_negative`.
 - INV-02: for every inventory and resource, the sum of active quantity reservations is at most the stored quantity.
 - INV-03: for every inventory, stored quantity plus capacity reservations is at most each declared capacity rule (total and per resource).
@@ -28,9 +28,10 @@ Source: VER-5.2
 - INV-18: `hashWorld(decodeWorld(encodeWorld(output.world)))` equals `hashWorld(output.world)`.
 - INV-21: a `step` produced an output rather than throwing, and `output.tick` is `before.tick + 1`.
 - INV-22: every producer with a non-empty block-reason list is not `processing`, and every `processing` producer has no block reasons other than `throughput_throttled`.
+- INV-23: when `output.journal` is present, for every owner and resource the change in the owner's account equals the journal's `account` and `trade` deltas for that owner and resource.
 - INV-24: each store's `ids()` is in ascending order.
 
-Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-21, INV-22, INV-24
+Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-21, INV-22, INV-23, INV-24
 
 #### Scenario: A valid empty world has no findings
 - **WHEN** `checkInvariants` is called with a before-world and the output of stepping it
@@ -107,6 +108,15 @@ Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, I
 #### Scenario: A bounded population passes
 - **WHEN** every population group has a count in [0, capacity]
 - **THEN** the findings contain no INV-07
+
+#### Scenario: An unexplained account change is reported
+- **WHEN** the journal is present and an owner's account changes by `50` while the journal's account deltas for that owner sum to `0`
+- **THEN** the findings contain INV-23
+
+#### Scenario: A journalled account charge passes
+- **WHEN** the journal is present and a maintenance charge of `-500` for the owner matches the journal's account delta
+- **THEN** the findings contain no INV-23
+
 
 ### Requirement: Clone-run harness
 `cloneRun(world, registry, input)` SHALL clone the world, step the original and the clone with the same input, and report success only when their state hashes, events, and outcomes are identical (INV-17).

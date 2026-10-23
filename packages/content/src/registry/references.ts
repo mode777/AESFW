@@ -249,6 +249,8 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
           'resource',
           `/needs/${id}/demand/resource`,
         );
+      } else if (collection === 'deficit_policies') {
+        check(id, definition['resource'], 'resource', `/deficit_policies/${id}/resource`);
       } else if (collection === 'need_categories') {
         asArray(definition['members']).forEach((entry, index) =>
           check(
@@ -271,6 +273,23 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
         }
       }
     }
+  }
+  const policyResources = new Map<string, string>();
+  for (const policy of definitions['deficit_policies'] ?? []) {
+    const resource = asString(policy['resource']);
+    if (resource === null) continue;
+    const existing = policyResources.get(resource);
+    if (existing !== undefined) {
+      diagnostics.push(
+        diag('duplicate_deficit_policy', {
+          definition: policy.id,
+          path: `/deficit_policies/${policy.id}/resource`,
+          args: { resource, other: existing },
+        }),
+      );
+      continue;
+    }
+    policyResources.set(resource, policy.id);
   }
   return diagnostics;
 }

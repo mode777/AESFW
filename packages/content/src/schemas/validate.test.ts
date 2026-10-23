@@ -142,6 +142,76 @@ describe('[CONT-11.2][TDS-20.2] raw-document schema validation', () => {
     ]);
     expect(codes(result.diagnostics)).toContain('schema_invalid');
   });
+
+  it('[CONT-6.22] a deficit policy validates', () => {
+    const result = validateSchemas([
+      file({
+        deficit_policies: [
+          {
+            id: 'test.deficit.default',
+            resource: 'test.resource.credits',
+            trigger: { operator: 'less', value: 0 },
+            action: 'pause_entities',
+            order: ['maintenance_desc', 'entity_id_asc'],
+            stop_when: 'net_rate_non_negative',
+            exclude_tags: ['test.tag.hub'],
+            resume: {
+              policy: 'automatic_reverse_order',
+              when: { operator: 'greater_equal', value: 0 },
+            },
+          },
+        ],
+      }),
+    ]);
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it('[CONT-6.22] an unknown action is rejected', () => {
+    const result = validateSchemas([
+      file({
+        deficit_policies: [
+          {
+            id: 'test.deficit.default',
+            resource: 'test.resource.credits',
+            trigger: { operator: 'less', value: 0 },
+            action: 'bankrupt',
+            order: ['maintenance_desc'],
+            stop_when: 'net_rate_non_negative',
+            resume: { policy: 'manual', when: { operator: 'greater_equal', value: 0 } },
+          },
+        ],
+      }),
+    ]);
+    expect(codes(result.diagnostics)).toContain('schema_invalid');
+  });
+
+  it('[CONT-6.22] an empty order list is rejected', () => {
+    const result = validateSchemas([
+      file({
+        deficit_policies: [
+          {
+            id: 'test.deficit.default',
+            resource: 'test.resource.credits',
+            trigger: { operator: 'less', value: 0 },
+            action: 'pause_entities',
+            order: [],
+            stop_when: 'net_rate_non_negative',
+            resume: { policy: 'manual', when: { operator: 'greater_equal', value: 0 } },
+          },
+        ],
+      }),
+    ]);
+    expect(codes(result.diagnostics)).toContain('schema_invalid');
+  });
+
+  it('[CONT-6.8] an entity definition with tags validates', () => {
+    const result = validateSchemas([
+      file({
+        entity_definitions: [{ id: 'test.entity.hub', tags: ['test.tag.hub'], components: {} }],
+      }),
+    ]);
+    expect(result.diagnostics).toEqual([]);
+  });
 });
 
 describe('[TDS-7] definition collection catalogue', () => {
@@ -157,6 +227,7 @@ describe('[TDS-7] definition collection catalogue', () => {
       'growth_policies',
       'conditions',
       'curves',
+      'deficit_policies',
     ]);
     expect(DEFINITION_COLLECTIONS.resources).toBe('resource');
     expect(DEFINITION_COLLECTIONS.location_templates).toBe('location');
@@ -166,5 +237,6 @@ describe('[TDS-7] definition collection catalogue', () => {
     expect(DEFINITION_COLLECTIONS.needs).toBe('need');
     expect(DEFINITION_COLLECTIONS.need_categories).toBe('needCategory');
     expect(DEFINITION_COLLECTIONS.growth_policies).toBe('growthPolicy');
+    expect(DEFINITION_COLLECTIONS.deficit_policies).toBe('deficitPolicy');
   });
 });

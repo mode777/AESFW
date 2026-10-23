@@ -196,3 +196,66 @@ describe('[TDS-16.1] phase 01 applyCommands', () => {
     expect(w.commandQueue).toHaveLength(0);
   });
 });
+
+describe('[ARCH-7.2] ResumeDeficitPausedEntities', () => {
+  const withPausedOwner = (w: ReturnType<typeof world>, paused: readonly number[]) => {
+    for (const entity of paused) {
+      stores(w).get<{ definition: number }>('definition').set(entityId(entity), { definition: 1 });
+    }
+    w.owners = {
+      owners: [
+        {
+          handle: ownerHandle(0),
+          knowledge: [],
+          accounts: [],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: paused.map((entity) => entityId(entity)),
+        },
+      ],
+    };
+    return w;
+  };
+
+  it('[ARCH-7.2] the command resumes a named entity', () => {
+    const w = withPausedOwner(world(), [2]);
+    const output = runPhases(
+      w,
+      registry,
+      [1],
+      input([
+        scheduled('c1', 0, 0, { type: 'ResumeDeficitPausedEntities', entities: [entityId(2)] }),
+      ]),
+    );
+    expect(w.owners.owners[0]?.deficitPaused).toEqual([]);
+    expect(output.outcomes[0]?.status).toBe('applied');
+    expect(output.events[0]?.type).toBe('CommandApplied');
+  });
+
+  it('[ARCH-7.2] the command resumes all paused entities', () => {
+    const w = withPausedOwner(world(), [2, 3]);
+    runPhases(
+      w,
+      registry,
+      [1],
+      input([scheduled('c1', 0, 0, { type: 'ResumeDeficitPausedEntities', entities: 'all' })]),
+    );
+    expect(w.owners.owners[0]?.deficitPaused).toEqual([]);
+  });
+
+  it('[ARCH-7.2] a command naming a missing entity is rejected', () => {
+    const w = withPausedOwner(world(), []);
+    const output = runPhases(
+      w,
+      registry,
+      [1],
+      input([
+        scheduled('c1', 0, 0, { type: 'ResumeDeficitPausedEntities', entities: [entityId(9)] }),
+      ]),
+    );
+    expect(output.outcomes[0]?.status).toBe('rejected');
+    if (output.outcomes[0]?.status === 'rejected') {
+      expect(output.outcomes[0].errors[0]?.code).toBe('unknown_entity');
+    }
+  });
+});

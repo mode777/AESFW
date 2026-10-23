@@ -111,6 +111,22 @@ const mapCommand = (
     };
     return ok({ type: 'PlaceEntityPlan', definition, location, transform: logicalTransform });
   }
+  if (type === 'ResumeDeficitPausedEntities') {
+    const raw = payload['entities'];
+    if (raw === 'all') {
+      return ok({ type: 'ResumeDeficitPausedEntities', entities: 'all' });
+    }
+    if (
+      Array.isArray(raw) &&
+      raw.every((value) => typeof value === 'number' && Number.isSafeInteger(value))
+    ) {
+      return ok({
+        type: 'ResumeDeficitPausedEntities',
+        entities: (raw as readonly number[]).map((value) => ids.entityId(value)),
+      });
+    }
+    return { ok: false, error: { code: 'unknown_command', arguments: { type } } };
+  }
   const entity = entityOf(payload);
   if (entity === null) {
     return { ok: false, error: { code: 'unknown_entity', arguments: { entity: -1 } } };
@@ -179,8 +195,13 @@ const mapCommand = (
   }
 };
 
-const referencedEntities = (command: Command): readonly EntityId[] =>
-  command.type === 'PlaceEntityPlan' ? [command.location] : [command.entity];
+const referencedEntities = (command: Command): readonly EntityId[] => {
+  if (command.type === 'PlaceEntityPlan') return [command.location];
+  if (command.type === 'ResumeDeficitPausedEntities') {
+    return command.entities === 'all' ? [] : command.entities;
+  }
+  return [command.entity];
+};
 
 /**
  * Creates a session from compiled content (TDS-18.1).

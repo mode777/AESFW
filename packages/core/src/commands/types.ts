@@ -51,6 +51,10 @@ export type Command =
       readonly entity: EntityId;
       readonly capability: DefinitionHandle;
       readonly priority: Int;
+    }
+  | {
+      readonly type: 'ResumeDeficitPausedEntities';
+      readonly entities: readonly EntityId[] | 'all';
     };
 
 /** The stable command type names (TDS-16.2). */

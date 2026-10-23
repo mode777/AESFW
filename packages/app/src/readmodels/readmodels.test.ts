@@ -193,3 +193,33 @@ describe('[PIC-10.3] needBreakdown', () => {
     expect(needBreakdown(session(), 1)).toEqual([]);
   });
 });
+
+describe('[PIC-10.1] deficit-paused entity detail', () => {
+  it('[PIC-10.1] a deficit-paused entity reports the pause and the resume command', () => {
+    const state = session();
+    state.world.stores.get<{ owner: ids.OwnerHandle }>('owner').set(ids.entityId(3), {
+      owner: ids.ownerHandle(0),
+    });
+    state.world.owners = {
+      owners: [
+        {
+          handle: ids.ownerHandle(0),
+          knowledge: [],
+          accounts: [],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: [ids.entityId(3)],
+        },
+      ],
+    };
+    const detail = entityDetail(state, 3);
+    expect(detail?.paused_by_deficit).toBe(true);
+    expect(detail?.available_commands).toContain('ResumeDeficitPausedEntities');
+  });
+
+  it('[PIC-10.1] a running entity reports no pause', () => {
+    const detail = entityDetail(session(), 3);
+    expect(detail?.paused_by_deficit).toBeUndefined();
+    expect(detail?.available_commands).not.toContain('ResumeDeficitPausedEntities');
+  });
+});

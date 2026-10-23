@@ -78,6 +78,15 @@ export function entityDetail(session: SessionState, entity: number): EntityDetai
           policy: maintenance.chargePolicy,
         };
 
+  const owner =
+    world.stores.get<{ owner: number }>('owner').get(id)?.owner ?? locationOwner ?? null;
+  const pausedByDeficit =
+    owner !== null &&
+    (world.owners.owners.find((entry) => entry.handle === owner)?.deficitPaused ?? []).includes(id);
+  const availableCommands: readonly string[] = pausedByDeficit
+    ? [...AVAILABLE_COMMANDS, 'ResumeDeficitPausedEntities']
+    : AVAILABLE_COMMANDS;
+
   return {
     entity_id: entity,
     definition_id:
@@ -90,7 +99,8 @@ export function entityDetail(session: SessionState, entity: number): EntityDetai
       ? {}
       : { owner_id: `owner.${locationOwner}` }),
     enabled: reader.enabled(id) ?? true,
-    available_commands: [...AVAILABLE_COMMANDS],
+    ...(pausedByDeficit ? { paused_by_deficit: true } : {}),
+    available_commands: [...availableCommands],
     ...(production === undefined ? {} : { production }),
     block_reasons: producer?.blockReasons ?? [],
     ...(maintenanceDto === undefined ? {} : { maintenance: maintenanceDto }),

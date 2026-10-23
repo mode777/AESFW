@@ -12,6 +12,7 @@ import type { DefinitionType } from '@aesfw/core';
 
 import { ConditionSchema } from './condition.js';
 import { CurveSchema } from './curve.js';
+import { DeficitPolicySchema } from './deficit.js';
 import { EntityDefinitionSchema } from './entity.js';
 import { LocationTemplateSchema } from './location.js';
 import { NeedCategorySchema, NeedSchema } from './need.js';
@@ -31,6 +32,7 @@ export const DEFINITION_COLLECTIONS = {
   growth_policies: 'growthPolicy',
   conditions: 'condition',
   curves: 'curve',
+  deficit_policies: 'deficitPolicy',
 } as const satisfies Readonly<Record<string, DefinitionType>>;
 
 /** A top-level document key of the M1 content set. */
@@ -53,6 +55,7 @@ export const DEFINITION_SCHEMAS = {
   growth_policies: GrowthPolicySchema,
   conditions: ConditionSchema,
   curves: CurveSchema,
+  deficit_policies: DeficitPolicySchema,
 } as const satisfies Readonly<Record<DefinitionCollection, TSchema>>;
 
 /** True when `key` names a known definition collection. */

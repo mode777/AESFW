@@ -75,6 +75,7 @@ export function buildRegistry(
       if (id === undefined) return null;
       return indexes.byId.get(id)?.data ?? null;
     },
+    handlesOf: (type) => (definitionsByType.get(type) ?? []).map((definition) => definition.handle),
     definitionsOf: (type) => definitionsByType.get(type) ?? [],
     tagsOf: (id) => indexes.tagsByResource.get(id) ?? [],
   };

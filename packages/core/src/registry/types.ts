@@ -46,6 +46,13 @@ export interface Registry {
    * core functions that need definition data treat its absence as "not found".
    */
   readonly definitionDataOf?: (type: DefinitionType, handle: DefinitionHandle) => JsonValue | null;
+  /**
+   * The handles of a definition type in ascending handle order, or an empty
+   * list when the type is unknown or unimplemented (TDS-7). Optional: the
+   * compiled content registry implements it; core systems that enumerate
+   * content-defined policies treat its absence as "none".
+   */
+  readonly handlesOf?: (type: DefinitionType) => readonly DefinitionHandle[];
 }
 
 /** A registry with no definitions; used before content compilation exists. */

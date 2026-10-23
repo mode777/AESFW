@@ -1,0 +1,137 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "resource", "trigger", "action", "order", "stop_when", "resume"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "resource": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "trigger": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["operator", "value"],
+      "properties": {
+        "operator": {
+          "anyOf": [
+            {
+              "const": "less",
+              "type": "string"
+            },
+            {
+              "const": "less_equal",
+              "type": "string"
+            },
+            {
+              "const": "greater",
+              "type": "string"
+            },
+            {
+              "const": "greater_equal",
+              "type": "string"
+            },
+            {
+              "const": "equal",
+              "type": "string"
+            }
+          ]
+        },
+        "value": {
+          "type": "integer"
+        }
+      }
+    },
+    "action": {
+      "const": "pause_entities",
+      "type": "string"
+    },
+    "order": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "const": "maintenance_desc",
+            "type": "string"
+          },
+          {
+            "const": "entity_id_asc",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "stop_when": {
+      "const": "net_rate_non_negative",
+      "type": "string"
+    },
+    "exclude_tags": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "resume": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["policy", "when"],
+      "properties": {
+        "policy": {
+          "anyOf": [
+            {
+              "const": "automatic_reverse_order",
+              "type": "string"
+            },
+            {
+              "const": "manual",
+              "type": "string"
+            },
+            {
+              "const": "disabled",
+              "type": "string"
+            }
+          ]
+        },
+        "when": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["operator", "value"],
+          "properties": {
+            "operator": {
+              "anyOf": [
+                {
+                  "const": "less",
+                  "type": "string"
+                },
+                {
+                  "const": "less_equal",
+                  "type": "string"
+                },
+                {
+                  "const": "greater",
+                  "type": "string"
+                },
+                {
+                  "const": "greater_equal",
+                  "type": "string"
+                },
+                {
+                  "const": "equal",
+                  "type": "string"
+                }
+              ]
+            },
+            "value": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+}

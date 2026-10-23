@@ -199,6 +199,54 @@ describe('[CONT-11.3] reference resolution', () => {
     expect(codes(diagnostics)).toContain('unsupported_shortage_policy');
   });
 
+  it('[CONT-6.22] a deficit policy resolves its resource', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.credits')],
+      deficit_policies: [
+        {
+          id: 'test.deficit.default',
+          resource: 'test.resource.credits',
+          trigger: { operator: 'less', value: 0 },
+          action: 'pause_entities',
+          order: ['maintenance_desc', 'entity_id_asc'],
+          stop_when: 'net_rate_non_negative',
+          resume: {
+            policy: 'automatic_reverse_order',
+            when: { operator: 'greater_equal', value: 0 },
+          },
+        },
+      ],
+    });
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('[CONT-6.22] a duplicate deficit policy for one resource is rejected', () => {
+    const { diagnostics } = buildRegistry({
+      resources: [resource('test.resource.credits')],
+      deficit_policies: [
+        {
+          id: 'test.deficit.a',
+          resource: 'test.resource.credits',
+          trigger: { operator: 'less', value: 0 },
+          action: 'pause_entities',
+          order: ['maintenance_desc'],
+          stop_when: 'net_rate_non_negative',
+          resume: { policy: 'manual', when: { operator: 'greater_equal', value: 0 } },
+        },
+        {
+          id: 'test.deficit.b',
+          resource: 'test.resource.credits',
+          trigger: { operator: 'less', value: 0 },
+          action: 'pause_entities',
+          order: ['maintenance_desc'],
+          stop_when: 'net_rate_non_negative',
+          resume: { policy: 'manual', when: { operator: 'greater_equal', value: 0 } },
+        },
+      ],
+    });
+    expect(codes(diagnostics)).toContain('duplicate_deficit_policy');
+  });
+
   it('[CONT-6.10] a resolvable satisfaction_curve is accepted', () => {
     const { diagnostics } = buildRegistry({
       resources: [resource('test.resource.credits')],
@@ -358,5 +406,15 @@ describe('[TDS-7] frozen registry', () => {
       expect(registry.definitionDataOf?.('resource', handle)).toEqual(definition);
     }
     expect(registry.definitionDataOf?.('resource', ids.definitionHandle(99))).toBeNull();
+  });
+
+  it('[TDS-7] handlesOf enumerates a type in ascending handle order', () => {
+    const { registry } = buildRegistry({
+      resources: [resource('test.resource.b'), resource('test.resource.a')],
+    });
+    const handles = registry.handlesOf?.('resource') ?? [];
+    expect(handles).toHaveLength(2);
+    expect([...handles].sort((left, right) => left - right)).toEqual([...handles]);
+    expect(registry.handlesOf?.('deficitPolicy')).toEqual([]);
   });
 });

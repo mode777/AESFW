@@ -163,6 +163,7 @@ export const EntityDefinitionSchema = Type.Object(
   {
     id: IdSchema,
     includes: Type.Optional(Type.Array(IdSchema)),
+    tags: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
     components: ComponentsSchema,
   },
   { additionalProperties: false },

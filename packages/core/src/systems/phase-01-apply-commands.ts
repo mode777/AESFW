@@ -13,6 +13,7 @@ import type { ScheduledCommand, World } from '../world/types.js';
 import type { CommandError, CommandOutcome } from '../commands/types.js';
 import { compareScheduledCommands } from '../commands/order.js';
 import type { EntityId, Tick } from '../ids/index.js';
+import { entityId } from '../ids/index.js';
 import { writeCommandOutcomes } from '../pipeline/scratch.js';
 import type { SystemDescriptor, TickContext } from '../pipeline/types.js';
 import { lifecycleOf } from '../sim/construction/lifecycle.js';
@@ -196,6 +197,45 @@ const applyOne = (ctx: TickContext, scheduled: ScheduledCommand): CommandOutcome
       }
       store.set(command.entity, { ...consumer, priority: command.priority });
       return emitApplied(command.entity);
+    }
+    case 'ResumeDeficitPausedEntities': {
+      const targets =
+        command.entities === 'all' ? null : ([...command.entities] as readonly EntityId[]);
+      if (targets !== null) {
+        for (const entity of targets) {
+          if (!entityExists(world, entity)) {
+            return reject([{ code: 'unknown_entity', arguments: { entity } }], [entity]);
+          }
+        }
+      }
+      const ownerIndex = world.owners.owners.findIndex((entry) => entry.handle === scheduled.actor);
+      const resumed: EntityId[] = [];
+      if (ownerIndex >= 0) {
+        const ownerState = world.owners.owners[ownerIndex];
+        if (ownerState !== undefined) {
+          const remaining =
+            targets === null
+              ? []
+              : ownerState.deficitPaused.filter((entity) => !targets.includes(entity));
+          for (const entity of ownerState.deficitPaused) {
+            if (targets === null || targets.includes(entity)) resumed.push(entity);
+          }
+          if (resumed.length > 0) {
+            const owners = [...world.owners.owners];
+            owners[ownerIndex] = { ...ownerState, deficitPaused: remaining };
+            world.owners = { owners };
+          }
+        }
+      }
+      for (const entity of resumed) stampRevision(world, entity, ctx.tick);
+      ctx.events.emit({
+        type: 'CommandApplied',
+        subjects: resumed,
+        owner: scheduled.actor,
+        location: null,
+        payload: { command_id: scheduled.commandId, command_type: command.type },
+      });
+      return applied(scheduled.commandId, ctx.tick, resumed[0] ?? entityId(0));
     }
     default: {
       return reject([{ code: 'not_supported', arguments: { type: commandType } }], []);

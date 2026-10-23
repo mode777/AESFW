@@ -33,6 +33,17 @@ curves:
       - [1000, 1000]
     extrapolation: clamp
 
+deficit_policies:
+  - id: demo.deficit.default
+    resource: demo.resource.credits
+    trigger: { operator: less, value: 0 }
+    action: pause_entities
+    order: [maintenance_desc, entity_id_asc]
+    stop_when: net_rate_non_negative
+    resume:
+      policy: automatic_reverse_order
+      when: { operator: greater_equal, value: 0 }
+
 location_templates:
   - id: demo.location.a
     spatial_policy: framework.spatial.abstract_capacity

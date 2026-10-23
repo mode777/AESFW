@@ -356,6 +356,52 @@ const checkConservation = (
   }
 };
 
+const checkOwnerBalanceConservation = (
+  before: World,
+  output: TickOutput,
+  findings: InvariantFinding[],
+): void => {
+  const journal = output.journal;
+  if (journal === null) return;
+  const delta = new Map<string, number>();
+  const add = (owner: number, resource: number, amount: number): void => {
+    const key = `${owner}:${resource}`;
+    delta.set(key, (delta.get(key) ?? 0) + amount);
+  };
+  for (const transaction of journal) {
+    if (transaction.kind === 'account') {
+      add(transaction.owner, transaction.resource, transaction.delta);
+    } else if (transaction.kind === 'trade') {
+      add(
+        transaction.owner,
+        transaction.resource,
+        transaction.direction === 'sell' ? -transaction.quantity : transaction.quantity,
+      );
+    }
+  }
+  const beforeTotals = new Map<string, number>();
+  for (const owner of before.owners.owners) {
+    for (const entry of owner.accounts)
+      beforeTotals.set(`${owner.handle}:${entry.resource}`, entry.amount);
+  }
+  const afterTotals = new Map<string, number>();
+  for (const owner of output.world.owners.owners) {
+    for (const entry of owner.accounts)
+      afterTotals.set(`${owner.handle}:${entry.resource}`, entry.amount);
+  }
+  const keys = new Set<string>([...beforeTotals.keys(), ...afterTotals.keys(), ...delta.keys()]);
+  for (const key of keys) {
+    const expected = (afterTotals.get(key) ?? 0) - (beforeTotals.get(key) ?? 0);
+    const actual = delta.get(key) ?? 0;
+    if (expected !== actual) {
+      findings.push({
+        id: 'INV-23',
+        message: `owner balance ${key} changed by ${expected} but the journal accounts for ${actual}`,
+      });
+    }
+  }
+};
+
 /**
  * Evaluates the invariant catalogue over a completed tick (VER-6).
  *
@@ -377,6 +423,7 @@ export function checkInvariants(
   checkPopulationBounds(output.world, findings);
   checkSatisfactionRange(output.world, findings);
   checkConservation(before, output, findings);
+  checkOwnerBalanceConservation(before, output, findings);
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);
   checkPersistence(output.world, registry, findings);

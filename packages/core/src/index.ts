@@ -203,10 +203,22 @@ export type {
 } from './sim/production/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
 export { applyMaintenance, dueLines, isCharging } from './sim/economy/index.js';
+export {
+  applyDeficitPolicy,
+  compareBalance,
+  dueForResource,
+  ownerIncomePerTick,
+  ownerMaintenancePerTick,
+  ownerNetRate,
+  resolveDeficitPolicies,
+} from './sim/economy/index.js';
 export type {
+  BalanceComparison,
   ChargePolicy,
+  DeficitPolicySpec,
   Maintenance,
   MaintenanceInput,
+  ResumePolicy,
   ShortagePolicy,
 } from './sim/economy/index.js';
 export { isPopulationGroup, isResidence, updatePopulation } from './sim/population/index.js';

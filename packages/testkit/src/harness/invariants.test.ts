@@ -481,3 +481,83 @@ describe('[VER-6] population invariants', () => {
     ).not.toContain('INV-07');
   });
 });
+
+describe('[GDD-20.2][INV-23] owner balance conservation', () => {
+  const journallingInput: TickInput = {
+    commands: [],
+    options: { journal: true, hash: false },
+  };
+
+  it('[INV-23] a journalled account charge passes', () => {
+    const balanceRegistry = expectContentOk(
+      content()
+        .define('resources', {
+          id: 'test.r.credits',
+          quantity: { precision: 'fixed', scale: 1000 },
+          storage: { policy: 'normal', scope: 'owner' },
+          transportable: false,
+          allow_negative: true,
+        })
+        .build(),
+    );
+    const registry2 = balanceRegistry.registry;
+    const credits = registry2.handleOf('resource', ids.stringId('test.r.credits'));
+    if (credits === null) throw new Error('credits missing');
+    const working = world(registry2)
+      .owner({
+        handle: ids.ownerHandle(0),
+        knowledge: [],
+        accounts: [{ resource: credits, amount: 1000 }],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const writer = createTransactionWriter(working, null);
+    const applied = writer.atomic((builder) => {
+      builder.account({
+        owner: ids.ownerHandle(0),
+        resource: credits,
+        delta: -500,
+        reason: 'maintenance',
+      });
+    });
+    expect(applied.ok).toBe(true);
+    const output = step(working, registry2, journallingInput);
+    // The journal records the pipeline's account transaction for the charge.
+    if (output.journal === null) throw new Error('journal missing');
+    (output.journal as Transaction[]).push({
+      kind: 'account',
+      seq: 0,
+      owner: ids.ownerHandle(0),
+      resource: credits,
+      delta: -500,
+      reason: 'maintenance',
+    });
+    expect(
+      checkInvariants(before, output, registry2).some((finding) => finding.id === 'INV-23'),
+    ).toBe(false);
+  });
+
+  it('[INV-23] an unexplained account change is reported', () => {
+    const working = world(resourceRegistry()).build();
+    const before = cloneWorld(working);
+    working.owners = {
+      owners: [
+        {
+          handle: ids.ownerHandle(0),
+          knowledge: [],
+          accounts: [{ resource, amount: 50 }],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: [],
+        },
+      ],
+    };
+    const output = step(working, resourceRegistry(), journallingInput);
+    expect(
+      checkInvariants(before, output, resourceRegistry()).map((finding) => finding.id),
+    ).toContain('INV-23');
+  });
+});

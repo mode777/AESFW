@@ -120,3 +120,16 @@ Source: CONT-6.4, CONT-6.6
 #### Scenario: Grid spatial parameters map to a grid plan
 - **WHEN** a `framework.spatial.grid` template declares width `4`, height `4`, and `buildable_ratio` of `min: 400, max: 700`
 - **THEN** the plan location carries width `4`, height `4`, and a seeded buildable ratio of `400` to `700`
+
+### Requirement: Definition handle enumeration
+The core `Registry` interface SHALL offer an optional `handlesOf(type)` accessor returning the definition handles of a type in ascending handle order, or an empty list when the type is unknown. The compiled content registry SHALL implement it.
+
+Source: TDS-7, TDS-20.2
+
+#### Scenario: Enumerating compiled handles is ascending
+- **WHEN** a package compiles three resources
+- **THEN** `handlesOf('resource')` returns their three handles in ascending order
+
+#### Scenario: An unknown type enumerates empty
+- **WHEN** `handlesOf` is called for a type with no definitions
+- **THEN** it returns an empty list
