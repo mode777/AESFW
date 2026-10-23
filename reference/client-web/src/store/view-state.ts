@@ -74,6 +74,7 @@ export function drawerAction(current: string | null, key: string): string | null
   const normalized = key.toLowerCase();
   if (normalized === 'e') return current === 'economy' ? null : 'economy';
   if (normalized === 'p') return current === 'planning' ? null : 'planning';
+  if (normalized === 'l') return current === 'logistics' ? null : 'logistics';
   return current;
 }
 

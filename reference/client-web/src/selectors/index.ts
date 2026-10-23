@@ -47,6 +47,23 @@ export {
 export type { EconomySourceRow, EconomyViewModel } from './economy.js';
 export { planningView } from './planning-view.js';
 export { worldMap } from './world-map.js';
+export {
+  draftFromOrder,
+  draftPayload,
+  draftValid,
+  emptyDraft,
+  logisticsView,
+  orderRows,
+  transportUnits,
+} from './logistics.js';
+export type {
+  LogisticsOrderRow,
+  LogisticsUnitRow,
+  LogisticsViewModel,
+  RouteActionDraft,
+  RouteDraft,
+  RouteStationDraft,
+} from './logistics.js';
 export type {
   WorldMapConnection,
   WorldMapModel,

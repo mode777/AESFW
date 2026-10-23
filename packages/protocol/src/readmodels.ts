@@ -113,6 +113,14 @@ export interface TransportDetailDto {
   readonly failure_reasons?: readonly string[];
 }
 
+/** A transport order summary for the logistics view (PIC-10.4, REF-12.4). */
+export interface TransportOrderDto {
+  readonly order_id: WireInt;
+  readonly mode: string;
+  readonly stations: readonly TransportStationDto[];
+  readonly repeat: boolean;
+}
+
 /** One consuming tier of the planning read model (PIC-10.5). */
 export interface PlanningTierDto {
   readonly tier_id: WireId;

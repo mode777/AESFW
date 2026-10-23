@@ -398,3 +398,36 @@ body {
 .transport-dot.state-moving {
   fill: var(--ink, #fff);
 }
+
+.logistics-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.logistics-unit.selected,
+.logistics-order.selected {
+  outline: 2px solid var(--accent, #6cf);
+}
+
+.logistics-detail-row {
+  font-size: 12px;
+}
+
+.logistics-detail-row.failure {
+  color: var(--accent-warn, #f80);
+}
+
+.logistics-station,
+.logistics-action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.logistics-field {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}

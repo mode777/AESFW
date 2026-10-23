@@ -12,6 +12,7 @@ import type { CompiledContent } from '@aesfw/content';
 import { createSession } from '../session/session.js';
 import type { SessionState } from '../session/types.js';
 import { transportDetail } from './transport-detail.js';
+import { transportOrders } from './transport-orders.js';
 
 const registry: Registry = {
   stringIdOf: (type, handle) =>
@@ -136,5 +137,14 @@ describe('[PIC-10.4] transport detail read model', () => {
 
   it('[PIC-10.4] a non-transport entity has no detail', () => {
     expect(transportDetail(session(), 99)).toBeNull();
+  });
+
+  it('[PIC-10.4] the order list exposes stations and repeat', () => {
+    const orders = transportOrders(populated());
+    expect(orders).toHaveLength(1);
+    expect(orders[0]?.order_id).toBe(6);
+    expect(orders[0]?.mode).toBe('route');
+    expect(orders[0]?.repeat).toBe(true);
+    expect(orders[0]?.stations[0]?.actions[0]?.rule_mode).toBe('excess_above');
   });
 });

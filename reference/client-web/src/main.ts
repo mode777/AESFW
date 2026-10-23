@@ -13,6 +13,8 @@ import type {
   NeedBreakdownDto,
   PlacementResultDto,
   PlanningDto,
+  TransportDetailDto,
+  TransportOrderDto,
 } from '@aesfw/protocol';
 import { R0_CONTENT } from './content/r0.js';
 import { h, replaceChildren } from './dom/h.js';
@@ -27,6 +29,8 @@ import {
   placementFootprint,
   placementKeyAction,
   placementQueryPayload,
+  draftPayload,
+  logisticsView,
   planningView,
   pushTrend,
 } from './selectors/index.js';
@@ -43,6 +47,7 @@ import { createInventoryTable } from './views/inventory-table.js';
 import { createLocationGrid } from './views/location-grid.js';
 import { createNotice } from './views/notice.js';
 import { createPlanningView } from './views/planning.js';
+import { createLogisticsView } from './views/logistics.js';
 import { createPopulationTable } from './views/population-table.js';
 import { createTopBar } from './views/top-bar.js';
 import { createWorldMap } from './views/world-map.js';
@@ -90,6 +95,8 @@ interface QueryResult {
   readonly definition_metadata?: readonly DefinitionMetadataDto[];
   readonly placement_result?: PlacementResultDto | null;
   readonly planning?: PlanningDto;
+  readonly transport_detail?: TransportDetailDto | null;
+  readonly transport_orders?: readonly TransportOrderDto[];
 }
 
 /**
@@ -109,7 +116,65 @@ export function mount(root: HTMLElement): void {
   const notice = createNotice();
   const economy = createEconomyView(client, ACTOR_ID, i18n);
   const planning = createPlanningView(i18n);
-  const drawer = h('div', { class: 'drawer', 'data-testid': 'drawer' }, economy.el, planning.el);
+  let transportOrderList: readonly TransportOrderDto[] = [];
+  let transportDetailModel: TransportDetailDto | null = null;
+  const refreshLogistics = (): void => {
+    logistics.show(
+      logisticsView(mirror.projection(), transportOrderList, transportDetailModel, null),
+    );
+  };
+  const logistics = createLogisticsView({
+    onCreate: (draft) => {
+      client.command({
+        command_id: `client-order-${Date.now()}`,
+        actor_id: ACTOR_ID,
+        type: 'CreateTransportOrder',
+        payload: draftPayload(draft),
+      });
+    },
+    onModify: (orderId, draft) => {
+      client.command({
+        command_id: `client-order-modify-${Date.now()}`,
+        actor_id: ACTOR_ID,
+        type: 'ModifyTransportOrder',
+        payload: { order_id: orderId, ...draftPayload(draft) },
+      });
+    },
+    onDelete: (orderId) => {
+      client.command({
+        command_id: `client-order-delete-${Date.now()}`,
+        actor_id: ACTOR_ID,
+        type: 'DeleteTransportOrder',
+        payload: { order_id: orderId },
+      });
+    },
+    onAssign: (unitId, orderId) => {
+      client.command({
+        command_id: `client-order-assign-${Date.now()}`,
+        actor_id: ACTOR_ID,
+        type: 'AssignTransport',
+        payload: { unit_id: unitId, order_id: orderId },
+      });
+    },
+    onUnassign: (unitId) => {
+      client.command({
+        command_id: `client-order-unassign-${Date.now()}`,
+        actor_id: ACTOR_ID,
+        type: 'UnassignTransport',
+        payload: { unit_id: unitId },
+      });
+    },
+    onSelectUnit: (unitId) => {
+      client.query(ACTOR_ID, { kind: 'transport_detail', entity_id: unitId });
+    },
+  });
+  const drawer = h(
+    'div',
+    { class: 'drawer', 'data-testid': 'drawer' },
+    economy.el,
+    planning.el,
+    logistics.el,
+  );
   let trend: readonly number[] = [];
   const archetypes = new Map<string, ShapeArchetype>();
   const footprints = new Map<string, Footprint>();
@@ -119,12 +184,17 @@ export function mount(root: HTMLElement): void {
     const kind = view.drawer();
     economy.el.hidden = kind !== 'economy';
     planning.el.hidden = kind !== 'planning';
+    logistics.el.hidden = kind !== 'logistics';
     drawer.hidden = kind === null;
     if (kind === 'economy') {
       economy.show(economyView(mirror.projection(), ACTOR_ID, trend));
     }
     if (kind === 'planning') {
       client.query(ACTOR_ID, { kind: 'planning' });
+    }
+    if (kind === 'logistics') {
+      refreshLogistics();
+      client.query(ACTOR_ID, { kind: 'transport_orders' });
     }
   };
 
@@ -284,6 +354,7 @@ export function mount(root: HTMLElement): void {
     }
     inventory.show(projection);
     worldMapView.update();
+    refreshLogistics();
     for (const location of locations) {
       client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
     }
@@ -311,6 +382,9 @@ export function mount(root: HTMLElement): void {
         break;
       case 'command_result':
         notice.show(commandNotice(response.result, i18n));
+        if (response.result.status === 'accepted') {
+          client.query(ACTOR_ID, { kind: 'transport_orders' });
+        }
         break;
       case 'query_result': {
         const result = response.result as QueryResult;
@@ -338,6 +412,14 @@ export function mount(root: HTMLElement): void {
         }
         if (result.planning !== undefined) {
           planning.show(planningView(result.planning));
+        }
+        if (result.transport_orders !== undefined) {
+          transportOrderList = result.transport_orders;
+          refreshLogistics();
+        }
+        if (result.transport_detail !== undefined) {
+          transportDetailModel = result.transport_detail;
+          refreshLogistics();
         }
         if (result.placement_result !== undefined) {
           const placement = view.placement();
@@ -418,7 +500,14 @@ export function mount(root: HTMLElement): void {
     if (event.key === 'c' || event.key === 'C' || event.key === 's' || event.key === 'S') {
       view.overlay.set(toggleOverlay(view.overlay(), event.key));
     }
-    if (event.key === 'e' || event.key === 'E' || event.key === 'p' || event.key === 'P') {
+    if (
+      event.key === 'e' ||
+      event.key === 'E' ||
+      event.key === 'p' ||
+      event.key === 'P' ||
+      event.key === 'l' ||
+      event.key === 'L'
+    ) {
       const next = drawerAction(view.drawer(), event.key);
       if (next !== view.drawer()) {
         view.drawer.set(next);

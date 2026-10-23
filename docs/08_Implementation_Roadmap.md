@@ -244,7 +244,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 6.6 | `add-transport-read-model` | app/projections | transport detail and events ✓ archived 2026-10-23 | PIC-10.4 | 6.4, 2.4 | S |
 | 6.7 | `add-golden-logistics-loop` | testkit/scenarios | SCN-02 ✓ archived 2026-10-23 | VER-9.3 | 6.5 | S |
 | 6.8 | `add-client-world-map` | reference/client | world map, transport interpolation, R2 content ✓ archived 2026-10-23 | REF-12.1, REF-14.3 | 6.6, 3.7 | M |
-| 6.9 | `add-client-route-editor` | reference/client | logistics view and route editor | REF-12.4 | 6.8 | M |
+| 6.9 | `add-client-route-editor` | reference/client | logistics view and route editor ✓ archived 2026-10-23 | REF-12.4 | 6.8 | M |
 
 **Exit criteria:** SCN-02 passes; a route created in the browser supplies a second location.
 

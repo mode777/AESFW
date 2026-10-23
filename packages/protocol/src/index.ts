@@ -70,6 +70,7 @@ export type {
   TransportCargoDto,
   TransportCargoSlotDto,
   TransportDetailDto,
+  TransportOrderDto,
   TransportProgressDto,
   TransportStationDto,
 } from './readmodels.js';

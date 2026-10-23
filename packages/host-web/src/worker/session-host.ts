@@ -22,6 +22,7 @@ import {
   save,
   submitCommand,
   transportDetail,
+  transportOrders,
 } from '@aesfw/app';
 import type { SaveDocument, SessionState } from '@aesfw/app';
 import { createMemorySource, loadContent } from '@aesfw/content';
@@ -160,6 +161,9 @@ const answerQuery = (
   }
   if (kind === 'transport_detail' && entity !== null) {
     return { transport_detail: transportDetail(session, entity) as unknown as JsonValue };
+  }
+  if (kind === 'transport_orders') {
+    return { transport_orders: transportOrders(session) as unknown as JsonValue };
   }
   if (kind === 'placement_query') {
     const dto = parsePlacementQuery(query);

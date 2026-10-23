@@ -44,7 +44,10 @@ const actionDto = (registry: Registry, action: StationAction): TransportActionDt
   };
 };
 
-const stationDtos = (registry: Registry, order: TransportOrder): readonly TransportStationDto[] =>
+export const stationDtos = (
+  registry: Registry,
+  order: TransportOrder,
+): readonly TransportStationDto[] =>
   order.stations.map((station) => ({
     endpoint_id: String(station.endpoint),
     actions: station.actions.map((action) => actionDto(registry, action)),
