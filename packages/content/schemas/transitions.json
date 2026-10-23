@@ -1,0 +1,179 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "source_tier", "target_tier", "duration_ticks", "conversion"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_tier": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "target_tier": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "trigger": {
+      "anyOf": [
+        {
+          "const": "manual_command",
+          "type": "string"
+        },
+        {
+          "const": "automatic",
+          "type": "string"
+        },
+        {
+          "const": "scheduled",
+          "type": "string"
+        },
+        {
+          "const": "condition_duration",
+          "type": "string"
+        }
+      ]
+    },
+    "condition": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "costs": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["resource", "quantity"],
+        "properties": {
+          "resource": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "cost_source": {
+      "const": "location_inventory",
+      "type": "string"
+    },
+    "cost_access_purpose": {
+      "const": "population_transition",
+      "type": "string"
+    },
+    "refund_policy": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["policy"],
+          "properties": {
+            "policy": {
+              "const": "none",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["policy", "fraction"],
+          "properties": {
+            "policy": {
+              "const": "fraction",
+              "type": "string"
+            },
+            "fraction": {
+              "minimum": 0,
+              "maximum": 1000,
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["policy", "resources"],
+          "properties": {
+            "policy": {
+              "const": "resources",
+              "type": "string"
+            },
+            "resources": {
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": ["resource", "quantity"],
+                "properties": {
+                  "resource": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "duration_ticks": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "conversion": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "population": {
+          "anyOf": [
+            {
+              "const": "retain_count",
+              "type": "string"
+            },
+            {
+              "const": "retain_count_clamped",
+              "type": "string"
+            },
+            {
+              "const": "clamp_to_target_capacity",
+              "type": "string"
+            },
+            {
+              "const": "retain_occupancy_ratio",
+              "type": "string"
+            },
+            {
+              "const": "set_fixed",
+              "type": "string"
+            },
+            {
+              "const": "apply_multiplier",
+              "type": "string"
+            }
+          ]
+        },
+        "population_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "population_multiplier": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "entity_definition": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    }
+  }
+}

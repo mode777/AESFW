@@ -85,6 +85,25 @@ const ResidenceSchema = Type.Object(
     capacity: Type.Integer({ minimum: 1 }),
     initial_population: Type.Optional(Type.Integer({ minimum: 0 })),
     growth_policy: IdSchema,
+    empty_residence: Type.Optional(
+      Type.Union([
+        Type.Object({ policy: Type.Literal('retain') }, { additionalProperties: false }),
+        Type.Object(
+          {
+            policy: Type.Literal('revert'),
+            definition: IdSchema,
+          },
+          { additionalProperties: false },
+        ),
+        Type.Object(
+          {
+            policy: Type.Literal('decay'),
+            delay_ticks: Type.Integer({ minimum: 0 }),
+          },
+          { additionalProperties: false },
+        ),
+      ]),
+    ),
   },
   { additionalProperties: false },
 );

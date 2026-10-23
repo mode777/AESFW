@@ -23,6 +23,7 @@ export const PopulationTierSchema = Type.Object(
     id: IdSchema,
     consumption_factor: Type.Optional(Type.Integer({ minimum: 1 })),
     need_categories: Type.Array(IdSchema),
+    decline_transitions: Type.Optional(Type.Array(IdSchema)),
     satisfaction: Type.Optional(
       Type.Object(
         {

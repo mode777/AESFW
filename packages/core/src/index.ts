@@ -321,6 +321,25 @@ export { isPopulationGroup, isResidence, updatePopulation } from './sim/populati
 export type { PopulationGroup, PopulationOutput, Residence } from './sim/population/index.js';
 export type { Growth, GrowthCondition, GrowthStep } from './sim/population/index.js';
 export { updateBands } from './sim/population/index.js';
+export {
+  advanceTransitions,
+  declineTransitionsOf,
+  emptyResidencePolicyOf,
+  residenceCapacityOf,
+  residenceFromDefinition,
+  startTransition,
+  transitionDefinitionOf,
+  transitionDefinitionsOf,
+} from './sim/transitions/index.js';
+export type {
+  EmptyResidencePolicy,
+  PopulationConversion,
+  RefundPolicy,
+  RunningTransition,
+  TransitionCost,
+  TransitionDefinition,
+  TransitionTrigger,
+} from './sim/transitions/index.js';
 export type { BandEffects, BandMultiplier, BandState, BandTable } from './sim/population/index.js';
 export {
   applyServiceProvider,

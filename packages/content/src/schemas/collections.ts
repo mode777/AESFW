@@ -11,6 +11,7 @@ import type { TSchema } from '@sinclair/typebox';
 import type { DefinitionType } from '@aesfw/core';
 
 import { SatisfactionBandsSchema } from './band.js';
+import { TransitionSchema } from './transition.js';
 import { UnlockSchema } from './unlock.js';
 import { ConditionSchema } from './condition.js';
 import { ConnectionDefinitionSchema } from './connection.js';
@@ -39,6 +40,7 @@ export const DEFINITION_COLLECTIONS = {
   services: 'service',
   satisfaction_bands: 'band',
   unlocks: 'unlock',
+  transitions: 'transition',
   growth_policies: 'growthPolicy',
   conditions: 'condition',
   curves: 'curve',
@@ -69,6 +71,7 @@ export const DEFINITION_SCHEMAS = {
   services: ServiceSchema,
   satisfaction_bands: SatisfactionBandsSchema,
   unlocks: UnlockSchema,
+  transitions: TransitionSchema,
   growth_policies: GrowthPolicySchema,
   conditions: ConditionSchema,
   curves: CurveSchema,

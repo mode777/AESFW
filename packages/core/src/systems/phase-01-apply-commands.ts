@@ -15,6 +15,7 @@ import { compareScheduledCommands } from '../commands/order.js';
 import type { EntityId, Tick } from '../ids/index.js';
 import { entityId, stringId } from '../ids/index.js';
 import { writeCommandOutcomes } from '../pipeline/scratch.js';
+import { startTransition, transitionDefinitionOf } from '../sim/transitions/index.js';
 import type { SystemDescriptor, TickContext } from '../pipeline/types.js';
 import { lifecycleOf } from '../sim/construction/lifecycle.js';
 import {
@@ -298,6 +299,72 @@ const applyOne = (ctx: TickContext, scheduled: ScheduledCommand): CommandOutcome
       });
       return emitApplied(command.location, command.location);
     }
+    case 'RequestPopulationTransition': {
+      const residence = world.stores.get('residence').get(command.entity);
+      if (residence === undefined) {
+        return reject(
+          [{ code: 'unknown_entity', arguments: { entity: command.entity } }],
+          [command.entity],
+        );
+      }
+      const definition = transitionDefinitionOf(ctx.registry, command.transition);
+      if (definition === null) {
+        return reject(
+          [
+            {
+              code: 'unknown_definition',
+              arguments: { type: 'transition', definition: command.transition },
+            },
+          ],
+          [command.entity],
+        );
+      }
+      if ((residence as { readonly tier: number }).tier !== definition.sourceTier) {
+        return reject(
+          [
+            {
+              code: 'invalid_transition',
+              arguments: { entity: command.entity, transition: command.transition },
+            },
+          ],
+          [command.entity],
+        );
+      }
+      if (
+        definition.condition !== null &&
+        !ctx.conditionEvaluator(world, definition.condition, command.entity)
+      ) {
+        return reject(
+          [
+            {
+              code: 'not_eligible',
+              arguments: { entity: command.entity, transition: command.transition },
+            },
+          ],
+          [command.entity],
+        );
+      }
+      if (!startTransition(world, ctx.tx, ctx.events, command.entity, definition, ctx.tick)) {
+        return reject(
+          [
+            {
+              code: 'insufficient_quantity',
+              arguments: { inventory: command.entity, resource: 0, requested: 0 },
+            },
+          ],
+          [command.entity],
+        );
+      }
+      stampRevision(world, command.entity, ctx.tick);
+      ctx.events.emit({
+        type: 'CommandApplied',
+        subjects: [command.entity],
+        owner: scheduled.actor,
+        location: null,
+        payload: { command_id: scheduled.commandId, command_type: command.type },
+      });
+      return applied(scheduled.commandId, ctx.tick, command.entity);
+    }
     case 'SetResourcePurposeLock': {
       const inventoryStore = world.stores.get<{ owner: number | null }>('inventory');
       const inventory = inventoryStore.get(command.inventory);
@@ -468,6 +535,7 @@ export const phase01ApplyCommands: SystemDescriptor = {
     'cargo',
     'inventory',
     'handling',
+    'transition',
   ],
   run: (ctx) => {
     const world = ctx.world;

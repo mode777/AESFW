@@ -61,9 +61,7 @@ describe('[CONT-6.17] unlock definitions', () => {
           condition: 'test.condition.absent',
         },
       ],
-      recipes: [
-        { id: 'test.recipe.a', mode: 'batch', duration_ticks: 1, inputs: [], outputs: [] },
-      ],
+      recipes: [{ id: 'test.recipe.a', mode: 'batch', duration_ticks: 1, inputs: [], outputs: [] }],
     });
     expect(result.diagnostics.length).toBeGreaterThan(0);
   });

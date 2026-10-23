@@ -33,6 +33,9 @@ export const ERROR_CODES = {
   unknown_resource: { arguments: ['resource'] },
   invalid_purpose: { arguments: ['purpose'] },
   not_unlocked: { arguments: ['definition'] },
+  invalid_transition: { arguments: ['entity', 'transition'] },
+  not_eligible: { arguments: ['entity', 'transition'] },
+  insufficient_quantity: { arguments: ['inventory', 'resource', 'requested'] },
 } as const satisfies Readonly<Record<string, ErrorCodeSpec>>;
 
 /** A stable command error code. */

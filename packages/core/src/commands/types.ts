@@ -59,6 +59,11 @@ export type Command =
       readonly entities: readonly EntityId[] | 'all';
     }
   | {
+      readonly type: 'RequestPopulationTransition';
+      readonly entity: EntityId;
+      readonly transition: DefinitionHandle;
+    }
+  | {
       readonly type: 'SetResourcePurposeLock';
       readonly inventory: EntityId;
       readonly resource: DefinitionHandle;

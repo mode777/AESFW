@@ -162,6 +162,51 @@
             "growth_policy": {
               "minLength": 1,
               "type": "string"
+            },
+            "empty_residence": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["policy"],
+                  "properties": {
+                    "policy": {
+                      "const": "retain",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["policy", "definition"],
+                  "properties": {
+                    "policy": {
+                      "const": "revert",
+                      "type": "string"
+                    },
+                    "definition": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["policy", "delay_ticks"],
+                  "properties": {
+                    "policy": {
+                      "const": "decay",
+                      "type": "string"
+                    },
+                    "delay_ticks": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  }
+                }
+              ]
             }
           }
         },

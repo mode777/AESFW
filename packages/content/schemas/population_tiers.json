@@ -18,6 +18,13 @@
         "type": "string"
       }
     },
+    "decline_transitions": {
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      }
+    },
     "satisfaction": {
       "additionalProperties": false,
       "type": "object",

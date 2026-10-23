@@ -258,7 +258,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | --- | --- | --- | --- | --- | --- | --- |
 | 7.1 | `add-sustained-conditions` | content/conditions | `sustained` compilation, timers (phase 22), persistence ✓ archived 2026-10-23 | CONT-7.2, TDS-14.3 | 1.6, 2.5 | M |
 | 7.2 | `add-satisfaction-bands` | sim/needs | band tables, effects, grace timers; INV-09 ✓ archived 2026-10-23 | GDD-12.6, CONT-6.19 | 7.1, 4.1 | M |
-| 7.3 | `add-tier-transitions` | sim/transitions | generic transition engine; triggers; atomic costs with purpose; conversion and refund policies; empty-residence policies; advancement and decline; `RequestPopulationTransition` (phase 24) | GDD-9.3, GDD-13, CONT-6.15 | 7.2, 3.2 | L |
+| 7.3 | `add-tier-transitions` | sim/transitions | generic transition engine; triggers; atomic costs with purpose; conversion and refund policies; empty-residence policies; advancement and decline; `RequestPopulationTransition` (phase 24) ✓ archived 2026-10-23 | GDD-9.3, GDD-13, CONT-6.15 | 7.2, 3.2 | L |
 | 7.4 | `add-purpose-locks` | kernel/transactions | `SetResourcePurposeLock`, access filtering for all purposes including `transport_load` ✓ archived 2026-10-23 | GDD-8.5, GDD-15.3 | 1.7, 2.2 | S |
 | 7.5 | `add-unlocks` | sim/unlocks | unlock definitions, scopes, definition and command availability, metadata exposure (phase 25) ✓ archived 2026-10-23 | GDD-19, CONT-6.17, PIC-4 | 7.1 | M |
 | 7.6 | `add-services-and-coverage-needs` | sim/needs | coverage and capacity service providers; `spatial_coverage`, `service_capacity`, and `state_query` needs ✓ archived 2026-10-23 | GDD-3.6, GDD-9.6, GDD-12.2, CONT-6.11, CONT-6.12 | 3.1, 1.13 | M |

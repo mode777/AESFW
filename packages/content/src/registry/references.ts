@@ -218,6 +218,15 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             );
           }
         }
+        const emptyResidence = asRecord(residence?.['empty_residence']);
+        if (emptyResidence?.['policy'] === 'revert') {
+          check(
+            id,
+            emptyResidence['definition'],
+            'entity',
+            `/entity_definitions/${id}/components/residence/empty_residence/definition`,
+          );
+        }
         const provider = asRecord(components?.['service_provider']);
         check(
           id,
@@ -256,6 +265,36 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
           asRecord(definition['satisfaction'])?.['bands'],
           'band',
           `/population_tiers/${id}/satisfaction/bands`,
+        );
+        asArray(definition['decline_transitions']).forEach((entry, index) =>
+          check(id, entry, 'transition', `/population_tiers/${id}/decline_transitions/${index}`),
+        );
+      } else if (collection === 'transitions') {
+        check(id, definition['source_tier'], 'tier', `/transitions/${id}/source_tier`);
+        check(id, definition['target_tier'], 'tier', `/transitions/${id}/target_tier`);
+        check(id, definition['condition'], 'condition', `/transitions/${id}/condition`);
+        asArray(definition['costs']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/transitions/${id}/costs/${index}/resource`,
+          ),
+        );
+        const refund = asRecord(definition['refund_policy']);
+        asArray(refund?.['resources']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/transitions/${id}/refund_policy/resources/${index}/resource`,
+          ),
+        );
+        check(
+          id,
+          asRecord(definition['conversion'])?.['entity_definition'],
+          'entity',
+          `/transitions/${id}/conversion/entity_definition`,
         );
       } else if (collection === 'unlocks') {
         check(id, definition['condition'], 'condition', `/unlocks/${id}/condition`);
@@ -331,8 +370,8 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
                 `/satisfaction_bands/${id}/bands/${index}/effects/${effectIndex}/resource`,
               );
             }
-            // A `trigger_decline` transition reference is validated by 7.3,
-            // which owns the transition definitions.
+            // A `trigger_decline` transition reference and its source-tier
+            // match are validated by 7.3, which owns transition definitions.
           });
         });
       } else if (collection === 'needs') {

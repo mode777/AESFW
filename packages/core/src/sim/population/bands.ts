@@ -29,6 +29,7 @@ export type BandEffects = {
   readonly growthOverride: Growth | null;
   readonly outputMultipliers: readonly BandMultiplier[];
   readonly declineGraceTicks: Int | null;
+  readonly declineTransition: DefinitionHandle | null;
 };
 
 /** A residence's satisfaction-band state (phase 22, GDD-12.6). */
@@ -39,6 +40,8 @@ export type BandState = {
   readonly advancementEnabled: boolean;
   readonly growthOverride: Growth | null;
   readonly outputMultipliers: readonly BandMultiplier[];
+  readonly declineGraceTicks: Int | null;
+  readonly declineTransition: DefinitionHandle | null;
 };
 
 /** A band table parsed from definition data (CONT-6.19). */
@@ -69,6 +72,7 @@ export function bandTableOf(registry: Registry, handle: DefinitionHandle): BandT
     let advancementEnabled = false;
     let growthOverride: Growth | null = null;
     let declineGraceTicks: Int | null = null;
+    let declineTransition: DefinitionHandle | null = null;
     const outputMultipliers: BandMultiplier[] = [];
     for (const effectEntry of asArray(band['effects'])) {
       const effect = asRecord(effectEntry);
@@ -95,12 +99,23 @@ export function bandTableOf(registry: Registry, handle: DefinitionHandle): BandT
         advancementEnabled = true;
       } else if (effect['type'] === 'trigger_decline') {
         declineGraceTicks = asInt(effect['grace_ticks']);
+        const transitionId = effect['transition'];
+        declineTransition =
+          typeof transitionId === 'string'
+            ? (registry.handleOf?.('transition', stringId(transitionId)) ?? null)
+            : null;
       }
     }
     outputMultipliers.sort((left, right) => left.resource - right.resource);
     return {
       min: asInt(band['min']),
-      effects: { advancementEnabled, growthOverride, outputMultipliers, declineGraceTicks },
+      effects: {
+        advancementEnabled,
+        growthOverride,
+        outputMultipliers,
+        declineGraceTicks,
+        declineTransition,
+      },
     };
   });
   if (bands.length === 0) return null;
@@ -159,6 +174,8 @@ export function updateBands(world: World, registry: Registry): void {
       advancementEnabled: band.effects.advancementEnabled,
       growthOverride: band.effects.growthOverride,
       outputMultipliers: band.effects.outputMultipliers,
+      declineGraceTicks: band.effects.declineGraceTicks,
+      declineTransition: band.effects.declineTransition,
     });
   }
 }

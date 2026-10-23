@@ -370,6 +370,21 @@ const mapCommand = (
     }
     return { ok: false, error: { code: 'unknown_command', arguments: { type } } };
   }
+  if (type === 'RequestPopulationTransition') {
+    const entity = entityOf(payload);
+    const transitionId = payload['transition_id'];
+    if (entity === null || typeof transitionId !== 'string') {
+      return { ok: false, error: { code: 'unknown_command', arguments: { type } } };
+    }
+    const transition = content.registry.handleOf('transition', ids.stringId(transitionId));
+    if (transition === null) {
+      return {
+        ok: false,
+        error: { code: 'unknown_definition', arguments: { type: 'transition', definition: -1 } },
+      };
+    }
+    return ok({ type: 'RequestPopulationTransition', entity, transition });
+  }
   if (type === 'SetResourcePurposeLock') {
     const inventory = entityOf({ entity_id: payload['inventory_id'] });
     const resource = payload['resource'];
@@ -479,6 +494,7 @@ const referencedEntities = (command: Command): readonly EntityId[] => {
     return command.entities === 'all' ? [] : command.entities;
   }
   if (command.type === 'SetResourcePurposeLock') return [command.inventory];
+  if (command.type === 'RequestPopulationTransition') return [command.entity];
   return [command.entity];
 };
 
