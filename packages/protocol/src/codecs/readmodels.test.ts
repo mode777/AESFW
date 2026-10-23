@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { decodeEntityDetail, decodeNeedBreakdown, decodePlanning } from '../index.js';
+import {
+  decodeEntityDetail,
+  decodeNeedBreakdown,
+  decodePlanning,
+  decodeTransportDetail,
+} from '../index.js';
 
 describe('[PIC-10.1] entity detail codec', () => {
   it('[PIC-10.1] entity detail without an entity id is rejected', () => {
@@ -64,5 +69,38 @@ describe('[PIC-10.5] planning codec', () => {
       chains: [],
     });
     expect(decoded.ok).toBe(false);
+  });
+});
+
+describe('[PIC-10.4] transport detail codec', () => {
+  it('[PIC-10.4] decodes a transport detail', () => {
+    const decoded = decodeTransportDetail({
+      entity_id: 5,
+      order_id: 6,
+      mode: 'route',
+      state: 'handling',
+      current_station: 1,
+      connection_path: ['test.conn.a_b'],
+      stations: [
+        {
+          endpoint_id: '1',
+          actions: [{ resource_id: 'test.resource.a', action: 'load', rule_mode: 'all' }],
+        },
+      ],
+      cargo: {
+        policy: 'typed_slots',
+        slots: [{ slot: 0, resource_id: 'test.resource.a', quantity: 40 }],
+      },
+      progress: { action_index: 0, handled: 5, target: 40 },
+      failure_reasons: ['cargo_cannot_unload'],
+    });
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) return;
+    expect(decoded.value.stations?.[0]?.actions[0]?.rule_mode).toBe('all');
+    expect(decoded.value.cargo?.slots[0]?.quantity).toBe(40);
+  });
+
+  it('[PIC-10.4] rejects a malformed transport detail', () => {
+    expect(decodeTransportDetail({ entity_id: 5 }).ok).toBe(false);
   });
 });

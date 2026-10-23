@@ -14,6 +14,12 @@ import type {
   PlanningDto,
   PlanningScopeDto,
   PlanningTierDto,
+  TransportActionDto,
+  TransportCargoDto,
+  TransportCargoSlotDto,
+  TransportDetailDto,
+  TransportProgressDto,
+  TransportStationDto,
 } from '../readmodels.js';
 import { err, ok, type DecodeResult } from '../result.js';
 import {
@@ -322,4 +328,169 @@ export function decodePlanning(value: unknown): DecodeResult<PlanningDto> {
   if (errors.length > 0 || !isString(ownerId))
     return err(errors.length > 0 ? errors : [invalidField('owner_id')]);
   return ok({ owner_id: ownerId, resources, chains });
+}
+
+/** Decodes the transport detail read model (PIC-10.4). */
+export function decodeTransportDetail(value: unknown): DecodeResult<TransportDetailDto> {
+  if (!isObject(value)) return err([invalidField('')]);
+  const errors: ProtocolError[] = [];
+  const entityId = value['entity_id'];
+  if (!isNonNegativeInteger(entityId)) errors.push(invalidField('entity_id'));
+  const state = value['state'];
+  if (!isString(state)) errors.push(invalidField('state'));
+  if (errors.length > 0 || !isNonNegativeInteger(entityId) || !isString(state)) {
+    return err(errors.length > 0 ? errors : [invalidField('entity_id')]);
+  }
+  const detail: {
+    entity_id: number;
+    state: string;
+    order_id?: number;
+    mode?: string;
+    stations?: TransportStationDto[];
+    current_station?: number;
+    connection_path?: string[];
+    cargo?: TransportCargoDto;
+    progress?: TransportProgressDto;
+    failure_reasons?: string[];
+  } = { entity_id: entityId, state };
+  const orderId = value['order_id'];
+  if (orderId !== undefined) {
+    if (isNonNegativeInteger(orderId)) detail.order_id = orderId;
+    else errors.push(invalidField('order_id'));
+  }
+  const mode = value['mode'];
+  if (mode !== undefined) {
+    if (isString(mode)) detail.mode = mode;
+    else errors.push(invalidField('mode'));
+  }
+  const currentStation = value['current_station'];
+  if (currentStation !== undefined) {
+    if (isNonNegativeInteger(currentStation)) detail.current_station = currentStation;
+    else errors.push(invalidField('current_station'));
+  }
+  const connectionPath = value['connection_path'];
+  if (connectionPath !== undefined) {
+    if (isStringArray(connectionPath)) detail.connection_path = [...connectionPath];
+    else errors.push(invalidField('connection_path'));
+  }
+  const failureReasons = value['failure_reasons'];
+  if (failureReasons !== undefined) {
+    if (isStringArray(failureReasons)) detail.failure_reasons = [...failureReasons];
+    else errors.push(invalidField('failure_reasons'));
+  }
+  const rawStations = value['stations'];
+  if (rawStations !== undefined) {
+    if (!Array.isArray(rawStations)) {
+      errors.push(invalidField('stations'));
+    } else {
+      const stations: TransportStationDto[] = [];
+      rawStations.forEach((raw, index) => {
+        if (!isObject(raw)) {
+          errors.push(invalidField(`stations[${index}]`));
+          return;
+        }
+        const endpoint = raw['endpoint_id'];
+        const rawActions = raw['actions'];
+        if (!isString(endpoint)) errors.push(invalidField(`stations[${index}].endpoint_id`));
+        if (!Array.isArray(rawActions)) {
+          errors.push(invalidField(`stations[${index}].actions`));
+          return;
+        }
+        const actions: TransportActionDto[] = [];
+        rawActions.forEach((rawAction, actionIndex) => {
+          if (!isObject(rawAction)) {
+            errors.push(invalidField(`stations[${index}].actions[${actionIndex}]`));
+            return;
+          }
+          const resource = rawAction['resource_id'];
+          const action = rawAction['action'];
+          const ruleMode = rawAction['rule_mode'];
+          const quantity = rawAction['quantity'];
+          if (!isString(resource)) {
+            errors.push(invalidField(`stations[${index}].actions[${actionIndex}].resource_id`));
+          }
+          if (!isString(action)) {
+            errors.push(invalidField(`stations[${index}].actions[${actionIndex}].action`));
+          }
+          if (!isString(ruleMode)) {
+            errors.push(invalidField(`stations[${index}].actions[${actionIndex}].rule_mode`));
+          }
+          if (quantity !== undefined && !isNonNegativeInteger(quantity)) {
+            errors.push(invalidField(`stations[${index}].actions[${actionIndex}].quantity`));
+          }
+          if (isString(resource) && isString(action) && isString(ruleMode)) {
+            actions.push({
+              resource_id: resource,
+              action,
+              rule_mode: ruleMode,
+              ...(isNonNegativeInteger(quantity) ? { quantity } : {}),
+            });
+          }
+        });
+        if (isString(endpoint)) stations.push({ endpoint_id: endpoint, actions });
+      });
+      detail.stations = stations;
+    }
+  }
+  const rawCargo = value['cargo'];
+  if (rawCargo !== undefined) {
+    if (!isObject(rawCargo)) {
+      errors.push(invalidField('cargo'));
+    } else {
+      const policy = rawCargo['policy'];
+      const rawSlots = rawCargo['slots'];
+      if (!isString(policy)) errors.push(invalidField('cargo.policy'));
+      if (!Array.isArray(rawSlots)) {
+        errors.push(invalidField('cargo.slots'));
+      } else if (isString(policy)) {
+        const slots: TransportCargoSlotDto[] = [];
+        rawSlots.forEach((rawSlot, index) => {
+          if (!isObject(rawSlot)) {
+            errors.push(invalidField(`cargo.slots[${index}]`));
+            return;
+          }
+          const slot = rawSlot['slot'];
+          const resource = rawSlot['resource_id'];
+          const quantity = rawSlot['quantity'];
+          if (!isNonNegativeInteger(slot)) errors.push(invalidField(`cargo.slots[${index}].slot`));
+          if (resource !== undefined && !isString(resource)) {
+            errors.push(invalidField(`cargo.slots[${index}].resource_id`));
+          }
+          if (!isNonNegativeInteger(quantity)) {
+            errors.push(invalidField(`cargo.slots[${index}].quantity`));
+          }
+          if (isNonNegativeInteger(slot) && isNonNegativeInteger(quantity)) {
+            slots.push({
+              slot,
+              quantity,
+              ...(isString(resource) ? { resource_id: resource } : {}),
+            });
+          }
+        });
+        detail.cargo = { policy, slots };
+      }
+    }
+  }
+  const rawProgress = value['progress'];
+  if (rawProgress !== undefined) {
+    if (!isObject(rawProgress)) {
+      errors.push(invalidField('progress'));
+    } else {
+      const actionIndex = rawProgress['action_index'];
+      const handled = rawProgress['handled'];
+      const target = rawProgress['target'];
+      if (!isNonNegativeInteger(actionIndex)) errors.push(invalidField('progress.action_index'));
+      if (!isNonNegativeInteger(handled)) errors.push(invalidField('progress.handled'));
+      if (!isNonNegativeInteger(target)) errors.push(invalidField('progress.target'));
+      if (
+        isNonNegativeInteger(actionIndex) &&
+        isNonNegativeInteger(handled) &&
+        isNonNegativeInteger(target)
+      ) {
+        detail.progress = { action_index: actionIndex, handled, target };
+      }
+    }
+  }
+  if (errors.length > 0) return err(errors);
+  return ok(detail as unknown as TransportDetailDto);
 }

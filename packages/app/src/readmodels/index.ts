@@ -8,3 +8,4 @@ export { planningMetrics } from './planning.js';
 export { entityDetail } from './entity-detail.js';
 export { locationSummary } from './location-summary.js';
 export { needBreakdown } from './need-breakdown.js';
+export { transportDetail } from './transport-detail.js';

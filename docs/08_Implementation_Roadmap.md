@@ -241,7 +241,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 6.3 | `add-route-planning-and-movement` | sim/transport | `shortest_stable` planner, traversal time, movement (phase 16), abstract transfer variant ✓ archived 2026-10-23 | ARCH-14.1–14.3 | 6.2 | M |
 | 6.4 | `add-transport-orders-and-stations` | sim/transport | route mode, station cursor, load/unload, handling rates, failure policies, order templates (phases 14–16, 19); transport commands ✓ archived 2026-10-23 | GDD-15.2, GDD-15.5–15.7, ARCH-14.4, CONT-9 | 6.3, 2.2 | L |
 | 6.5 | `add-transport-quantity-rules` | sim/transport | all quantity rules of GDD-15.3 ✓ archived 2026-10-23 | GDD-15.3 | 6.4 | M |
-| 6.6 | `add-transport-read-model` | app/projections | transport detail and events | PIC-10.4 | 6.4, 2.4 | S |
+| 6.6 | `add-transport-read-model` | app/projections | transport detail and events ✓ archived 2026-10-23 | PIC-10.4 | 6.4, 2.4 | S |
 | 6.7 | `add-golden-logistics-loop` | testkit/scenarios | SCN-02 | VER-9.3 | 6.5 | S |
 | 6.8 | `add-client-world-map` | reference/client | world map, transport interpolation, R2 content | REF-12.1, REF-14.3 | 6.6, 3.7 | M |
 | 6.9 | `add-client-route-editor` | reference/client | logistics view and route editor | REF-12.4 | 6.8 | M |

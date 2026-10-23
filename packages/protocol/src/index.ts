@@ -64,6 +64,12 @@ export type {
   PlanningScopeDto,
   PlanningTierDto,
   ResidenceDto,
+  TransportActionDto,
+  TransportCargoDto,
+  TransportCargoSlotDto,
+  TransportDetailDto,
+  TransportProgressDto,
+  TransportStationDto,
 } from './readmodels.js';
 export type {
   WorkerCommandRequestDto,
@@ -98,5 +104,6 @@ export {
   decodeLocationSummary,
   decodeNeedBreakdown,
   decodePlanning,
+  decodeTransportDetail,
 } from './codecs/readmodels.js';
 export { decodeWorkerRequest, decodeWorkerResponse } from './codecs/worker.js';

@@ -21,6 +21,7 @@ import {
   project,
   save,
   submitCommand,
+  transportDetail,
 } from '@aesfw/app';
 import type { SaveDocument, SessionState } from '@aesfw/app';
 import { createMemorySource, loadContent } from '@aesfw/content';
@@ -156,6 +157,9 @@ const answerQuery = (
     return {
       planning: planningMetrics(session, session.settings.actor) as unknown as JsonValue,
     };
+  }
+  if (kind === 'transport_detail' && entity !== null) {
+    return { transport_detail: transportDetail(session, entity) as unknown as JsonValue };
   }
   if (kind === 'placement_query') {
     const dto = parsePlacementQuery(query);

@@ -223,6 +223,10 @@ const applyFailure = (
   }
   if (policy === 'fail') {
     unassignTransport(world, unit);
+    return;
+  }
+  if (policy === 'wait' || policy === 'retry' || policy === 'retain') {
+    world.stores.get<StationCursor>('stationCursor').set(unit, { ...cursor, failure: key });
   }
 };
 

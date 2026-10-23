@@ -65,6 +65,54 @@ export interface NeedBreakdownDto {
   readonly band?: string;
 }
 
+/** One action of a transport station (PIC-10.4). */
+export interface TransportActionDto {
+  readonly resource_id: WireId;
+  readonly action: string;
+  readonly rule_mode: string;
+  readonly quantity?: WireInt;
+}
+
+/** One station of a transport order (PIC-10.4). */
+export interface TransportStationDto {
+  readonly endpoint_id: WireId;
+  readonly actions: readonly TransportActionDto[];
+}
+
+/** One cargo slot or entry (PIC-10.4). */
+export interface TransportCargoSlotDto {
+  readonly slot: WireInt;
+  readonly resource_id?: WireId;
+  readonly quantity: WireInt;
+}
+
+/** Cargo state of a transport unit (PIC-10.4). */
+export interface TransportCargoDto {
+  readonly policy: string;
+  readonly slots: readonly TransportCargoSlotDto[];
+}
+
+/** Progress of the current station action (PIC-10.4). */
+export interface TransportProgressDto {
+  readonly action_index: WireInt;
+  readonly handled: WireInt;
+  readonly target: WireInt;
+}
+
+/** Transport detail read model (PIC-10.4). */
+export interface TransportDetailDto {
+  readonly entity_id: WireInt;
+  readonly order_id?: WireInt;
+  readonly mode?: string;
+  readonly state: string;
+  readonly stations?: readonly TransportStationDto[];
+  readonly current_station?: WireInt;
+  readonly connection_path?: readonly WireId[];
+  readonly cargo?: TransportCargoDto;
+  readonly progress?: TransportProgressDto;
+  readonly failure_reasons?: readonly string[];
+}
+
 /** One consuming tier of the planning read model (PIC-10.5). */
 export interface PlanningTierDto {
   readonly tier_id: WireId;

@@ -122,6 +122,8 @@ export type StationCursor = {
   readonly handled: Int;
   readonly target: Int;
   readonly started: boolean;
+  /** The last failure that is keeping the action waiting, if any. */
+  readonly failure?: FailureKey;
 };
 
 /** A unit's assignment to an order. */
