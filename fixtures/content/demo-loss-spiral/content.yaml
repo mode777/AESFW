@@ -1,0 +1,145 @@
+resources:
+  - id: demo.resource.credits
+    tags: [balance]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: owner }
+    transportable: false
+    allow_negative: true
+
+  - id: demo.resource.source
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  - id: demo.resource.need
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  - id: demo.capability.tier_1
+    tags: [virtual, capability]
+    quantity: { precision: integer, scale: 1 }
+    storage: { policy: recomputed, scope: location }
+    transportable: false
+
+curves:
+  - id: demo.curve.income
+    type: piecewise_linear
+    points:
+      - [0, 0]
+      - [500, 500]
+      - [1000, 1000]
+    extrapolation: clamp
+
+deficit_policies:
+  - id: demo.deficit.default
+    resource: demo.resource.credits
+    trigger: { operator: less, value: 0 }
+    action: pause_entities
+    order: [maintenance_desc, entity_id_asc]
+    stop_when: net_rate_non_negative
+    resume:
+      policy: automatic_reverse_order
+      when: { operator: greater_equal, value: 0 }
+
+location_templates:
+  - id: demo.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+
+recipes:
+  - id: demo.recipe.need
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      - { resource: demo.resource.source, quantity: 1000 }
+    outputs:
+      - { resource: demo.resource.need, quantity: 500 }
+    capability_requirements:
+      - { resource: demo.capability.tier_1, quantity: 1 }
+
+population_tiers:
+  - id: demo.population.tier_1
+    consumption_factor: 1000
+    need_categories: [demo.need_category.base]
+    outputs:
+      - resource: demo.capability.tier_1
+        scope: location
+        rate_per_population_per_tick: 1
+      - resource: demo.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 10
+        satisfaction_curve: demo.curve.income
+      - resource: demo.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 5
+
+need_categories:
+  - id: demo.need_category.base
+    evaluation: { mode: all }
+    members:
+      - { need: demo.need.base, weight: 1000 }
+
+needs:
+  - id: demo.need.base
+    category: demo.need_category.base
+    applies_to: [demo.population.tier_1]
+    demand:
+      type: resource_consumption
+      resource: demo.resource.need
+      quantity_per_population_per_tick: 2
+    fulfillment:
+      measurement_window_ticks: 10
+      target_ratio: 1000
+
+growth_policies:
+  - id: demo.growth.default
+    interval_ticks: 10
+    increase:
+      quantity: 1
+      condition: demo.condition.grow
+
+conditions:
+  - id: demo.condition.grow
+    expression:
+      greater_equal:
+        left: { aggregate_need_fulfillment: current_entity }
+        right: 800
+
+entity_definitions:
+  - id: demo.entity.source
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: demo.resource.source, quantity_per_tick: 1000 }
+
+  - id: demo.entity.producer
+    components:
+      producer:
+        recipes: [demo.recipe.need]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+      maintenance:
+        interval_ticks: 10
+        inputs:
+          - resource: demo.resource.credits
+            quantity: 500
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  - id: demo.entity.residence
+    components:
+      residence:
+        population_tier: demo.population.tier_1
+        capacity: 10
+        initial_population: 2
+        growth_policy: demo.growth.default

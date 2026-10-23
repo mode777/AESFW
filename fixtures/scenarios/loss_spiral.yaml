@@ -1,0 +1,13 @@
+scenario:
+  id: test.scenario.loss_spiral
+  requirements: [GDD-3.7, GDD-20.3, SCN-04]
+  content:
+    packages: [fixtures/content/demo-loss-spiral]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 600
+    hash_interval: 10
+    invariants: true
