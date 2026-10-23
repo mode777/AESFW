@@ -218,6 +218,19 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             );
           }
         }
+        const provider = asRecord(components?.['service_provider']);
+        check(
+          id,
+          provider?.['service'],
+          'service',
+          `/entity_definitions/${id}/components/service_provider/service`,
+        );
+        check(
+          id,
+          provider?.['capability'],
+          'resource',
+          `/entity_definitions/${id}/components/service_provider/capability`,
+        );
       } else if (collection === 'population_tiers') {
         asArray(definition['need_categories']).forEach((entry, index) =>
           check(id, entry, 'needCategory', `/population_tiers/${id}/need_categories/${index}`),
@@ -243,12 +256,10 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
         asArray(definition['applies_to']).forEach((entry, index) =>
           check(id, entry, 'tier', `/needs/${id}/applies_to/${index}`),
         );
-        check(
-          id,
-          asRecord(definition['demand'])?.['resource'],
-          'resource',
-          `/needs/${id}/demand/resource`,
-        );
+        const demand = asRecord(definition['demand']);
+        check(id, demand?.['resource'], 'resource', `/needs/${id}/demand/resource`);
+        check(id, demand?.['service'], 'service', `/needs/${id}/demand/service`);
+        check(id, demand?.['condition'], 'condition', `/needs/${id}/demand/condition`);
       } else if (collection === 'deficit_policies') {
         check(id, definition['resource'], 'resource', `/deficit_policies/${id}/resource`);
       } else if (collection === 'connections') {

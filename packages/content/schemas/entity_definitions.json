@@ -207,6 +207,75 @@
             }
           }
         },
+        "service_provider": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["mode", "service"],
+              "properties": {
+                "mode": {
+                  "const": "coverage",
+                  "type": "string"
+                },
+                "service": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "relation": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["type", "cells"],
+                  "properties": {
+                    "type": {
+                      "const": "radius",
+                      "type": "string"
+                    },
+                    "cells": {
+                      "minimum": 1,
+                      "type": "integer"
+                    }
+                  }
+                },
+                "consumes": {
+                  "type": "array",
+                  "items": {
+                    "not": {}
+                  }
+                }
+              }
+            },
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["mode", "service", "capability", "quantity_per_tick"],
+              "properties": {
+                "mode": {
+                  "const": "capacity",
+                  "type": "string"
+                },
+                "service": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "capability": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "quantity_per_tick": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "consumes": {
+                  "type": "array",
+                  "items": {
+                    "not": {}
+                  }
+                }
+              }
+            }
+          ]
+        },
         "construction": {
           "additionalProperties": false,
           "type": "object",

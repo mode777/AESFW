@@ -9,6 +9,7 @@
 import { Type } from '@sinclair/typebox';
 
 import { IdSchema, InventoryRefSchema, ItemRefSchema, RateRefSchema } from './common.js';
+import { RelationSchema } from './service.js';
 
 const ChargePolicySchema = Type.Union([
   Type.Literal('while_exists'),
@@ -112,6 +113,28 @@ const StorageProviderSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const ServiceProviderSchema = Type.Union([
+  Type.Object(
+    {
+      mode: Type.Literal('coverage'),
+      service: IdSchema,
+      relation: Type.Optional(RelationSchema),
+      consumes: Type.Optional(Type.Array(Type.Never())),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      mode: Type.Literal('capacity'),
+      service: IdSchema,
+      capability: IdSchema,
+      quantity_per_tick: Type.Integer({ minimum: 1 }),
+      consumes: Type.Optional(Type.Array(Type.Never())),
+    },
+    { additionalProperties: false },
+  ),
+]);
+
 const DeconstructionSchema = Type.Object(
   {
     duration_ticks: Type.Integer({ minimum: 0 }),
@@ -168,6 +191,7 @@ const ComponentsSchema = Type.Object(
     residence: Type.Optional(ResidenceSchema),
     storage_access: Type.Optional(StorageAccessSchema),
     storage_provider: Type.Optional(StorageProviderSchema),
+    service_provider: Type.Optional(ServiceProviderSchema),
     construction: Type.Optional(ConstructionSchema),
     placement: Type.Optional(PlacementSchema),
     connectivity: Type.Optional(ConnectivitySchema),

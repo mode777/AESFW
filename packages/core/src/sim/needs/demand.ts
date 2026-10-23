@@ -29,7 +29,10 @@ export function calculatePopulationDemand(world: World, events: EventWriter): vo
     const previous = needStore.get(entity);
     const needs: NeedRuntime[] = [];
     for (const spec of residence.needs ?? []) {
-      const base = mul(spec.quantityPerPopulationPerTick, group.count);
+      const base =
+        spec.type === 'spatial_coverage' || spec.type === 'state_query'
+          ? 1
+          : mul(spec.quantityPerPopulationPerTick, group.count);
       const demanded = mulDiv(base, residence.consumptionFactor, 1000, 'floor');
       const window =
         (isNeedStates(previous)

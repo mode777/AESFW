@@ -319,7 +319,12 @@ export type {
 export { isPopulationGroup, isResidence, updatePopulation } from './sim/population/index.js';
 export type { PopulationGroup, PopulationOutput, Residence } from './sim/population/index.js';
 export type { Growth, GrowthCondition, GrowthStep } from './sim/population/index.js';
-export { calculatePopulationDemand, deliverNeeds, updateSatisfaction } from './sim/needs/index.js';
+export {
+  applyServiceProvider,
+  calculatePopulationDemand,
+  deliverNeeds,
+  updateSatisfaction,
+} from './sim/needs/index.js';
 export type {
   CategoryMember,
   CategoryMode,

@@ -6,7 +6,13 @@
  *
  * Source: CONT-6.6, CONT-6.8, GDD-9.4, GDD-9.5, GDD-11, GDD-12
  */
-import { allocateEntity, applyStorageProvider, ids, instantiateWorld } from '@aesfw/core';
+import {
+  allocateEntity,
+  applyServiceProvider,
+  applyStorageProvider,
+  ids,
+  instantiateWorld,
+} from '@aesfw/core';
 import type {
   CapabilityConsumer,
   Cargo,
@@ -508,6 +514,7 @@ const instantiateDefinition = (
     }
   }
   applyStorageProvider(world, registry, definition.handle, entity, ids.entityId(location));
+  applyServiceProvider(world, registry, definition.handle, entity);
   if (components['connectivity'] !== undefined) {
     const node = connectivityNodeFrom(components['connectivity']);
     if (node !== null) {

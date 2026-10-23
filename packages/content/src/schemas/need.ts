@@ -1,8 +1,6 @@
 /**
- * The need and need-category schemas (CONT-6.11, CONT-6.13). Only the
- * `resource_consumption` and `resource_availability` demands of the M1 loop
- * are schematised; service, coverage, and state-query demands belong to
- * `add-services-and-coverage-needs` (7.6).
+ * The need and need-category schemas (CONT-6.11, CONT-6.13). The demand union
+ * covers every supplier type of GDD-12.2.
  *
  * Source: CONT-6.11, CONT-6.13
  */
@@ -29,13 +27,46 @@ const ResourceAvailabilityDemandSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const ServiceCapacityDemandSchema = Type.Object(
+  {
+    type: Type.Literal('service_capacity'),
+    service: IdSchema,
+    quantity_per_population_per_tick: Type.Integer({ minimum: 0 }),
+  },
+  { additionalProperties: false },
+);
+
+const SpatialCoverageDemandSchema = Type.Object(
+  {
+    type: Type.Literal('spatial_coverage'),
+    service: IdSchema,
+    required_distinct_providers: Type.Optional(Type.Integer({ minimum: 1 })),
+    provider_selector: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  },
+  { additionalProperties: false },
+);
+
+const StateQueryDemandSchema = Type.Object(
+  {
+    type: Type.Literal('state_query'),
+    condition: IdSchema,
+  },
+  { additionalProperties: false },
+);
+
 /** A need definition (CONT-6.11). */
 export const NeedSchema = Type.Object(
   {
     id: IdSchema,
     category: IdSchema,
     applies_to: Type.Array(IdSchema),
-    demand: Type.Union([ResourceConsumptionDemandSchema, ResourceAvailabilityDemandSchema]),
+    demand: Type.Union([
+      ResourceConsumptionDemandSchema,
+      ResourceAvailabilityDemandSchema,
+      ServiceCapacityDemandSchema,
+      SpatialCoverageDemandSchema,
+      StateQueryDemandSchema,
+    ]),
     fulfillment: Type.Object(
       {
         measurement_window_ticks: Type.Integer({ minimum: 1 }),

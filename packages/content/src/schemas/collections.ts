@@ -19,6 +19,7 @@ import { LocationTemplateSchema } from './location.js';
 import { NeedCategorySchema, NeedSchema } from './need.js';
 import { GrowthPolicySchema, PopulationTierSchema } from './population.js';
 import { RecipeSchema } from './recipe.js';
+import { ServiceSchema } from './service.js';
 import { ResourceSchema } from './resource.js';
 import { TransportOrderTemplateSchema } from './order.js';
 import { TransportUnitSchema } from './transport.js';
@@ -33,6 +34,7 @@ export const DEFINITION_COLLECTIONS = {
   population_tiers: 'tier',
   needs: 'need',
   need_categories: 'needCategory',
+  services: 'service',
   growth_policies: 'growthPolicy',
   conditions: 'condition',
   curves: 'curve',
@@ -60,6 +62,7 @@ export const DEFINITION_SCHEMAS = {
   population_tiers: PopulationTierSchema,
   needs: NeedSchema,
   need_categories: NeedCategorySchema,
+  services: ServiceSchema,
   growth_policies: GrowthPolicySchema,
   conditions: ConditionSchema,
   curves: CurveSchema,

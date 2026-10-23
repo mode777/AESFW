@@ -7,6 +7,7 @@ export { calculatePopulationDemand } from './demand.js';
 export { deliverNeeds } from './deliver.js';
 export { updateSatisfaction } from './fulfillment.js';
 export { isNeedStates } from './types.js';
+export { applyServiceProvider } from './providers.js';
 export type {
   CategoryMember,
   CategoryMode,
@@ -16,6 +17,7 @@ export type {
   NeedSpec,
   NeedStates,
   NeedType,
+  ServiceProvider,
   Satisfaction,
   SatisfactionAggregation,
 } from './types.js';

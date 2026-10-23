@@ -61,6 +61,65 @@
               "type": "integer"
             }
           }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["type", "service", "quantity_per_population_per_tick"],
+          "properties": {
+            "type": {
+              "const": "service_capacity",
+              "type": "string"
+            },
+            "service": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "quantity_per_population_per_tick": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["type", "service"],
+          "properties": {
+            "type": {
+              "const": "spatial_coverage",
+              "type": "string"
+            },
+            "service": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "required_distinct_providers": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "provider_selector": {
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {}
+              }
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": ["type", "condition"],
+          "properties": {
+            "type": {
+              "const": "state_query",
+              "type": "string"
+            },
+            "condition": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
         }
       ]
     },

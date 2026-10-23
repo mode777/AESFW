@@ -224,6 +224,7 @@ describe('[TDS-7] definition collection catalogue', () => {
       'population_tiers',
       'needs',
       'need_categories',
+      'services',
       'growth_policies',
       'conditions',
       'curves',

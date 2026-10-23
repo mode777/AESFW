@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "mode"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "mode": {
+      "anyOf": [
+        {
+          "const": "coverage",
+          "type": "string"
+        },
+        {
+          "const": "capacity",
+          "type": "string"
+        }
+      ]
+    },
+    "default_relation": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["type", "cells"],
+      "properties": {
+        "type": {
+          "const": "radius",
+          "type": "string"
+        },
+        "cells": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
