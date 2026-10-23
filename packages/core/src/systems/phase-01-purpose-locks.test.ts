@@ -197,3 +197,45 @@ describe('[TDS-8.5][TDS-12.3] purpose-lock persistence', () => {
     expect(hashWorld(decoded.value, registry)).toBe(hashWorld(uninterrupted, registry));
   });
 });
+
+describe('[GDD-19] placement availability', () => {
+  it('[GDD-19] a locked definition is rejected with not_unlocked', () => {
+    const world = makeWorld();
+    const lockRegistry: Registry = {
+      ...registry,
+      stringIdOf: (type, handle) =>
+        type === 'entity' && handle === definitionHandle(42)
+          ? stringId('test.entity.locked')
+          : registry.stringIdOf(type, handle),
+    };
+    const scheduled: ScheduledCommand = {
+      commandId: 'c1',
+      actor: ownerHandle(0),
+      tick: tick(1),
+      seq: 1,
+      command: {
+        type: 'PlaceEntityPlan',
+        definition: definitionHandle(42),
+        location: entityId(2),
+        transform: {
+          location: entityId(2),
+          position: { x: 0, y: 0 },
+          orientation: 0,
+        },
+      } as never,
+    };
+    world.commandQueue = [scheduled];
+    const output = runSystem(phase01ApplyCommands, world, lockRegistry, {
+      commands: [scheduled],
+      options: { journal: false, hash: false },
+      unlockSystem: {
+        update: () => undefined,
+        isAvailable: () => false,
+      },
+    });
+    expect(output.outcomes[0]?.status).toBe('rejected');
+    if (output.outcomes[0]?.status === 'rejected') {
+      expect(output.outcomes[0].errors[0]?.code).toBe('not_unlocked');
+    }
+  });
+});

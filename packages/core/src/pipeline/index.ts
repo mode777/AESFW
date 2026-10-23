@@ -17,6 +17,7 @@ export type {
   PolicySet,
   StoreKey,
   SustainedTimerUpdater,
+  UnlockSystem,
   SystemDescriptor,
   SystemStores,
   TickContext,

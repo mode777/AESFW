@@ -13,7 +13,7 @@ import type { ScheduledCommand, World } from '../world/types.js';
 import type { CommandError, CommandOutcome } from '../commands/types.js';
 import { compareScheduledCommands } from '../commands/order.js';
 import type { EntityId, Tick } from '../ids/index.js';
-import { entityId } from '../ids/index.js';
+import { entityId, stringId } from '../ids/index.js';
 import { writeCommandOutcomes } from '../pipeline/scratch.js';
 import type { SystemDescriptor, TickContext } from '../pipeline/types.js';
 import { lifecycleOf } from '../sim/construction/lifecycle.js';
@@ -89,6 +89,26 @@ const applyOne = (ctx: TickContext, scheduled: ScheduledCommand): CommandOutcome
 
   switch (command.type) {
     case 'PlaceEntityPlan': {
+      if (
+        ctx.unlockSystem !== null &&
+        !ctx.unlockSystem.isAvailable(
+          world,
+          scheduled.actor,
+          'entity',
+          stringId(ctx.registry.stringIdOf('entity', command.definition) ?? ''),
+        )
+      ) {
+        return reject(
+          [
+            {
+              code: 'not_unlocked',
+              arguments: { definition: command.definition },
+            },
+          ],
+          [command.location],
+          command.location,
+        );
+      }
       const outcome = applyPlaceEntityPlan(world, ctx.registry, command, ctx.conditionEvaluator);
       if (!outcome.ok) return reject(outcome.errors, [command.location], command.location);
       return emitApplied(outcome.entity, command.location);

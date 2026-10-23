@@ -257,6 +257,37 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
           'band',
           `/population_tiers/${id}/satisfaction/bands`,
         );
+      } else if (collection === 'unlocks') {
+        check(id, definition['condition'], 'condition', `/unlocks/${id}/condition`);
+        const TARGET_TYPES: Readonly<Record<string, string>> = {
+          entity_definition: 'entity',
+          recipe: 'recipe',
+          population_tier: 'tier',
+          transport_type: 'transportType',
+          location_template: 'location',
+          connection: 'connection',
+          transition: 'transition',
+          exchange: 'exchange',
+        };
+        asArray(definition['targets']).forEach((entry, index) => {
+          const target = asRecord(entry);
+          const type = target?.['type'];
+          const definitionType = typeof type === 'string' ? TARGET_TYPES[type] : undefined;
+          if (definitionType === undefined) {
+            diagnostics.push(
+              diag('invalid_unlock_target', {
+                definition: id,
+                path: `/unlocks/${id}/targets/${index}/type`,
+                args: { type: typeof type === 'string' ? type : 'unknown' },
+              }),
+            );
+            return;
+          }
+          // Transitions and exchanges have no collection yet; their owning rows
+          // (7.3, 9.1) validate those references.
+          if (type === 'transition' || type === 'exchange') return;
+          check(id, target?.['id'], definitionType as never, `/unlocks/${id}/targets/${index}/id`);
+        });
       } else if (collection === 'satisfaction_bands') {
         const bands = asArray(definition['bands']);
         let previousMin = -1;

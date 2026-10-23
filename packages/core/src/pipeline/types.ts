@@ -8,8 +8,8 @@
  */
 import type { JsonValue } from '../det/index.js';
 import type { DomainEvent, EventWriter } from '../events/event-writer.js';
-import type { Tick } from '../ids/index.js';
-import type { Registry } from '../registry/types.js';
+import type { OwnerHandle, StringId, Tick } from '../ids/index.js';
+import type { DefinitionType, Registry } from '../registry/types.js';
 import type { AtomicBuilder, Transaction, TransactionWriter, TxError } from '../tx/index.js';
 import type { StateHash } from '../world/codec.js';
 import type { ComponentKind, ComponentStores } from '../world/component-store.js';
@@ -80,6 +80,22 @@ export type PolicySet = Readonly<Record<string, never>>;
  */
 export type SustainedTimerUpdater = (ctx: TickContext) => void;
 
+/**
+ * Unlock evaluation and definition availability (GDD-19, CONT-6.17, design
+ * D4). `@aesfw/content` builds the implementation from compiled content.
+ */
+export interface UnlockSystem {
+  /** Phase 25: recompute the unlocked targets of every owner. */
+  readonly update: (ctx: TickContext) => void;
+  /** True when `id` of `type` is not gated, or the owner has unlocked it. */
+  readonly isAvailable: (
+    world: World,
+    owner: OwnerHandle,
+    type: DefinitionType,
+    id: StringId,
+  ) => boolean;
+}
+
 /** Re-exported transaction types (TDS-12); implemented by `../tx`. */
 export type { AtomicBuilder, Transaction, TransactionWriter, TxError };
 
@@ -96,6 +112,8 @@ export interface TickContext {
   readonly conditionEvaluator: PlacementConditionEvaluator;
   /** Updates sustained timers in phase 22 (TDS-14.3, design D4). */
   readonly sustainedTimerUpdater: SustainedTimerUpdater;
+  /** Evaluates unlocks and gates definitions (GDD-19, design D4). */
+  readonly unlockSystem: UnlockSystem | null;
 }
 
 /** A registered system (TDS-11.2). */
@@ -125,6 +143,8 @@ export interface TickInput {
   readonly conditionEvaluator?: PlacementConditionEvaluator;
   /** Optional sustained-timer updater (TDS-14.3, design D4). Defaults to no-op. */
   readonly sustainedTimerUpdater?: SustainedTimerUpdater;
+  /** Optional unlock system (GDD-19, design D4). Defaults to ungated. */
+  readonly unlockSystem?: UnlockSystem;
 }
 
 /** Output of one tick (TDS-10.1). */

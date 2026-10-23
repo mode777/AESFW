@@ -21,13 +21,18 @@ const asObject = (value: unknown): JsonObject =>
 export function definitionMetadata(
   content: CompiledContent,
   type: DefinitionType,
+  isAvailable?: (type: DefinitionType, id: string) => boolean,
 ): readonly DefinitionMetadataDto[] {
   const registry = content.registry as ContentRegistry;
-  return registry.definitionsOf(type).map((definition) => ({
-    definition_id: definition.id,
-    definition_type: type,
-    tags: [...registry.tagsOf(ids.stringId(definition.id))],
-    parameters: asObject(definition.data),
-    commands: [],
-  }));
+  return registry.definitionsOf(type).map((definition) => {
+    const available = isAvailable?.(type, definition.id) ?? true;
+    return {
+      definition_id: definition.id,
+      definition_type: type,
+      tags: [...registry.tagsOf(ids.stringId(definition.id))],
+      parameters: asObject(definition.data),
+      commands: [],
+      ...(available ? {} : { locked: true }),
+    };
+  });
 }

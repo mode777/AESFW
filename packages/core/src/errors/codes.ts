@@ -29,6 +29,10 @@ export const ERROR_CODES = {
   insufficient_capacity: { arguments: ['required', 'available'] },
   placement_condition_failed: { arguments: ['condition'] },
   invalid_construction_state: { arguments: ['entity', 'state'] },
+  unknown_inventory: { arguments: ['inventory'] },
+  unknown_resource: { arguments: ['resource'] },
+  invalid_purpose: { arguments: ['purpose'] },
+  not_unlocked: { arguments: ['definition'] },
 } as const satisfies Readonly<Record<string, ErrorCodeSpec>>;
 
 /** A stable command error code. */

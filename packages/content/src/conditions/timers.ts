@@ -50,6 +50,13 @@ export type SustainedQueryResolver = (
   query: QueryRef,
 ) => number;
 
+/** Resolves a domain query for an owner-scoped `sustained` timer (GDD-19). */
+export type SustainedOwnerQueryResolver = (
+  world: World,
+  owner: ids.OwnerHandle,
+  query: QueryRef,
+) => number;
+
 const timerKey = (condition: DefinitionHandle, slot: number, subject: ids.EntityId): string =>
   `${condition}|${slot}|${subject}`;
 
@@ -105,6 +112,7 @@ const collectNodes = (root: Expr): TrackedNode[] => {
 export function buildSustainedTimerUpdater(
   content: CompiledContent,
   resolveQuery: SustainedQueryResolver = () => 0,
+  resolveOwnerQuery?: SustainedOwnerQueryResolver,
 ): SustainedTimerUpdater {
   const registry = content.registry as ContentRegistry;
   const tracked = new Map<DefinitionHandle, TrackedCondition>();
@@ -117,6 +125,20 @@ export function buildSustainedTimerUpdater(
     if (nodes.length > 0) tracked.set(definition.handle, { handle: definition.handle, nodes });
   }
   if (tracked.size === 0) return () => undefined;
+
+  // Conditions referenced by unlock definitions are evaluated per owner
+  // (TDS-14.3: "owners for unlocks"); their timer subjects are owner handles.
+  const unlockConditions = new Set<DefinitionHandle>();
+  const unlockDefinitions =
+    typeof registry.definitionsOf === 'function' ? registry.definitionsOf('unlock') : [];
+  for (const definition of unlockDefinitions) {
+    const data = definition.data;
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) continue;
+    const conditionId = (data as { readonly [key: string]: unknown })['condition'];
+    if (typeof conditionId !== 'string') continue;
+    const handle = registry.handleOf('condition', ids.stringId(conditionId));
+    if (handle !== null) unlockConditions.add(handle);
+  }
 
   return (ctx: TickContext): void => {
     const world: World = ctx.world;
@@ -151,6 +173,29 @@ export function buildSustainedTimerUpdater(
           subject,
           consecutiveTrueTicks: holds ? readTicks(condition, node.slot, subject) + 1 : 0,
         });
+      }
+    }
+    if (resolveOwnerQuery !== undefined && unlockConditions.size > 0) {
+      for (const owner of world.owners.owners) {
+        for (const [condition, trackedCondition] of tracked) {
+          if (!unlockConditions.has(condition)) continue;
+          const subject = ids.entityId(owner.handle);
+          for (const node of trackedCondition.nodes) {
+            const context: EvalContext = {
+              subject: { kind: 'owner', id: owner.handle },
+              query: (query) => resolveOwnerQuery(world, owner.handle, query),
+              aggregate: () => 0,
+              timer: (slot) => readTicks(condition, slot, subject),
+            };
+            const holds = evaluate(node.inner, context) === true;
+            pending.push({
+              condition,
+              slot: node.slot,
+              subject,
+              consecutiveTrueTicks: holds ? readTicks(condition, node.slot, subject) + 1 : 0,
+            });
+          }
+        }
       }
     }
     if (pending.length === 0) return;

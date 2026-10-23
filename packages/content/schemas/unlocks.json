@@ -1,0 +1,81 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "scope", "targets", "condition"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "const": "owner",
+          "type": "string"
+        },
+        {
+          "const": "global",
+          "type": "string"
+        }
+      ]
+    },
+    "reversible": {
+      "type": "boolean"
+    },
+    "targets": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["type", "id"],
+        "properties": {
+          "type": {
+            "anyOf": [
+              {
+                "const": "entity_definition",
+                "type": "string"
+              },
+              {
+                "const": "recipe",
+                "type": "string"
+              },
+              {
+                "const": "population_tier",
+                "type": "string"
+              },
+              {
+                "const": "transport_type",
+                "type": "string"
+              },
+              {
+                "const": "location_template",
+                "type": "string"
+              },
+              {
+                "const": "connection",
+                "type": "string"
+              },
+              {
+                "const": "transition",
+                "type": "string"
+              },
+              {
+                "const": "exchange",
+                "type": "string"
+              }
+            ]
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "condition": {
+      "minLength": 1,
+      "type": "string"
+    }
+  }
+}

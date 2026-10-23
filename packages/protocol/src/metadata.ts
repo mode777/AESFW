@@ -14,4 +14,6 @@ export interface DefinitionMetadataDto {
   readonly presentation_key?: string;
   readonly parameters: JsonObject;
   readonly commands?: readonly string[];
+  /** True when an unlock gates the definition and the actor has not unlocked it. */
+  readonly locked?: boolean;
 }

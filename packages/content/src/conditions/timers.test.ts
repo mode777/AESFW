@@ -89,6 +89,7 @@ const stepTimers = (
       policies: {},
       conditionEvaluator: () => true,
       sustainedTimerUpdater: () => undefined,
+      unlockSystem: null,
     };
     updater(context);
   }
@@ -153,5 +154,80 @@ describe('[TDS-14.3] sustained timer updater', () => {
     const updater = buildSustainedTimerUpdater(content);
     stepTimers(worldState, built.registry, updater, 2);
     expect(worldState.timers.timers).toEqual([]);
+  });
+});
+
+describe('[TDS-14.3][GDD-19] owner-scoped sustained timers', () => {
+  it('[TDS-14.3] an unlock condition advances a timer keyed by the owner', () => {
+    const built = buildRegistry({
+      conditions: [
+        {
+          id: 'test.condition.unlock',
+          expression: {
+            sustained: {
+              ticks: 2,
+              condition: {
+                greater_equal: { left: { population_count: { scope: 'owner' } }, right: 1 },
+              },
+            },
+          },
+        },
+      ],
+      unlocks: [
+        {
+          id: 'test.unlock.a',
+          scope: 'owner',
+          targets: [{ type: 'recipe', id: 'test.recipe.a' }],
+          condition: 'test.condition.unlock',
+        },
+      ],
+      recipes: [{ id: 'test.recipe.a', mode: 'batch', duration_ticks: 1, inputs: [], outputs: [] }],
+    });
+    const content: CompiledContent = {
+      registry: built.registry,
+      checksum: '',
+      packages: [],
+      presentation: null,
+    };
+    const worldState = worldWithSources(built.registry, []);
+    worldState.owners = {
+      owners: [
+        {
+          handle: ids.ownerHandle(0),
+          knowledge: [],
+          accounts: [],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: [],
+        },
+      ],
+    };
+    const updater = buildSustainedTimerUpdater(
+      content,
+      () => 0,
+      () => 3,
+    );
+    const context = (): TickContext => ({
+      tick: 1 as never,
+      registry: built.registry,
+      world: worldState,
+      tx: createTransactionWriter(worldState, null, txEnvironmentFor(built.registry)),
+      events: { emit: () => undefined, events: [] },
+      scratch: { values: new Map() },
+      policies: {},
+      conditionEvaluator: () => true,
+      sustainedTimerUpdater: () => undefined,
+      unlockSystem: null,
+    });
+    updater(context());
+    updater(context());
+    expect(worldState.timers.timers).toEqual([
+      {
+        condition: ids.definitionHandle(0),
+        slot: 0,
+        subject: ids.entityId(0),
+        consecutiveTrueTicks: 2,
+      },
+    ]);
   });
 });

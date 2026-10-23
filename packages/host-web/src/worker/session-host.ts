@@ -25,9 +25,9 @@ import {
   transportOrders,
 } from '@aesfw/app';
 import type { SaveDocument, SessionState } from '@aesfw/app';
-import { createMemorySource, loadContent } from '@aesfw/content';
+import { buildUnlockSystem, createMemorySource, loadContent } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
-import { InvariantViolation } from '@aesfw/core';
+import { InvariantViolation, ids } from '@aesfw/core';
 import type { DefinitionType, DomainEvent, OwnerHandle } from '@aesfw/core';
 import { PROTOCOL_VERSION, decodeWorkerRequest } from '@aesfw/protocol';
 import type {
@@ -147,10 +147,13 @@ const answerQuery = (
     };
   }
   if (kind === 'definition_metadata' && typeof query['definition_type'] === 'string') {
+    const unlockSystem = buildUnlockSystem(content);
     return {
       definition_metadata: definitionMetadata(
         content,
         query['definition_type'] as DefinitionType,
+        (type, id) =>
+          unlockSystem.isAvailable(session.world, session.settings.actor, type, ids.stringId(id)),
       ) as unknown as JsonValue,
     };
   }

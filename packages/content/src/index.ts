@@ -37,6 +37,7 @@ export * from './schemas/index.js';
 export * from './composition/index.js';
 export * from './registry/index.js';
 export * from './conditions/index.js';
+export { buildUnlockSystem, unlockQueryValue } from './unlocks/system.js';
 export { defaultWorldPlan, worldPlan } from './world/plan.js';
 export type { DefaultWorldPlanResult } from './world/plan.js';
 

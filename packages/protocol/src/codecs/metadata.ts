@@ -31,6 +31,10 @@ export function decodeDefinitionMetadata(value: unknown): DecodeResult<Definitio
   if (commands !== undefined && !isStringArray(commands)) {
     errors.push(invalidField('commands'));
   }
+  const locked = value['locked'];
+  if (locked !== undefined && typeof locked !== 'boolean') {
+    errors.push(invalidField('locked'));
+  }
 
   if (errors.length > 0) return err(errors);
 
@@ -44,5 +48,6 @@ export function decodeDefinitionMetadata(value: unknown): DecodeResult<Definitio
     ...base,
     ...(presentationKey === undefined ? {} : { presentation_key: presentationKey as string }),
     ...(commands === undefined ? {} : { commands: commands as readonly string[] }),
+    ...(locked === undefined ? {} : { locked: locked as boolean }),
   });
 }

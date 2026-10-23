@@ -1,14 +1,17 @@
 /**
- * Phase 25 — evaluateUnlocks (TDS-11.1). Registered no-op until its owning roadmap row.
+ * Phase 25 — evaluateUnlocks (TDS-11.1, GDD-19). Recomputes every owner's
+ * unlocked targets through the injected unlock system.
  *
- * Source: TDS-11.1, ARCH-5.2
+ * Source: TDS-11.1, GDD-19, ARCH-5.2
  */
 import type { SystemDescriptor } from '../pipeline/types.js';
 
 export const phase25EvaluateUnlocks: SystemDescriptor = {
   phase: 25,
   name: 'evaluateUnlocks',
-  reads: [],
-  writes: [],
-  run: () => undefined,
+  reads: ['owners'],
+  writes: ['owners'],
+  run: (ctx) => {
+    ctx.unlockSystem?.update(ctx);
+  },
 };

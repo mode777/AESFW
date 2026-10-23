@@ -138,6 +138,12 @@ describe('[PIC-4] definitionMetadata', () => {
     expect(metadata).toHaveLength(1);
     expect(metadata[0]?.definition_id).toBe('test.entity.residence');
     expect(metadata[0]?.tags).toEqual(['test.tag.a']);
+    expect(metadata[0]?.locked).toBeUndefined();
+  });
+
+  it('[PIC-4][GDD-19] marks an unavailable definition as locked', () => {
+    const metadata = definitionMetadata(content, 'entity', () => false);
+    expect(metadata[0]?.locked).toBe(true);
   });
 });
 
