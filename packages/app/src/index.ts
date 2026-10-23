@@ -32,6 +32,7 @@ export {
   entityDetail,
   locationSummary,
   needBreakdown,
+  planningMetrics,
 } from './readmodels/index.js';
 export { save, load, FRAMEWORK_VERSION, HASH_ALGORITHM } from './persistence/index.js';
 export type { SaveDocument, SaveHeader, SaveSessionState } from './persistence/index.js';

@@ -64,3 +64,48 @@ export interface NeedBreakdownDto {
   readonly satisfaction?: WireInt;
   readonly band?: string;
 }
+
+/** One consuming tier of the planning read model (PIC-10.5). */
+export interface PlanningTierDto {
+  readonly tier_id: WireId;
+  readonly per_capita_permille: WireInt;
+  readonly supported: WireInt;
+  readonly consuming_population: WireInt;
+  readonly coverage_permille: WireInt;
+}
+
+/** One scope (owner or location) of the planning read model (PIC-10.5). */
+export interface PlanningScopeDto {
+  readonly scope: 'owner' | 'location';
+  readonly location_id?: WireInt;
+  readonly net_per_tick: WireInt;
+  readonly tiers: readonly PlanningTierDto[];
+}
+
+/** One chain stage of the planning read model (PIC-10.5). */
+export interface PlanningChainStageDto {
+  readonly definition_id: WireId;
+  readonly count: WireInt;
+  readonly ratio: WireInt;
+  readonly output_per_tick: WireInt;
+  readonly footprint: WireInt;
+  readonly maintenance_per_interval: WireInt;
+  readonly capability_demand: Readonly<Record<string, WireInt>>;
+}
+
+/** One resource chain of the planning read model (PIC-10.5). */
+export interface PlanningChainDto {
+  readonly resource_id: WireId;
+  readonly output_per_tick: WireInt;
+  readonly stages: readonly PlanningChainStageDto[];
+}
+
+/** The planning read model (PIC-10.5). */
+export interface PlanningDto {
+  readonly owner_id: WireId;
+  readonly resources: readonly {
+    readonly resource_id: WireId;
+    readonly scopes: readonly PlanningScopeDto[];
+  }[];
+  readonly chains: readonly PlanningChainDto[];
+}

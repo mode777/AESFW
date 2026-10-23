@@ -58,6 +58,11 @@ export type {
   LocationSummaryDto,
   MaintenanceDto,
   NeedBreakdownDto,
+  PlanningChainDto,
+  PlanningChainStageDto,
+  PlanningDto,
+  PlanningScopeDto,
+  PlanningTierDto,
   ResidenceDto,
 } from './readmodels.js';
 export type {
@@ -92,5 +97,6 @@ export {
   decodeEntityDetail,
   decodeLocationSummary,
   decodeNeedBreakdown,
+  decodePlanning,
 } from './codecs/readmodels.js';
 export { decodeWorkerRequest, decodeWorkerResponse } from './codecs/worker.js';
