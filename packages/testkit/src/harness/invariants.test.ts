@@ -830,12 +830,13 @@ describe('[INV-16] cargo-slot invariant', () => {
 describe('[INV-12] exchange price bounds', () => {
   const EXCHANGE = ids.definitionHandle(0);
   const RESOURCE = ids.definitionHandle(0);
+  const CURRENCY = ids.definitionHandle(0);
   const exchangeRegistry: Registry = {
     ...createEmptyRegistry(),
     stringIdOf: (type, handle) =>
       type === 'exchange' && handle === EXCHANGE
         ? ids.stringId('test.exchange.a')
-        : type === 'resource' && handle === RESOURCE
+        : type === 'resource' && (handle === RESOURCE || handle === CURRENCY)
           ? ids.stringId('test.resource.a')
           : null,
     handleOf: (type, id) =>
@@ -843,7 +844,9 @@ describe('[INV-12] exchange price bounds', () => {
         ? EXCHANGE
         : type === 'resource' && id === ids.stringId('test.resource.a')
           ? RESOURCE
-          : null,
+          : type === 'resource' && id === ids.stringId('test.resource.credits')
+            ? CURRENCY
+            : null,
     definitionDataOf: (type, handle) =>
       type === 'exchange' && handle === EXCHANGE
         ? {
@@ -872,7 +875,12 @@ describe('[INV-12] exchange price bounds', () => {
   };
 
   const exchangeWorld = (buy: number, sell: number): core.World => {
-    const working = world().store('exchangeRef', ids.entityId(1), { exchange: EXCHANGE }).build();
+    const working = world()
+      .store('exchangeRef', ids.entityId(1), {
+        exchange: EXCHANGE,
+        location: ids.entityId(0),
+      })
+      .build();
     working.exchanges = {
       prices: [
         {
@@ -908,5 +916,52 @@ describe('[INV-12] exchange price bounds', () => {
     const output = step(working, exchangeRegistry, input);
     const withoutDefinition: Registry = { ...exchangeRegistry, definitionDataOf: () => null };
     expect(checkInvariants(before, output, withoutDefinition).map((f) => f.id)).toContain('INV-12');
+  });
+});
+
+describe('[INV-13] exchange spread', () => {
+  const EXCHANGE = ids.definitionHandle(0);
+  const RESOURCE = ids.definitionHandle(0);
+  const spreadWorld = (buy: number, sell: number): core.World => {
+    const working = world()
+      .store('exchangeRef', ids.entityId(1), {
+        exchange: EXCHANGE,
+        location: ids.entityId(0),
+      })
+      .build();
+    working.exchanges = {
+      prices: [
+        {
+          exchange: ids.entityId(1),
+          resource: RESOURCE,
+          buy: ids.tick(buy),
+          sell: ids.tick(sell),
+          soldVolume: [],
+          boughtVolume: [],
+        },
+      ],
+    };
+    return working;
+  };
+  const spreadRegistry: Registry = {
+    ...createEmptyRegistry(),
+    stringIdOf: (type, handle) =>
+      type === 'resource' && handle === RESOURCE ? ids.stringId('test.resource.a') : null,
+  };
+
+  it('[INV-13] a crossed spread is reported', () => {
+    const working = spreadWorld(1000, 1000);
+    const before = cloneWorld(working);
+    const output = step(working, spreadRegistry, input);
+    expect(checkInvariants(before, output, spreadRegistry).map((f) => f.id)).toContain('INV-13');
+  });
+
+  it('[INV-13] a valid spread has no finding', () => {
+    const working = spreadWorld(1000, 800);
+    const before = cloneWorld(working);
+    const output = step(working, spreadRegistry, input);
+    expect(checkInvariants(before, output, spreadRegistry).some((f) => f.id === 'INV-13')).toBe(
+      false,
+    );
   });
 });

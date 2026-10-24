@@ -7,11 +7,13 @@
  */
 import type { Diagnostic } from '../errors/diagnostic.js';
 import type { Int } from '../fx/index.js';
+import { mul } from '../fx/index.js';
 import { definitionHandle, reservationId } from '../ids/index.js';
 import type { DefinitionHandle, EntityId, OwnerHandle, ReservationId, Tick } from '../ids/index.js';
 import { err, ok } from '../result.js';
 import type { Result } from '../result.js';
 import type { OwnerState, Purpose, Reservation, World } from '../world/types.js';
+import type { TradeRequest } from './types.js';
 import { accepts } from './inventory.js';
 import { effectiveInventoryCapacity } from '../sim/internal-logistics/storage.js';
 import type { Inventory } from './inventory.js';
@@ -40,7 +42,8 @@ type StagedOp =
   | { readonly op: 'deposit'; readonly request: DepositRequest }
   | { readonly op: 'withdraw'; readonly request: WithdrawRequest }
   | { readonly op: 'transfer'; readonly request: TransferRequest }
-  | { readonly op: 'account'; readonly request: AccountRequest };
+  | { readonly op: 'account'; readonly request: AccountRequest }
+  | { readonly op: 'trade'; readonly request: TradeRequest };
 
 interface TxState {
   readonly world: World;
@@ -580,6 +583,42 @@ const applyOp = (state: TxState, op: StagedOp): TxError | null => {
       });
       return null;
     }
+    case 'trade': {
+      const request = op.request;
+      const owner = state.world.owners.owners[request.owner];
+      if (owner === undefined) {
+        return txError('unknown_owner', { owner: request.owner });
+      }
+      const total = mul(request.price, request.quantity);
+      const delta = request.direction === 'buy' ? -total : total;
+      const current = accountsFor(state, request.owner).get(request.currency) ?? 0;
+      const next = checkedAdd(current, delta);
+      if (next === null) {
+        return txError('arithmetic_overflow', { owner: request.owner, resource: request.currency });
+      }
+      if (next < 0 && !state.allowNegative(request.currency)) {
+        return txError('insufficient_balance', {
+          owner: request.owner,
+          resource: request.currency,
+          balance: current,
+          delta,
+        });
+      }
+      accountsFor(state, request.owner).set(request.currency, next);
+      state.transactions.push({
+        kind: 'trade',
+        seq: seqOf(state, 0),
+        exchange: request.exchange,
+        owner: request.owner,
+        unit: request.unit,
+        resource: request.resource,
+        currency: request.currency,
+        quantity: request.quantity,
+        price: request.price,
+        direction: request.direction,
+      });
+      return null;
+    }
   }
 };
 
@@ -666,6 +705,7 @@ export function createTransactionWriter(
       withdraw: (request) => staged.push({ op: 'withdraw', request }),
       transfer: (request) => staged.push({ op: 'transfer', request }),
       account: (request) => staged.push({ op: 'account', request }),
+      trade: (request) => staged.push({ op: 'trade', request }),
     };
     build(builder);
     return staged;

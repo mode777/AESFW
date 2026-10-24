@@ -19,6 +19,7 @@ import { exchangePriceOf, recordExchangeVolume, recoverExchangePrices } from './
 
 const EXCHANGE = definitionHandle(0);
 const RESOURCE = definitionHandle(1);
+const CURRENCY = definitionHandle(2);
 
 const ELASTICITY = {
   window_ticks: 10,
@@ -37,13 +38,17 @@ const registry: Registry = {
       ? stringId('test.exchange.a')
       : type === 'resource' && handle === RESOURCE
         ? stringId('test.resource.a')
-        : null,
+        : type === 'resource' && handle === CURRENCY
+          ? stringId('test.resource.credits')
+          : null,
   handleOf: (type, id) =>
     type === 'exchange' && id === stringId('test.exchange.a')
       ? EXCHANGE
       : type === 'resource' && id === stringId('test.resource.a')
         ? RESOURCE
-        : null,
+        : type === 'resource' && id === stringId('test.resource.credits')
+          ? CURRENCY
+          : null,
   definitionDataOf: (type, handle) =>
     type === 'exchange' && handle === EXCHANGE
       ? {
@@ -96,8 +101,10 @@ const makeWorld = (): { world: World; exchange: number } => {
     owners: [{ handle: ownerHandle(0), accounts: [], knowledge: [] }],
   };
   instantiateWorld(world, plan);
+  const location = world.stores.get('location').ids()[0];
+  if (location === undefined) throw new Error('no location instantiated');
   const exchange = allocateEntity(world);
-  world.stores.get('exchangeRef').set(exchange, { exchange: EXCHANGE });
+  world.stores.get('exchangeRef').set(exchange, { exchange: EXCHANGE, location });
   world.exchanges = {
     prices: [
       {

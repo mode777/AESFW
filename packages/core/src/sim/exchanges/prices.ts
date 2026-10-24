@@ -15,6 +15,7 @@ import { InvariantViolation } from '../../errors/invariant-violation.js';
 import type { Registry } from '../../registry/types.js';
 import type { ExchangePrice, VolumeEntry, World } from '../../world/types.js';
 import type { ExchangeConfig } from './config.js';
+import type { ExchangeRef } from './config.js';
 import { exchangeConfigOf } from './config.js';
 
 /** The trade directions of an exchange good (GDD-17.4). */
@@ -41,9 +42,18 @@ export function exchangeConfigOfEntity(
   world: World,
   exchange: EntityId,
 ): ExchangeConfig | null {
-  const component = world.stores.get<{ exchange: DefinitionHandle }>('exchangeRef').get(exchange);
+  const component = world.stores.get<ExchangeRef>('exchangeRef').get(exchange);
   if (component === undefined) return null;
   return exchangeConfigOf(registry, component.exchange);
+}
+
+/** The first exchange entity at `location` in ascending entity order, or `null`. */
+export function exchangeAtLocation(world: World, location: EntityId): EntityId | null {
+  for (const entity of world.stores.get<ExchangeRef>('exchangeRef').ids()) {
+    const component = world.stores.get<ExchangeRef>('exchangeRef').get(entity);
+    if (component !== undefined && component.location === location) return entity;
+  }
+  return null;
 }
 
 /**
@@ -103,6 +113,17 @@ export function stepAmount(config: ExchangeConfig, base: Int): Int {
 export function recoveryAmount(config: ExchangeConfig, base: Int): Int {
   const amount = mulDiv(base, config.elasticity.recoveryPermillePerInterval, 1000, 'floor');
   return config.elasticity.recoveryPermillePerInterval > 0 && amount < 1 ? 1 : amount;
+}
+
+/** Whether the good's price side is enabled for the direction (GDD-17.2). */
+export function sideEnabled(
+  config: ExchangeConfig,
+  resource: DefinitionHandle,
+  direction: TradeDirection,
+): boolean {
+  const good = config.goods.find((entry) => entry.resource === resource);
+  if (good === undefined) return false;
+  return direction === 'buy' ? good.buyEnabled : good.sellEnabled;
 }
 
 const replaceRow = (world: World, updated: ExchangePrice): void => {

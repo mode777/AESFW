@@ -21,6 +21,20 @@ location_templates:
         capacity: { mode: total, quantity: 1000000 }
         access_policy: framework.inventory.shared_location
     activation: { initial: true }
+  - id: demo.location.outpost
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+
+connections:
+  - id: demo.connection.trade_route
+    direction: bidirectional
+    traversal: { base_duration_ticks: 1 }
+    allowed_transport_tags: [demo.transport.standard]
 
 exchanges:
   - id: demo.exchange.port
@@ -40,11 +54,38 @@ exchanges:
       max_price_permille: 5000
     shared_between_owners: true
 
+entity_definitions:
+  - id: demo.entity.trader
+    components: {}
+
+transport_units:
+  - id: demo.transport.trader
+    entity_definition: demo.entity.trader
+    cargo:
+      compartment_policy: unrestricted
+      slots: 1
+      slot_capacity: 1000
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 1000
+      allowed_connection_tags: [demo.transport.standard]
+    handling:
+      loading_rate_per_tick: 100
+      unloading_rate_per_tick: 100
+    order_modes: [route, trade]
+
 worlds:
   - id: demo.world.exchange
     locations:
       - id: demo.loc.port
         template: demo.location.port
+      - id: demo.loc.outpost
+        template: demo.location.outpost
+    connections:
+      - id: demo.conn.port_outpost
+        definition: demo.connection.trade_route
+        origin: demo.loc.port
+        destination: demo.loc.outpost
     owners:
       - id: owner.a
         established_locations: [demo.loc.port]

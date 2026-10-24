@@ -36,9 +36,11 @@ export {
   readTransportHandling,
   routeStateOf,
   stationCursorOf,
+  tradeTarget,
   transportOrderOf,
   unassignTransport,
 } from './orders.js';
+export { executeTrades } from './trades.js';
 export type { RoutePath } from './route.js';
 export { TRANSPORT_ARRIVALS_KEY, TRANSPORT_HANDLING_KEY } from './types.js';
 export type {

@@ -4,17 +4,24 @@
  *
  * Source: GDD-17.1–17.3, ARCH-14.5, CONT-6.21
  */
-export type { ExchangeConfig, ExchangeElasticityConfig, ExchangeGoodConfig } from './config.js';
+export type {
+  ExchangeConfig,
+  ExchangeElasticityConfig,
+  ExchangeGoodConfig,
+  ExchangeRef,
+} from './config.js';
 export { exchangeConfigOf } from './config.js';
 export type { TradeDirection } from './prices.js';
 export type { VolumeEntry } from '../../world/types.js';
 export {
+  exchangeAtLocation,
   exchangeConfigOfEntity,
   exchangePriceOf,
   priceSideBounds,
   recordExchangeVolume,
   recoverExchangePrices,
   recoveryAmount,
+  sideEnabled,
   stepAmount,
   windowVolume,
 } from './prices.js';

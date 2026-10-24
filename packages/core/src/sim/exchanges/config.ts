@@ -6,16 +6,24 @@
  *
  * Source: GDD-17.2, GDD-17.3, ARCH-14.5, TDS-4.3
  */
-import type { DefinitionHandle, StringId } from '../../ids/index.js';
+import type { DefinitionHandle, EntityId, StringId } from '../../ids/index.js';
 import { stringId } from '../../ids/index.js';
 import type { Int } from '../../fx/index.js';
 import type { Registry } from '../../registry/types.js';
+
+/** The `exchangeRef` component of an exchange entity (GDD-17.2). */
+export type ExchangeRef = {
+  readonly exchange: DefinitionHandle;
+  readonly location: EntityId;
+};
 
 /** The price sides of one good (CONT-6.21). */
 export interface ExchangeGoodConfig {
   readonly resource: DefinitionHandle;
   readonly baseBuy: Int;
   readonly baseSell: Int;
+  readonly buyEnabled: boolean;
+  readonly sellEnabled: boolean;
 }
 
 /** The parsed elasticity block of an exchange (GDD-17.3). */
@@ -32,6 +40,7 @@ export interface ExchangeElasticityConfig {
 /** The parsed definition data of an exchange (CONT-6.21). */
 export interface ExchangeConfig {
   readonly id: StringId;
+  readonly currency: DefinitionHandle;
   readonly goods: readonly ExchangeGoodConfig[];
   readonly elasticity: ExchangeElasticityConfig;
 }
@@ -96,15 +105,28 @@ export function exchangeConfigOf(
     const good = asRecord(entry);
     if (good === null) continue;
     const resourceId = good['resource'];
-    const baseBuy = asInt(asRecord(good['buy_from_exchange'])?.['base_price']);
-    const baseSell = asInt(asRecord(good['sell_to_exchange'])?.['base_price']);
+    const buySide = asRecord(good['buy_from_exchange']);
+    const sellSide = asRecord(good['sell_to_exchange']);
+    const baseBuy = asInt(buySide?.['base_price']);
+    const baseSell = asInt(sellSide?.['base_price']);
     if (typeof resourceId !== 'string' || baseBuy === null || baseSell === null) continue;
     const resource = registry.handleOf('resource', stringId(resourceId));
     if (resource === null) continue;
-    goods.push({ resource, baseBuy, baseSell });
+    goods.push({
+      resource,
+      baseBuy,
+      baseSell,
+      buyEnabled: buySide?.['enabled'] === true,
+      sellEnabled: sellSide?.['enabled'] === true,
+    });
   }
+  const currencyId = data['currency'];
+  const currency =
+    typeof currencyId === 'string' ? registry.handleOf('resource', stringId(currencyId)) : null;
+  if (currency === null) return null;
   return {
     id: id as StringId,
+    currency,
     goods,
     elasticity: {
       windowTicks,

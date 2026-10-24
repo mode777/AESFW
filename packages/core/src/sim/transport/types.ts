@@ -138,14 +138,15 @@ export type RouteState = {
   readonly path: readonly EntityId[];
 };
 
-/** One staged handling transfer. */
+/** One staged handling or trade transfer. A trade carries `exchange` and no inventory. */
 export type PendingTransportTransfer = {
   readonly unit: EntityId;
   readonly order: EntityId;
   readonly action: TransportAction;
   readonly resource: DefinitionHandle;
   readonly quantity: Int;
-  readonly inventory: EntityId;
+  readonly inventory: EntityId | null;
+  readonly exchange: EntityId | null;
 };
 
 /** The scratch key holding phase 16's staged handling transfers. */

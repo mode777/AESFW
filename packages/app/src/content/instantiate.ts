@@ -597,7 +597,9 @@ export function instantiateExchanges(
 ): readonly Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const locationStore = world.stores.get<Location>('location');
-  const refStore = world.stores.get<{ exchange: DefinitionHandle }>('exchangeRef');
+  const refStore = world.stores.get<{ exchange: DefinitionHandle; location: number }>(
+    'exchangeRef',
+  );
   const definitionStore = world.stores.get<{ definition: DefinitionHandle }>('definition');
   const rows: { exchange: number; resource: DefinitionHandle; buy: Int; sell: Int }[] = [];
   for (const definition of registry.definitionsOf('exchange')) {
@@ -627,7 +629,7 @@ export function instantiateExchanges(
       continue;
     }
     const exchange = allocateEntity(world);
-    refStore.set(exchange, { exchange: definition.handle });
+    refStore.set(exchange, { exchange: definition.handle, location });
     definitionStore.set(exchange, { definition: definition.handle });
     for (const entry of asArray(data?.['goods'])) {
       const good = asRecord(entry);

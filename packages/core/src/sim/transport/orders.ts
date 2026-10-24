@@ -19,6 +19,8 @@ import type { World } from '../../world/types.js';
 import { quantityOf } from '../../tx/inventory.js';
 import type { Inventory } from '../../tx/inventory.js';
 import { locationHubOf } from '../location.js';
+import { exchangeAtLocation } from '../exchanges/index.js';
+import type { ExchangeRef } from '../exchanges/index.js';
 import { throttlePermilleOf } from '../internal-logistics/throttle.js';
 import { removeEntity } from '../construction/finalize.js';
 import { cargoFreeCapacity, cargoQuantity, loadCargo, unloadCargo } from './cargo.js';
@@ -59,7 +61,7 @@ const emptyCursor = (): StationCursor => ({
   started: false,
 });
 
-const clearMovement = (movement: TransportMovement): TransportMovement => ({
+export const clearMovement = (movement: TransportMovement): TransportMovement => ({
   ...movement,
   path: [],
   connectionIds: [],
@@ -76,10 +78,10 @@ const isMoving = (movement: TransportMovement | undefined): boolean => {
   return step + 1 < movement.path.length;
 };
 
-const orderOf = (world: World, order: EntityId): TransportOrder | undefined =>
+export const orderOf = (world: World, order: EntityId): TransportOrder | undefined =>
   world.stores.get<TransportOrder>('transportOrder').get(order);
 
-const cursorOf = (world: World, unit: EntityId): StationCursor | undefined =>
+export const cursorOf = (world: World, unit: EntityId): StationCursor | undefined =>
   world.stores.get<StationCursor>('stationCursor').get(unit);
 
 const assignmentOf = (world: World, unit: EntityId): TransportAssignment | undefined =>
@@ -91,10 +93,66 @@ const hubInventory = (world: World, location: EntityId): EntityId | null =>
 const rateOf = (world: World, unit: EntityId, action: TransportActionName): number => {
   const handling = world.stores.get<TransportHandling>('handling').get(unit);
   if (handling === undefined) return 0;
-  return action === 'load' ? handling.loadingRatePerTick : handling.unloadingRatePerTick;
+  return action === 'load' || action === 'buy'
+    ? handling.loadingRatePerTick
+    : handling.unloadingRatePerTick;
 };
 
 type TransportActionName = StationAction['action'];
+
+const isTradeAction = (action: TransportActionName): boolean =>
+  action === 'buy' || action === 'sell';
+
+/**
+ * The target quantity of one trade action at an exchange (GDD-17.4). The
+ * exchange's stock is unbounded, so the rule is measured from the acting side
+ * against the cargo alone: a buy targets cargo space, a sell targets the
+ * cargo. Rules that reference the far inventory fall back to their constant
+ * (`excess_above`, `maintain_origin_minimum`) or to the cargo bound
+ * (`deficit_below`, `maintain_destination_target`, `all` on the sell side).
+ *
+ * Source: GDD-17.4, GDD-15.3
+ */
+export function tradeTarget(world: World, unit: EntityId, action: StationAction): number {
+  const cargo = world.stores.get<Cargo>('cargo').get(unit);
+  if (cargo === undefined) return 0;
+  const amount = cargoQuantity(cargo, action.resource);
+  const free = cargoFreeCapacity(cargo, action.resource);
+  const rule = action.rule;
+  if (action.action === 'buy') {
+    switch (rule.mode) {
+      case 'fixed':
+      case 'excess_above':
+      case 'maintain_origin_minimum':
+        return Math.min(rule.quantity, free);
+      case 'up_to_capacity':
+      case 'all':
+        return free;
+      case 'deficit_below':
+      case 'maintain_destination_target':
+        return Math.min(Math.max(0, rule.quantity - amount), free);
+      case 'priority_list': {
+        const fit = rule.quantities.find((quantity) => quantity <= free);
+        return fit ?? 0;
+      }
+    }
+  }
+  switch (rule.mode) {
+    case 'fixed':
+    case 'excess_above':
+    case 'maintain_origin_minimum':
+      return Math.min(rule.quantity, amount);
+    case 'up_to_capacity':
+    case 'all':
+    case 'deficit_below':
+    case 'maintain_destination_target':
+      return amount;
+    case 'priority_list': {
+      const fit = rule.quantities.find((quantity) => quantity <= amount);
+      return fit ?? 0;
+    }
+  }
+}
 
 /**
  * The target quantity of one station action at its start (GDD-15.3). The rule
@@ -173,7 +231,7 @@ export function actionTarget(
   return Math.min(target, cargoAmount);
 }
 
-const currentAction = (
+export const currentAction = (
   order: TransportOrder,
   cursor: StationCursor,
 ): { station: TransportOrder['stations'][number]; action: StationAction } | null => {
@@ -184,7 +242,7 @@ const currentAction = (
   return { station, action };
 };
 
-const advanceAction = (
+export const advanceAction = (
   world: World,
   unit: EntityId,
   order: TransportOrder,
@@ -204,7 +262,7 @@ const advanceAction = (
   return cursor;
 };
 
-const applyFailure = (
+export const applyFailure = (
   world: World,
   unit: EntityId,
   order: TransportOrder,
@@ -333,9 +391,28 @@ const advanceStationCursor = (
 };
 
 /**
- * Stages handling transfers for docked units (phase 16).
+ * The exchange a trade station's endpoint names, when that endpoint is an
+ * exchange entity at `location` (GDD-17.2), otherwise the first exchange at
+ * `location` itself, or `null`.
  *
- * Source: GDD-15.2, GDD-15.4, GDD-15.7, GDD-15.1
+ * Source: GDD-17.2
+ */
+const exchangeEndpointAt = (
+  world: World,
+  endpoint: EntityId,
+  location: EntityId,
+): EntityId | null => {
+  const component = world.stores.get<ExchangeRef>('exchangeRef').get(endpoint);
+  if (component !== undefined && component.location === location) return endpoint;
+  return exchangeAtLocation(world, location);
+};
+
+/**
+ * Stages handling and trade transfers for docked units (phase 16). Trade
+ * actions defer their cursor advancement to phase 17 so a refused trade can
+ * still apply its failure policy.
+ *
+ * Source: GDD-15.2, GDD-15.4, GDD-15.7, GDD-15.1, GDD-17.4
  */
 export function advanceTransportOrders(
   world: World,
@@ -353,22 +430,47 @@ export function advanceTransportOrders(
     const cursor = cursorOf(world, unit);
     if (
       order === undefined ||
-      (order.mode !== 'route' && order.mode !== 'explore') ||
+      (order.mode !== 'route' && order.mode !== 'explore' && order.mode !== 'trade') ||
       cursor === undefined
     )
       continue;
     const station = order.stations[cursor.station];
-    if (station === undefined || movement.location !== station.endpoint) continue;
-    const inventory = hubInventory(world, movement.location);
-    if (inventory === null) continue;
+    if (station === undefined) continue;
+    const trading = station.actions.some((entry) => isTradeAction(entry.action));
+    const reached =
+      station.endpoint === movement.location ||
+      (trading && exchangeEndpointAt(world, station.endpoint, movement.location) !== null);
+    if (!reached) continue;
     const current = currentAction(order, cursor);
     if (current === null) {
       advanceStationCursor(world, unit, order, cursor);
       continue;
     }
+    const tradingAction = isTradeAction(current.action.action);
+    let exchange: EntityId | null = null;
+    let inventory: EntityId | undefined;
+    if (tradingAction) {
+      exchange = exchangeEndpointAt(world, station.endpoint, movement.location);
+      if (exchange === null && !cursor.started) {
+        applyFailure(
+          world,
+          unit,
+          order,
+          cursor,
+          current.action.action === 'buy' ? 'origin_unavailable' : 'destination_unavailable',
+        );
+        continue;
+      }
+    } else {
+      const hub = hubInventory(world, movement.location);
+      if (hub === null) continue;
+      inventory = hub;
+    }
     let target = cursor.target;
     if (!cursor.started) {
-      target = actionTarget(world, unit, current.action, inventory);
+      target = tradingAction
+        ? tradeTarget(world, unit, current.action)
+        : actionTarget(world, unit, current.action, inventory as EntityId);
       if (target <= 0) {
         const key: FailureKey =
           current.action.action === 'load' || current.action.action === 'buy'
@@ -396,10 +498,11 @@ export function advanceTransportOrders(
       action: current.action.action,
       resource: current.action.resource,
       quantity,
-      inventory,
+      inventory: tradingAction ? null : (inventory as EntityId),
+      exchange,
     });
     const handled = cursor.handled + quantity;
-    if (handled >= target) {
+    if (handled >= target && !tradingAction) {
       const next = advanceAction(world, unit, order, {
         ...cursor,
         handled,
@@ -416,18 +519,20 @@ export function advanceTransportOrders(
         .get<StationCursor>('stationCursor')
         .set(unit, { ...cursor, handled, target, started: true });
     }
-    events.emit({
-      type: 'TransportHandled',
-      subjects: [unit],
-      owner: null,
-      location: movement.location,
-      payload: {
-        unit,
-        action: current.action.action,
-        resource: current.action.resource,
-        quantity,
-      },
-    });
+    if (!tradingAction) {
+      events.emit({
+        type: 'TransportHandled',
+        subjects: [unit],
+        owner: null,
+        location: movement.location,
+        payload: {
+          unit,
+          action: current.action.action,
+          resource: current.action.resource,
+          quantity,
+        },
+      });
+    }
   }
   scratch.values.set(TRANSPORT_HANDLING_KEY, pending);
 }
@@ -438,7 +543,7 @@ export function readTransportHandling(scratch: TickScratch): readonly PendingTra
   return Array.isArray(value) ? (value as readonly PendingTransportTransfer[]) : [];
 }
 
-/** Commits staged handling transfers (phase 19). */
+/** Commits staged handling transfers (phase 19). Trades were consumed by phase 17. */
 export function commitTransportOrders(
   world: World,
   tx: TransactionWriter,
@@ -446,12 +551,14 @@ export function commitTransportOrders(
   events: EventWriter,
 ): void {
   for (const transfer of readTransportHandling(scratch)) {
+    if (transfer.action !== 'load' && transfer.action !== 'unload') continue;
     const cargo = world.stores.get<Cargo>('cargo').get(transfer.unit);
-    if (cargo === undefined) continue;
-    if (transfer.action === 'load' || transfer.action === 'buy') {
+    const inventory = transfer.inventory;
+    if (cargo === undefined || inventory === null) continue;
+    if (transfer.action === 'load') {
       const result = tx.atomic((builder) => {
         builder.withdraw({
-          inventory: transfer.inventory,
+          inventory,
           resource: transfer.resource,
           quantity: transfer.quantity,
           purpose: 'transport_load',
@@ -478,7 +585,7 @@ export function commitTransportOrders(
     }
     const result = tx.atomic((builder) => {
       builder.deposit({
-        inventory: transfer.inventory,
+        inventory,
         resource: transfer.resource,
         quantity: transfer.quantity,
         source: transfer.unit,

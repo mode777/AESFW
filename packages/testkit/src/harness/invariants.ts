@@ -46,6 +46,24 @@ const KNOWLEDGE_ORDER: Readonly<Record<string, number>> = {
 };
 
 /**
+ * INV-13: no sequence of trades within one tick and one exchange yields a
+ * profit from buying and reselling the same resource (GDD-17.3, GDD-17.4).
+ * With per-direction monotone prices and a validated base spread this holds
+ * exactly when every price row keeps `sell < buy`.
+ */
+const checkExchangeSpread = (world: World, findings: InvariantFinding[]): void => {
+  for (const price of world.exchanges.prices) {
+    if (price.sell < price.buy) continue;
+    findings.push({
+      id: 'INV-13',
+      message:
+        `exchange ${price.exchange} resource ${price.resource}` +
+        ` has sell ${price.sell} not below buy ${price.buy}`,
+    });
+  }
+};
+
+/**
  * INV-12: every exchange price stays within
  * `[min_price_permille, max_price_permille] × base_price` of its good
  * (GDD-17.3).
@@ -544,10 +562,11 @@ const checkOwnerBalanceConservation = (
     if (transaction.kind === 'account') {
       add(transaction.owner, transaction.resource, transaction.delta);
     } else if (transaction.kind === 'trade') {
+      const total = transaction.price * transaction.quantity;
       add(
         transaction.owner,
-        transaction.resource,
-        transaction.direction === 'sell' ? -transaction.quantity : transaction.quantity,
+        transaction.currency,
+        transaction.direction === 'buy' ? -total : total,
       );
     }
   }
@@ -660,6 +679,7 @@ export function checkInvariants(
   checkOwnerBalanceConservation(before, output, findings);
   checkKnowledge(before, output.world, findings);
   checkExchangePrices(output.world, registry, findings);
+  checkExchangeSpread(output.world, findings);
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);
   checkPersistence(output.world, registry, findings);

@@ -85,6 +85,7 @@ export type Transaction =
       readonly owner: OwnerHandle;
       readonly unit: EntityId;
       readonly resource: DefinitionHandle;
+      readonly currency: DefinitionHandle;
       readonly quantity: Int;
       readonly price: Int;
       readonly direction: 'buy' | 'sell';
@@ -154,6 +155,18 @@ export interface AccountRequest {
   readonly reason?: Reason;
 }
 
+/** An exchange trade request (GDD-17.4). The currency delta is `price × quantity`, debited for a buy and credited for a sell. */
+export interface TradeRequest {
+  readonly exchange: EntityId;
+  readonly owner: OwnerHandle;
+  readonly unit: EntityId;
+  readonly resource: DefinitionHandle;
+  readonly currency: DefinitionHandle;
+  readonly quantity: Int;
+  readonly price: Int;
+  readonly direction: 'buy' | 'sell';
+}
+
 /** Stages operations inside an atomic composite (TDS-12.2). */
 export interface AtomicBuilder {
   reserve(request: ReserveRequest): void;
@@ -164,6 +177,7 @@ export interface AtomicBuilder {
   withdraw(request: WithdrawRequest): void;
   transfer(request: TransferRequest): void;
   account(request: AccountRequest): void;
+  trade(request: TradeRequest): void;
 }
 
 /** A transaction failure, returned as data (TDS-12.2, TDS-23). */
