@@ -1,10 +1,10 @@
 /**
  * The `checkInvariants` framework (VER-6). It evaluates INV-01 to INV-05, INV-07, and INV-08,
- * INV-10, INV-18, INV-20, INV-21, and INV-24; INV-17 is checked by the clone-run
+ * INV-10, INV-14, INV-18, INV-20, INV-21, and INV-24; INV-17 is checked by the clone-run
  * harness. Each later system row extends the catalogue without changing the
  * runner.
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-18, INV-20, INV-21, INV-22, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-14, INV-18, INV-20, INV-21, INV-22, INV-24
  */
 import {
   InvariantViolation,
@@ -35,6 +35,49 @@ import type {
 import type { PopulationGroup } from '@aesfw/core';
 
 type World = core.World;
+
+/** The knowledge-level order `unknown < discovered < established` (INV-14). */
+const KNOWLEDGE_ORDER: Readonly<Record<string, number>> = {
+  unknown: 0,
+  discovered: 1,
+  established: 2,
+};
+
+/** INV-14: per owner and location, knowledge never decreases and stays sorted. */
+const checkKnowledge = (before: World, world: World, findings: InvariantFinding[]): void => {
+  const report = (message: string): void => {
+    findings.push({ id: 'INV-14', message });
+  };
+  for (let owner = 0; owner < world.owners.owners.length; owner += 1) {
+    const state = world.owners.owners[owner];
+    if (state === undefined) continue;
+    let previous: number | null = null;
+    for (const entry of state.knowledge) {
+      if (previous !== null && entry.location <= previous) {
+        report(
+          `owner ${owner} knowledge entries are not strictly ascending at location ${entry.location}`,
+        );
+      }
+      previous = entry.location;
+    }
+    const beforeState = before.owners.owners[owner];
+    if (beforeState === undefined) continue;
+    for (const entry of state.knowledge) {
+      const prior = beforeState.knowledge.find(
+        (candidate) => candidate.location === entry.location,
+      );
+      if (prior === undefined) continue;
+      const currentLevel = KNOWLEDGE_ORDER[entry.level];
+      const priorLevel = KNOWLEDGE_ORDER[prior.level];
+      if (currentLevel === undefined || priorLevel === undefined) continue;
+      if (currentLevel < priorLevel) {
+        report(
+          `owner ${owner} knowledge of location ${entry.location} decreased from ${prior.level} to ${entry.level}`,
+        );
+      }
+    }
+  }
+};
 
 /** A violated invariant, returned as data (VER-6). */
 export interface InvariantFinding {
@@ -575,6 +618,7 @@ export function checkInvariants(
   checkBandCoverage(output.world, registry, findings);
   checkConservation(before, output, findings);
   checkOwnerBalanceConservation(before, output, findings);
+  checkKnowledge(before, output.world, findings);
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);
   checkPersistence(output.world, registry, findings);

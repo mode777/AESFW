@@ -272,7 +272,12 @@ export function planTransportOrders(world: World): void {
     if (assignment?.order == null) continue;
     const order = orderOf(world, assignment.order);
     const movement = movementStore.get(unit);
-    if (order === undefined || order.mode !== 'route' || movement?.location === undefined) continue;
+    if (
+      order === undefined ||
+      (order.mode !== 'route' && order.mode !== 'explore') ||
+      movement?.location === undefined
+    )
+      continue;
     if (isMoving(movement)) continue;
     const cursor = cursorOf(world, unit) ?? emptyCursor();
     const station = order.stations[cursor.station];
@@ -342,7 +347,12 @@ export function advanceTransportOrders(
     if (assignment?.order == null) continue;
     const order = orderOf(world, assignment.order);
     const cursor = cursorOf(world, unit);
-    if (order === undefined || order.mode !== 'route' || cursor === undefined) continue;
+    if (
+      order === undefined ||
+      (order.mode !== 'route' && order.mode !== 'explore') ||
+      cursor === undefined
+    )
+      continue;
     const station = order.stations[cursor.station];
     if (station === undefined || movement.location !== station.endpoint) continue;
     const inventory = hubInventory(world, movement.location);

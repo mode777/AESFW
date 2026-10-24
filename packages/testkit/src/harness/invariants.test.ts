@@ -104,6 +104,91 @@ describe('[VER-6] invariant checker', () => {
     const findings = checkInvariants(before, output, registry);
     expect(findings.some((finding) => finding.id === 'INV-18')).toBe(false);
   });
+
+  it('[INV-14] a knowledge downgrade is reported', () => {
+    const working = world()
+      .owner({
+        handle: ids.ownerHandle(0),
+        knowledge: [
+          { location: ids.entityId(1), level: 'established' },
+          { location: ids.entityId(2), level: 'discovered' },
+        ],
+        accounts: [],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const owners = [...working.owners.owners];
+    const state = owners[0];
+    if (state === undefined) throw new Error('owner missing');
+    owners[0] = {
+      ...state,
+      knowledge: [
+        { location: ids.entityId(1), level: 'discovered' },
+        { location: ids.entityId(2), level: 'discovered' },
+      ],
+    };
+    working.owners = { owners };
+    const output = step(working, registry, input);
+    const findings = checkInvariants(before, output, registry);
+    const inv14 = findings.filter((finding) => finding.id === 'INV-14');
+    expect(inv14).toHaveLength(1);
+    expect(inv14[0]?.message).toContain('location 1');
+  });
+
+  it('[INV-14] unsorted knowledge entries are reported', () => {
+    const working = world()
+      .owner({
+        handle: ids.ownerHandle(0),
+        knowledge: [
+          { location: ids.entityId(2), level: 'discovered' },
+          { location: ids.entityId(1), level: 'discovered' },
+        ],
+        accounts: [],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const output = step(working, registry, input);
+    expect(
+      checkInvariants(before, output, registry)
+        .filter((finding) => finding.id === 'INV-14')
+        .some((finding) => finding.message.includes('strictly ascending')),
+    ).toBe(true);
+  });
+
+  it('[INV-14] a discovery raise has no findings', () => {
+    const working = world()
+      .owner({
+        handle: ids.ownerHandle(0),
+        knowledge: [{ location: ids.entityId(1), level: 'discovered' }],
+        accounts: [],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      })
+      .build();
+    const before = cloneWorld(working);
+    const owners = [...working.owners.owners];
+    const state = owners[0];
+    if (state === undefined) throw new Error('owner missing');
+    owners[0] = {
+      ...state,
+      knowledge: [
+        { location: ids.entityId(1), level: 'established' },
+        { location: ids.entityId(2), level: 'discovered' },
+      ],
+    };
+    working.owners = { owners };
+    const output = step(working, registry, input);
+    expect(
+      checkInvariants(before, output, registry).some((finding) => finding.id === 'INV-14'),
+    ).toBe(false);
+  });
 });
 
 describe('[VER-6] transaction invariants', () => {
