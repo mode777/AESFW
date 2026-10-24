@@ -30,6 +30,8 @@ import {
   placementKeyAction,
   placementQueryPayload,
   draftPayload,
+  establishDraft,
+  exploreDraft,
   logisticsView,
   planningView,
   pushTrend,
@@ -53,6 +55,7 @@ import { createProgressionView } from './views/progression.js';
 import { createPopulationTable } from './views/population-table.js';
 import { createTopBar } from './views/top-bar.js';
 import { createWorldMap } from './views/world-map.js';
+import type { WorldMapSelection } from './views/world-map.js';
 
 const ACTOR_ID = 'owner.0';
 const SUITABILITY_PROPERTY = 'ref.tier.property.suitability_p1';
@@ -231,7 +234,10 @@ export function mount(root: HTMLElement): void {
     const projection = mirror.projection();
     const locations = projection?.locations ?? [];
     const requested = view.location();
-    return locations.find((entry) => entry.entity_id === requested) ?? locations[0];
+    const found = locations.find((entry) => entry.entity_id === requested) ?? locations[0];
+    // Fog (REF-12.2): the grid needs attributes an unknown location hides.
+    if (found !== undefined && found.knowledge === 'unknown') return undefined;
+    return found;
   };
 
   const gridBounds = (): { width: number; height: number } | null => {
@@ -317,7 +323,57 @@ export function mount(root: HTMLElement): void {
     },
     onConfirm: () => submitPlacement(),
   });
-  const worldMapView = createWorldMap(mirror);
+  let mapSelection: WorldMapSelection | null = null;
+  const mapActions = h('div', { class: 'map-actions', 'data-testid': 'map-actions', hidden: true });
+  const renderMapActions = (): void => {
+    mapActions.replaceChildren();
+    if (mapSelection === null) {
+      mapActions.hidden = true;
+      return;
+    }
+    mapActions.hidden = false;
+    const { locationId, knowledge, active } = mapSelection;
+    const button = (testId: string, text: string, onclick: () => void): HTMLElement =>
+      h('button', { 'data-testid': testId, text, onclick });
+    if (knowledge !== 'unknown') {
+      mapActions.append(
+        button('map-activate', active ? 'Deactivate' : 'Activate', () => {
+          client.command({
+            command_id: `client-location-${Date.now()}`,
+            actor_id: ACTOR_ID,
+            type: active ? 'DeactivateLocation' : 'ActivateLocation',
+            payload: { location_id: locationId },
+          });
+          mapSelection = null;
+          renderMapActions();
+        }),
+      );
+    }
+    if (knowledge !== 'unknown') {
+      mapActions.append(
+        button('map-explore', 'Explore', () => {
+          view.drawer.set('logistics');
+          refreshDrawer();
+          logistics.prefill(exploreDraft(locationId));
+          mapSelection = null;
+          renderMapActions();
+        }),
+        button('map-establish', 'Establish', () => {
+          view.drawer.set('logistics');
+          refreshDrawer();
+          logistics.prefill(establishDraft(locationId));
+          mapSelection = null;
+          renderMapActions();
+        }),
+      );
+    }
+  };
+  const worldMapView = createWorldMap(mirror, {
+    onSelect: (selection) => {
+      mapSelection = mapSelection?.locationId === selection.locationId ? null : selection;
+      renderMapActions();
+    },
+  });
   const mapButton = h('button', {
     class: 'map-toggle',
     'data-testid': 'map-toggle',
@@ -330,6 +386,7 @@ export function mount(root: HTMLElement): void {
     worldMapView.el.hidden = !showMap;
     mapButton.textContent = showMap ? 'Grid' : 'Map';
     if (showMap) worldMapView.update();
+    renderMapActions();
   };
   const toggleMap = (): void => {
     view.worldMap.set(!view.worldMap());
@@ -496,7 +553,7 @@ export function mount(root: HTMLElement): void {
       mapButton,
       paletteView.el,
     ),
-    h('main', { class: 'canvas' }, grid.el, worldMapView.el),
+    h('main', { class: 'canvas' }, grid.el, worldMapView.el, mapActions),
     inspector.el,
     inventory.el,
     population.el,

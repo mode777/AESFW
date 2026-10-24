@@ -15,15 +15,30 @@ export interface WorldMapView {
   update(): void;
 }
 
+/** A location selected on the map. */
+export interface WorldMapSelection {
+  readonly locationId: number;
+  readonly knowledge: string;
+  readonly active: boolean;
+  readonly ownerId?: string;
+}
+
+/** Interaction callbacks of the map (REF-12.1 commands). */
+export interface WorldMapDeps {
+  readonly onSelect?: (selection: WorldMapSelection) => void;
+}
+
 const label = (point: { readonly locationId: number; readonly knowledge: string }): string =>
-  `${point.locationId} ${point.knowledge}`;
+  point.knowledge === 'unknown' ? `${point.locationId}` : `${point.locationId} ${point.knowledge}`;
 
 /**
- * Creates the world-map view (REF-12.1).
+ * Creates the world-map view (REF-12.1). Unknown locations render a dashed
+ * outline with their ID only; clicking a location reports it to `deps.onSelect`
+ * for the map commands (activate, deactivate, explore, establish).
  *
- * Source: REF-12.1
+ * Source: REF-12.1, REF-14.3
  */
-export function createWorldMap(mirror: Mirror): WorldMapView {
+export function createWorldMap(mirror: Mirror, deps: WorldMapDeps = {}): WorldMapView {
   const canvas = svg('svg', {
     class: 'world-map',
     viewBox: '0 0 1000 800',
@@ -64,6 +79,7 @@ export function createWorldMap(mirror: Mirror): WorldMapView {
         class: `world-location knowledge-${point.knowledge}`,
         transform: `translate(${point.x}, ${point.y})`,
         'data-testid': `world-location-${point.locationId}`,
+        role: 'button',
       });
       group.append(
         svg('rect', {
@@ -72,7 +88,12 @@ export function createWorldMap(mirror: Mirror): WorldMapView {
           width: 52,
           height: 36,
           rx: 6,
-          class: point.active ? 'world-location-shape' : 'world-location-shape inactive',
+          class:
+            point.knowledge === 'unknown'
+              ? 'world-location-shape unknown'
+              : point.active
+                ? 'world-location-shape'
+                : 'world-location-shape inactive',
         }),
       );
       group.append(
@@ -84,7 +105,7 @@ export function createWorldMap(mirror: Mirror): WorldMapView {
           text: label(point),
         }),
       );
-      if (point.ownerId !== undefined) {
+      if (point.ownerId !== undefined && point.knowledge !== 'unknown') {
         group.append(
           svg('circle', {
             cx: 20,
@@ -94,6 +115,13 @@ export function createWorldMap(mirror: Mirror): WorldMapView {
           }),
         );
       }
+      const selection = {
+        locationId: point.locationId,
+        knowledge: point.knowledge,
+        active: point.active,
+        ...(point.ownerId === undefined ? {} : { ownerId: point.ownerId }),
+      };
+      group.addEventListener('click', () => deps.onSelect?.(selection));
       nodes.push(group);
     }
     for (const transport of model.transports) {

@@ -28,6 +28,8 @@ export interface LogisticsDeps {
 export interface LogisticsView {
   readonly el: HTMLElement;
   show(model: LogisticsViewModel): void;
+  /** Opens the editor with a prefilled draft (REF-12.1 explore/establish). */
+  prefill(draft: RouteDraft): void;
 }
 
 const RULES = [
@@ -60,6 +62,12 @@ export function createLogisticsView(deps: LogisticsDeps): LogisticsView {
   const setDraft = (next: RouteDraft | null): void => {
     draft = next;
     render();
+  };
+
+  const prefill = (next: RouteDraft): void => {
+    selectedUnit = null;
+    selectedOrder = null;
+    setDraft(next);
   };
 
   const editDraft = (change: (current: RouteDraft) => RouteDraft): void => {
@@ -369,7 +377,7 @@ export function createLogisticsView(deps: LogisticsDeps): LogisticsView {
     render();
   };
 
-  return { el, show };
+  return { el, show, prefill };
 }
 
 const emptyDraftFor = (origin: number, destination: number, resourceId: string): RouteDraft => ({

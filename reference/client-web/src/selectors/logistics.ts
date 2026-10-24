@@ -122,6 +122,24 @@ export function draftFromOrder(order: TransportOrderDto): RouteDraft {
   };
 }
 
+/** Builds a single-station explore draft (REF-12.1). */
+export function exploreDraft(destination: number): RouteDraft {
+  return {
+    mode: 'explore',
+    repeat: false,
+    stations: [{ endpointId: destination, actions: [] }],
+  };
+}
+
+/** Builds a single-station establish draft (REF-12.1). */
+export function establishDraft(destination: number): RouteDraft {
+  return {
+    mode: 'establish',
+    repeat: false,
+    stations: [{ endpointId: destination, actions: [] }],
+  };
+}
+
 /** Builds an empty two-station load/unload draft. */
 export function emptyDraft(origin: number, destination: number, resourceId: string): RouteDraft {
   return {
@@ -174,13 +192,17 @@ export function draftPayload(draft: RouteDraft): JsonObject {
 
 /** True when a draft has at least one station and every station has an action. */
 export function draftValid(draft: RouteDraft): boolean {
+  // Explore and establish drafts target stations without actions (REF-12.1).
+  const actionless = draft.mode === 'explore' || draft.mode === 'establish';
   return (
     draft.stations.length > 0 &&
     draft.stations.every(
       (station) =>
         Number.isSafeInteger(station.endpointId) &&
-        station.actions.length > 0 &&
-        station.actions.every((action) => action.resourceId.length > 0),
+        (actionless
+          ? station.actions.length === 0
+          : station.actions.length > 0 &&
+            station.actions.every((action) => action.resourceId.length > 0)),
     )
   );
 }

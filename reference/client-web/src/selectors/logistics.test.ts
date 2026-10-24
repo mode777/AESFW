@@ -4,7 +4,9 @@ import {
   draftFromOrder,
   draftPayload,
   draftValid,
+  establishDraft,
   emptyDraft,
+  exploreDraft,
   logisticsView,
   transportUnits,
 } from './logistics.js';
@@ -97,5 +99,26 @@ describe('[REF-12.4] logistics selector', () => {
   it('[REF-12.4] validates a draft', () => {
     expect(draftValid(emptyDraft(1, 3, 'test.resource.a'))).toBe(true);
     expect(draftValid({ ...emptyDraft(1, 3, 'test.resource.a'), stations: [] })).toBe(false);
+  });
+});
+
+describe('[REF-12.1] explore and establish drafts', () => {
+  it('[REF-12.1] an explore draft targets one station without actions', () => {
+    const draft = exploreDraft(4);
+    expect(draft.mode).toBe('explore');
+    expect(draft.repeat).toBe(false);
+    expect(draft.stations).toEqual([{ endpointId: 4, actions: [] }]);
+    expect(draftValid(draft)).toBe(true);
+    const payload = draftPayload(draft);
+    expect(payload['mode']).toBe('explore');
+    expect(payload['stations']).toEqual([{ endpoint: 4, actions: [] }]);
+  });
+
+  it('[REF-12.1] an establish draft targets one station without actions', () => {
+    const draft = establishDraft(2);
+    expect(draft.mode).toBe('establish');
+    expect(draft.repeat).toBe(false);
+    expect(draftValid(draft)).toBe(true);
+    expect(draftPayload(draft)['mode']).toBe('establish');
   });
 });

@@ -381,6 +381,36 @@ body {
   fill: transparent;
 }
 
+.world-location.knowledge-unknown {
+  cursor: pointer;
+}
+
+.world-location.knowledge-discovered .world-location-shape {
+  stroke: var(--accent, #6cf);
+}
+
+.world-location.knowledge-established .world-location-shape {
+  stroke: var(--ink, #ddd);
+  stroke-width: 3;
+}
+
+.world-location {
+  cursor: pointer;
+}
+
+.map-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+}
+
+.map-actions button {
+  min-width: 72px;
+}
+
 .world-location-label {
   fill: var(--ink, #ddd);
   font-size: 11px;
