@@ -26,6 +26,7 @@ export { TransportUnitSchema } from './transport.js';
 export { TransportOrderTemplateSchema } from './order.js';
 export { DistributionRuleSchema, RegionSchema } from './region.js';
 export { EstablishmentSchema } from './establishment.js';
+export { ExchangeSchema } from './exchange.js';
 export { isValidDefinitionId } from './ids.js';
 export {
   COLLECTION_ORDER,

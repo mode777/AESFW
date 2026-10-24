@@ -1,0 +1,50 @@
+# Theme-free exchange fixture (roadmap 9.1).
+resources:
+  - id: demo.resource.credits
+    tags: [balance]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: owner }
+    transportable: false
+    allow_negative: true
+  - id: demo.resource.trade_goods
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+location_templates:
+  - id: demo.location.port
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+
+exchanges:
+  - id: demo.exchange.port
+    location: demo.location.port
+    currency: demo.resource.credits
+    goods:
+      - resource: demo.resource.trade_goods
+        buy_from_exchange: { base_price: 12000, enabled: true }
+        sell_to_exchange: { base_price: 8000, enabled: true }
+    elasticity:
+      window_ticks: 600
+      step_quantity: 100000
+      step_change_permille: 20
+      recovery_permille_per_interval: 50
+      recovery_interval_ticks: 60
+      min_price_permille: 100
+      max_price_permille: 5000
+    shared_between_owners: true
+
+worlds:
+  - id: demo.world.exchange
+    locations:
+      - id: demo.loc.port
+        template: demo.location.port
+    owners:
+      - id: owner.a
+        established_locations: [demo.loc.port]

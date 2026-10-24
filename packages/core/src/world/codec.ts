@@ -28,6 +28,7 @@ import type {
   MetricWindow,
   ModuleState,
   NamedRngStream,
+  VolumeEntry,
   OwnerState,
   Purpose,
   PurposeLock,
@@ -203,7 +204,14 @@ export function encodeWorld(world: World, registry: Registry): CanonicalState {
       resource: resourceIdOf(registry, price.resource),
       buy: price.buy,
       sell: price.sell,
-      volume_window: [...price.volumeWindow],
+      sold_volume: price.soldVolume.map((entry) => ({
+        tick: entry.tick,
+        quantity: entry.quantity,
+      })),
+      bought_volume: price.boughtVolume.map((entry) => ({
+        tick: entry.tick,
+        quantity: entry.quantity,
+      })),
     })),
     command_queue: world.commandQueue.map((command) => ({
       command_id: command.commandId,
@@ -370,14 +378,21 @@ const decodeTimers = (registry: Registry, value: JsonValue | undefined): Sustain
 const decodeExchanges = (registry: Registry, value: JsonValue | undefined): ExchangePrice[] =>
   asArray(value, '$.exchanges').map((entry, index) => {
     const record = asRecord(entry, `$.exchanges[${index}]`);
+    const volume = (field: string): VolumeEntry[] =>
+      asArray(record[field], `$.exchanges.${field}`).map((item, entryIndex) => {
+        const volumeRecord = asRecord(item, `$.exchanges.${field}[${entryIndex}]`);
+        return {
+          tick: tick(asInt(volumeRecord['tick'], `$.exchanges.${field}.tick`)),
+          quantity: asInt(volumeRecord['quantity'], `$.exchanges.${field}.quantity`),
+        };
+      });
     return {
       exchange: entityId(asInt(record['exchange'], '$.exchanges.exchange')),
       resource: handleOf(registry, 'resource', record['resource'], '$.exchanges.resource'),
       buy: asInt(record['buy'], '$.exchanges.buy'),
       sell: asInt(record['sell'], '$.exchanges.sell'),
-      volumeWindow: asArray(record['volume_window'], '$.exchanges.volume_window').map((item) =>
-        asInt(item, '$.exchanges.volume_window[]'),
-      ),
+      soldVolume: volume('sold_volume'),
+      boughtVolume: volume('bought_volume'),
     };
   });
 
@@ -537,7 +552,8 @@ export function cloneWorld(world: World): World {
     exchanges: {
       prices: world.exchanges.prices.map((price) => ({
         ...price,
-        volumeWindow: [...price.volumeWindow],
+        soldVolume: price.soldVolume.map((entry) => ({ ...entry })),
+        boughtVolume: price.boughtVolume.map((entry) => ({ ...entry })),
       })),
     },
     commandQueue: world.commandQueue.map((command) => ({

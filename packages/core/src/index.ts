@@ -295,6 +295,24 @@ export type {
 } from './sim/transport/index.js';
 export { applyPopulationOutputs, readCarry, writeCarry } from './sim/population/index.js';
 export {
+  exchangeConfigOf,
+  exchangeConfigOfEntity,
+  exchangePriceOf,
+  priceSideBounds,
+  recordExchangeVolume,
+  recoverExchangePrices,
+  recoveryAmount,
+  stepAmount,
+  windowVolume,
+} from './sim/exchanges/index.js';
+export type {
+  ExchangeConfig,
+  ExchangeElasticityConfig,
+  ExchangeGoodConfig,
+  TradeDirection,
+  VolumeEntry,
+} from './sim/exchanges/index.js';
+export {
   applyMaintenance,
   curveMultiplier,
   dueLines,

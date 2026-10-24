@@ -129,13 +129,22 @@ export interface SustainedTimerTable {
   readonly timers: readonly SustainedTimer[];
 }
 
+/** One dated volume entry of an exchange's rolling window, ascending by tick (GDD-17.3). */
+export interface VolumeEntry {
+  readonly tick: Tick;
+  readonly quantity: Int;
+}
+
 /** Exchange price state (02 §14.5). */
 export interface ExchangePrice {
   readonly exchange: EntityId;
   readonly resource: DefinitionHandle;
   readonly buy: Int;
   readonly sell: Int;
-  readonly volumeWindow: readonly Int[];
+  /** Per-tick sold quantity inside the elasticity window, ascending by tick. */
+  readonly soldVolume: readonly VolumeEntry[];
+  /** Per-tick bought quantity inside the elasticity window, ascending by tick. */
+  readonly boughtVolume: readonly VolumeEntry[];
 }
 
 /** Exchange prices, ordered by `(exchange, resource)`. */

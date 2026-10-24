@@ -30,6 +30,7 @@ export type {
   ScheduledCommand,
   SustainedTimer,
   SustainedTimerTable,
+  VolumeEntry,
   World,
   WorldSetup,
 } from './types.js';

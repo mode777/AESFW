@@ -34,10 +34,14 @@ import type {
   SourcePolicy,
   TransportHandling,
   TransportMovement,
+  VolumeEntry,
   World,
 } from '@aesfw/core';
+import type { fx } from '@aesfw/core';
 import { worldPlan } from '@aesfw/content';
 import type { CompiledDefinition, ContentRegistry } from '@aesfw/content';
+
+type Int = fx.Int;
 
 type Data = Record<string, unknown>;
 
@@ -568,7 +572,7 @@ export function instantiateWorldContent(
   const initial = defaultPlan.initialEntities;
   if (initial === undefined || initial.length === 0) {
     instantiateContentEntities(world, registry);
-    return plan.diagnostics;
+    return [...plan.diagnostics, ...instantiateExchanges(world, registry)];
   }
   for (const entry of initial) {
     const definition = registry.definitionOf('entity', entry.definition);
@@ -576,5 +580,84 @@ export function instantiateWorldContent(
     if (definition === null || location === undefined) continue;
     instantiateDefinition(world, registry, definition, location, entry.owner);
   }
-  return plan.diagnostics;
+  return [...plan.diagnostics, ...instantiateExchanges(world, registry)];
+}
+
+/**
+ * Instantiates one exchange entity per exchange definition at its referenced
+ * location and seeds the authoritative price rows (GDD-17.2, ARCH-14.5).
+ * An exchange whose location template has no instantiated location is skipped
+ * with a diagnostic instead of failing the session.
+ *
+ * Source: GDD-17.2, ARCH-14.5
+ */
+export function instantiateExchanges(
+  world: World,
+  registry: ContentRegistry,
+): readonly Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  const locationStore = world.stores.get<Location>('location');
+  const refStore = world.stores.get<{ exchange: DefinitionHandle }>('exchangeRef');
+  const definitionStore = world.stores.get<{ definition: DefinitionHandle }>('definition');
+  const rows: { exchange: number; resource: DefinitionHandle; buy: Int; sell: Int }[] = [];
+  for (const definition of registry.definitionsOf('exchange')) {
+    const data = asRecord(definition.data);
+    const locationId = data?.['location'];
+    if (typeof locationId !== 'string') continue;
+    const templateHandle = registry.handleOf('location', ids.stringId(locationId));
+    if (templateHandle === null) continue;
+    let location: number | null = null;
+    for (const entity of locationStore.ids()) {
+      const component = locationStore.get(entity);
+      if (component !== undefined && component.template === templateHandle) {
+        location = entity;
+        break;
+      }
+    }
+    if (location === null) {
+      diagnostics.push({
+        code: 'unresolved_exchange_location',
+        severity: 'warning',
+        package: null,
+        file: null,
+        path: null,
+        definition: registry.stringIdOf('exchange', definition.handle) ?? locationId,
+        args: { reference: locationId },
+      });
+      continue;
+    }
+    const exchange = allocateEntity(world);
+    refStore.set(exchange, { exchange: definition.handle });
+    definitionStore.set(exchange, { definition: definition.handle });
+    for (const entry of asArray(data?.['goods'])) {
+      const good = asRecord(entry);
+      if (good === null) continue;
+      const resourceId = good['resource'];
+      if (typeof resourceId !== 'string') continue;
+      const resource = registry.handleOf('resource', ids.stringId(resourceId));
+      if (resource === null) continue;
+      const buy = asRecord(good['buy_from_exchange'])?.['base_price'];
+      const sell = asRecord(good['sell_to_exchange'])?.['base_price'];
+      if (typeof buy !== 'number' || typeof sell !== 'number') continue;
+      rows.push({
+        exchange,
+        resource,
+        buy: buy,
+        sell: sell,
+      });
+    }
+  }
+  world.exchanges = {
+    prices: [...world.exchanges.prices, ...rows]
+      .map((row) => ({
+        exchange: ids.entityId(row.exchange),
+        resource: row.resource,
+        buy: row.buy,
+        sell: row.sell,
+        soldVolume: [] as readonly VolumeEntry[],
+        boughtVolume: [] as readonly VolumeEntry[],
+      }))
+      .sort((a, b) => a.exchange - b.exchange || a.resource - b.resource),
+  };
+  return diagnostics;
 }

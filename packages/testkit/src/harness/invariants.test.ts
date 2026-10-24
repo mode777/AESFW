@@ -826,3 +826,87 @@ describe('[INV-16] cargo-slot invariant', () => {
     );
   });
 });
+
+describe('[INV-12] exchange price bounds', () => {
+  const EXCHANGE = ids.definitionHandle(0);
+  const RESOURCE = ids.definitionHandle(0);
+  const exchangeRegistry: Registry = {
+    ...createEmptyRegistry(),
+    stringIdOf: (type, handle) =>
+      type === 'exchange' && handle === EXCHANGE
+        ? ids.stringId('test.exchange.a')
+        : type === 'resource' && handle === RESOURCE
+          ? ids.stringId('test.resource.a')
+          : null,
+    handleOf: (type, id) =>
+      type === 'exchange' && id === ids.stringId('test.exchange.a')
+        ? EXCHANGE
+        : type === 'resource' && id === ids.stringId('test.resource.a')
+          ? RESOURCE
+          : null,
+    definitionDataOf: (type, handle) =>
+      type === 'exchange' && handle === EXCHANGE
+        ? {
+            id: 'test.exchange.a',
+            location: 'test.location.a',
+            currency: 'test.resource.credits',
+            goods: [
+              {
+                resource: 'test.resource.a',
+                buy_from_exchange: { base_price: 1000, enabled: true },
+                sell_to_exchange: { base_price: 800, enabled: true },
+              },
+            ],
+            elasticity: {
+              window_ticks: 10,
+              step_quantity: 100,
+              step_change_permille: 100,
+              recovery_permille_per_interval: 200,
+              recovery_interval_ticks: 5,
+              min_price_permille: 500,
+              max_price_permille: 1500,
+            },
+            shared_between_owners: true,
+          }
+        : null,
+  };
+
+  const exchangeWorld = (buy: number, sell: number): core.World => {
+    const working = world().store('exchangeRef', ids.entityId(1), { exchange: EXCHANGE }).build();
+    working.exchanges = {
+      prices: [
+        {
+          exchange: ids.entityId(1),
+          resource: RESOURCE,
+          buy: ids.tick(buy),
+          sell: ids.tick(sell),
+          soldVolume: [],
+          boughtVolume: [],
+        },
+      ],
+    };
+    return working;
+  };
+
+  it('[INV-12] a price outside its permille bounds is reported', () => {
+    const working = exchangeWorld(2000, 100);
+    const before = cloneWorld(working);
+    const output = step(working, exchangeRegistry, input);
+    expect(checkInvariants(before, output, exchangeRegistry).map((f) => f.id)).toContain('INV-12');
+  });
+
+  it('[INV-12] prices within their bounds have no finding', () => {
+    const working = exchangeWorld(1000, 800);
+    const before = cloneWorld(working);
+    const output = step(working, exchangeRegistry, input);
+    expect(checkInvariants(before, output, exchangeRegistry)).toEqual([]);
+  });
+
+  it('[INV-12] a price row without a readable exchange definition is reported', () => {
+    const working = exchangeWorld(1000, 800);
+    const before = cloneWorld(working);
+    const output = step(working, exchangeRegistry, input);
+    const withoutDefinition: Registry = { ...exchangeRegistry, definitionDataOf: () => null };
+    expect(checkInvariants(before, output, withoutDefinition).map((f) => f.id)).toContain('INV-12');
+  });
+});

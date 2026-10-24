@@ -239,6 +239,7 @@ describe('[TDS-7] definition collection catalogue', () => {
       'regions',
       'distribution_rules',
       'location_establishments',
+      'exchanges',
     ]);
     expect(DEFINITION_COLLECTIONS.resources).toBe('resource');
     expect(DEFINITION_COLLECTIONS.location_templates).toBe('location');

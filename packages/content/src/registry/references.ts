@@ -49,6 +49,43 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
 
   const exists = (type: DefinitionType, id: string): boolean => allIds.get(id) === type;
 
+  /**
+   * Collection-local semantic checks of an exchange definition (CONT-6.21,
+   * GDD-17.3). The TypeBox schema already enforces presence and integer
+   * domains; this checks the cross-field rules that make elasticity a bound
+   * on the money exploit.
+   */
+  const validateExchangeSemantics = (
+    id: string,
+    definition: { readonly [key: string]: JsonValue },
+  ): readonly Diagnostic[] => {
+    const findings: Diagnostic[] = [];
+    const push = (reason: string, path: string): void => {
+      findings.push(diag('invalid_exchange', { definition: id, path, args: { reason } }));
+    };
+    const elasticity = asRecord(definition['elasticity']);
+    if (elasticity === null) {
+      push('missing_elasticity', `/exchanges/${id}/elasticity`);
+      return findings;
+    }
+    const min = elasticity['min_price_permille'];
+    const max = elasticity['max_price_permille'];
+    if (typeof min === 'number' && typeof max === 'number' && min > max) {
+      push('min_above_max', `/exchanges/${id}/elasticity`);
+    }
+    const goods = asArray(definition['goods']);
+    goods.forEach((entry, index) => {
+      const good = asRecord(entry);
+      if (good === null) return;
+      const buy = asRecord(good['buy_from_exchange'])?.['base_price'];
+      const sell = asRecord(good['sell_to_exchange'])?.['base_price'];
+      if (typeof buy === 'number' && typeof sell === 'number' && sell >= buy) {
+        push('sell_not_below_buy', `/exchanges/${id}/goods/${index}`);
+      }
+    });
+    return findings;
+  };
+
   const check = (definitionId: string, id: unknown, target: DefinitionType, path: string): void => {
     const value = asString(id);
     if (value === null) return;
@@ -115,6 +152,18 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             `/location_establishments/${id}/costs/${index}/resource`,
           ),
         );
+      } else if (collection === 'exchanges') {
+        check(id, definition['location'], 'location', `/exchanges/${id}/location`);
+        check(id, definition['currency'], 'resource', `/exchanges/${id}/currency`);
+        asArray(definition['goods']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/exchanges/${id}/goods/${index}/resource`,
+          ),
+        );
+        diagnostics.push(...validateExchangeSemantics(id, definition));
       } else if (collection === 'recipes') {
         for (const field of ['inputs', 'outputs'] as const) {
           asArray(definition[field]).forEach((entry, index) =>
@@ -346,9 +395,9 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             );
             return;
           }
-          // Transitions and exchanges have no collection yet; their owning rows
-          // (7.3, 9.1) validate those references.
-          if (type === 'transition' || type === 'exchange') return;
+          // Transitions have no collection yet; their owning row (7.3) validates
+          // those references. Exchanges resolve through the `exchanges` branch.
+          if (type === 'transition') return;
           check(id, target?.['id'], definitionType as never, `/unlocks/${id}/targets/${index}/id`);
         });
       } else if (collection === 'satisfaction_bands') {

@@ -1,0 +1,107 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["id", "location", "currency", "goods", "elasticity", "shared_between_owners"],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "location": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "currency": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "goods": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["resource", "buy_from_exchange", "sell_to_exchange"],
+        "properties": {
+          "resource": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "buy_from_exchange": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": ["base_price", "enabled"],
+            "properties": {
+              "base_price": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            }
+          },
+          "sell_to_exchange": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": ["base_price", "enabled"],
+            "properties": {
+              "base_price": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "elasticity": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "window_ticks",
+        "step_quantity",
+        "step_change_permille",
+        "recovery_permille_per_interval",
+        "recovery_interval_ticks",
+        "min_price_permille",
+        "max_price_permille"
+      ],
+      "properties": {
+        "window_ticks": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "step_quantity": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "step_change_permille": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "recovery_permille_per_interval": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "recovery_interval_ticks": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "min_price_permille": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_price_permille": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      }
+    },
+    "shared_between_owners": {
+      "type": "boolean"
+    }
+  }
+}

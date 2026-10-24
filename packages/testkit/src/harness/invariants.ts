@@ -1,10 +1,10 @@
 /**
  * The `checkInvariants` framework (VER-6). It evaluates INV-01 to INV-05, INV-07, and INV-08,
- * INV-10, INV-14, INV-18, INV-20, INV-21, and INV-24; INV-17 is checked by the clone-run
+ * INV-10, INV-12, INV-14, INV-18, INV-20, INV-21, and INV-24; INV-17 is checked by the clone-run
  * harness. Each later system row extends the catalogue without changing the
  * runner.
  *
- * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-14, INV-18, INV-20, INV-21, INV-22, INV-24
+ * Source: VER-6, INV-01, INV-02, INV-03, INV-04, INV-05, INV-07, INV-08, INV-10, INV-12, INV-14, INV-18, INV-20, INV-21, INV-22, INV-24
  */
 import {
   InvariantViolation,
@@ -14,8 +14,10 @@ import {
   det,
   encodeWorld,
   effectiveInventoryCapacity,
+  exchangeConfigOfEntity,
   hashWorld,
   ids,
+  priceSideBounds,
   resourceAllowsNegative,
   world as core,
 } from '@aesfw/core';
@@ -41,6 +43,44 @@ const KNOWLEDGE_ORDER: Readonly<Record<string, number>> = {
   unknown: 0,
   discovered: 1,
   established: 2,
+};
+
+/**
+ * INV-12: every exchange price stays within
+ * `[min_price_permille, max_price_permille] × base_price` of its good
+ * (GDD-17.3).
+ */
+const checkExchangePrices = (
+  world: World,
+  registry: Registry,
+  findings: InvariantFinding[],
+): void => {
+  const report = (message: string): void => {
+    findings.push({ id: 'INV-12', message });
+  };
+  for (const price of world.exchanges.prices) {
+    const config = exchangeConfigOfEntity(registry, world, price.exchange);
+    if (config === null) {
+      report(`exchange ${price.exchange} has no readable definition for price state`);
+      continue;
+    }
+    for (const direction of ['buy', 'sell'] as const) {
+      let side: { base: number; min: number; max: number };
+      try {
+        side = priceSideBounds(config, price.resource, direction);
+      } catch {
+        report(`exchange ${price.exchange} has no good for resource ${price.resource}`);
+        continue;
+      }
+      const value = direction === 'buy' ? price.buy : price.sell;
+      if (value < side.min || value > side.max) {
+        report(
+          `exchange ${price.exchange} ${direction} price ${value} for resource ${price.resource}` +
+            ` is outside [${side.min}, ${side.max}]`,
+        );
+      }
+    }
+  }
 };
 
 /** INV-14: per owner and location, knowledge never decreases and stays sorted. */
@@ -619,6 +659,7 @@ export function checkInvariants(
   checkConservation(before, output, findings);
   checkOwnerBalanceConservation(before, output, findings);
   checkKnowledge(before, output.world, findings);
+  checkExchangePrices(output.world, registry, findings);
   checkEntityIds(output.world, findings);
   checkAscending(output.world, findings);
   checkPersistence(output.world, registry, findings);

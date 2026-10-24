@@ -29,6 +29,7 @@ import { TransportUnitSchema } from './transport.js';
 import { WorldDefinitionSchema } from './world.js';
 import { DistributionRuleSchema, RegionSchema } from './region.js';
 import { EstablishmentSchema } from './establishment.js';
+import { ExchangeSchema } from './exchange.js';
 
 /** Maps a top-level document key to its core definition type (TDS-7). */
 export const DEFINITION_COLLECTIONS = {
@@ -54,6 +55,7 @@ export const DEFINITION_COLLECTIONS = {
   regions: 'region',
   distribution_rules: 'distributionRule',
   location_establishments: 'establishment',
+  exchanges: 'exchange',
 } as const satisfies Readonly<Record<string, DefinitionType>>;
 
 /** A top-level document key of the M1 content set. */
@@ -88,6 +90,7 @@ export const DEFINITION_SCHEMAS = {
   regions: RegionSchema,
   distribution_rules: DistributionRuleSchema,
   location_establishments: EstablishmentSchema,
+  exchanges: ExchangeSchema,
 } as const satisfies Readonly<Record<DefinitionCollection, TSchema>>;
 
 /** True when `key` names a known definition collection. */
