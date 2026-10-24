@@ -2,39 +2,43 @@
 
 ## Purpose
 
-Per-actor projections, delta computation, and delta application for the presentation contract (TDS-18.4, PIC-9, PIC-18).
+Per-actor projections, delta computation, and delta application for the presentation contract (TDS-18.4, PIC-9, PIC-18), with per-actor fog filtering of projections, read models, and events (ARCH-8.3, PIC-9.3).
 
 ## Requirements
 
 ### Requirement: Full projection
-`project(session, actor)` SHALL return a `SnapshotDto` carrying the session id, the world tick, the session revision, the content checksum, one owner entry per owner handle, one location entry per location entity, and one entity entry per non-location, non-inventory entity. Owner resource amounts SHALL be keyed by resource string ID. Locations SHALL list their inventories and inventory entries. Entity entries SHALL carry the entity's definition string ID, location, revision, lifecycle, and production state when the entity has those components. Owners SHALL be ordered by ascending owner handle and locations and entities by ascending entity ID. Fog filtering is not applied in this change.
+`project(session, actor)` SHALL build the projection per actor: a location whose knowledge state for the actor is `unknown` SHALL carry only its entity ID, `knowledge: unknown`, an empty inventory list, and its connections; a discovered or established location SHALL carry its full attributes. Entities at locations unknown to the actor SHALL be omitted. When the session's `fog` setting is disabled, the projection SHALL be unfiltered.
 
-Source: TDS-18.4, PIC-9.1, ARCH-8.2
+Source: PIC-9.1, PIC-9.3, ARCH-8.3, TDS-18.4, GDD-16.1
 
 #### Scenario: A projection contains the owner, location, and entity
-- **WHEN** a world with one owner, one location with one inventory, and one producer entity is projected
-- **THEN** the snapshot has one owner, one location with one inventory, and one entity with the producer's `definition_id`
+- **WHEN** the projection is built for an actor with full knowledge
+- **THEN** it contains the owner, every location with its attributes, and every entity
 
-#### Scenario: Projection order is ascending entity ID
-- **WHEN** two entities with IDs `2` and `1` are projected
-- **THEN** the `entities` array lists `1` before `2`
+#### Scenario: An unknown location exposes only its identity
+- **WHEN** the projection is built for an actor that has not discovered a location
+- **THEN** that location's DTO carries its entity ID, `knowledge: unknown`, and connections, and omits its definition, owner, active state, properties, throughput, grid, and inventories
+
+#### Scenario: Foreign entities at unknown locations are omitted
+- **WHEN** an entity's location is unknown to the actor
+- **THEN** the projection contains no entry for that entity
+
+#### Scenario: Disabling fog restores the full projection
+- **WHEN** the session is created with `fog: false`
+- **THEN** unknown locations carry their full attributes
 
 ### Requirement: Projection delta
-`diffProjection(prev, next)` SHALL return a `SnapshotDeltaDto` with `from_revision` equal to `prev.revision`, `to_revision` equal to `next.revision`, `tick` equal to `next.tick`, and `session_id` equal to `next.session_id`. It SHALL include an `entity_update` for every entity whose projected form differs between `prev` and `next`, including a change to its `spatial` or `connectivity` object, and an `inventory_update` for every inventory entry whose `stored` or `reserved` differs. It SHALL NOT include entries that are unchanged.
+`diffProjection(prev, next)` SHALL diff the locations of the two same-actor projections and report each location whose filtered DTO changed as a whole entry in an additive `location_updates` list, alongside the entity, inventory, and owner updates; `applyDelta` SHALL replace the changed location entries. A `LocationDiscovered` event is therefore followed by the newly visible attributes in the next delta.
 
-Source: PIC-9.2, TDS-18.4
+Source: PIC-9.2, PIC-9.3, TDS-18.4
 
-#### Scenario: An unchanged projection yields an empty delta
-- **WHEN** `diffProjection(p, p)` is computed
-- **THEN** `entity_updates` and `inventory_updates` are empty and `from_revision` equals `to_revision`
+#### Scenario: A discovery re-sends the location
+- **WHEN** the next projection after a `LocationDiscovered` event is diffed against the previous one
+- **THEN** the delta's `location_updates` contain the location with its newly visible attributes
 
-#### Scenario: A changed field appears in the delta
-- **WHEN** an entity's production `progress` changes between two projections
-- **THEN** the delta has an `entity_update` for that entity with component `production`
-
-#### Scenario: A connectivity change appears in the delta
-- **WHEN** an entity's connectivity `connected` changes from `false` to `true` between two projections
-- **THEN** the delta has an `entity_update` for that entity with component `connectivity` and field `connectivity`
+#### Scenario: An unchanged location is not re-sent
+- **WHEN** two consecutive projections carry the same filtered location DTO
+- **THEN** the delta contains no entry for that location
 
 ### Requirement: Delta application
 `applyDelta(base, delta)` SHALL return a new `SnapshotDto` equal to the projection the delta was computed against, by applying every `entity_update` and `inventory_update` to a copy of `base` and setting `revision` to `delta.to_revision` and `tick` to `delta.tick`. It SHALL leave entries the delta does not mention unchanged. Property P-10 SHALL hold: applying `diffProjection(p_n, p_{n+1})` to `p_n` yields `p_{n+1}` exactly.
@@ -119,7 +123,7 @@ Source: PIC-10.3, TDS-18.4
 - **THEN** it returns an empty array
 
 ### Requirement: Location grid projection
-`project(session, actor)` SHALL set `LocationDto.grid` to `{ width, height, blocked }` for every grid-policy location, where `blocked` lists the packed cell indices (`y * width + x`) in ascending order, and SHALL omit `grid` for an abstract-capacity location. The field is part of the per-actor projection and SHALL be subject to fog filtering when row 8.4 lands; this change applies no fog filtering.
+`project(session, actor)` SHALL set `LocationDto.grid` to `{ width, height, blocked }` for every grid-policy location, where `blocked` lists the packed cell indices (`y * width + x`) in ascending order, and SHALL omit `grid` for an abstract-capacity location. The field is part of the per-actor projection and is subject to fog filtering (PIC-9.3).
 
 Source: PIC-9.1, PIC-9.3, PIC-10.2, CONT-6.4, TDS-18.4
 
@@ -133,7 +137,7 @@ Source: PIC-9.1, PIC-9.3, PIC-10.2, CONT-6.4, TDS-18.4
 
 #### Scenario: The grid is projected per actor
 - **WHEN** the same world is projected for actor `test.owner.1` and for actor `test.owner.2`
-- **THEN** both projections carry the location's `grid` (no fog filtering is applied in this change)
+- **THEN** both projections carry the location's `grid`
 
 ### Requirement: Entity spatial projection
 `project(session, actor)` SHALL set `EntityDto.spatial` for an entity carrying a logical transform to `{ logical_position: [x, y], orientation, footprint }`, where `footprint` is `{ width, height }` when the entity has a footprint and is omitted otherwise, and SHALL omit `spatial` for an entity with no logical transform.
@@ -396,3 +400,42 @@ Source: PIC-10.1, GDD-12.6
 #### Scenario: A disabled advancement gate blocks advancement only
 - **WHEN** the band has `advancement_enabled: false` and the residence has one advancement and one decline transition
 - **THEN** the advancement entry is ineligible and the decline entry stays eligible
+
+### Requirement: Fog-filtered read models
+The read models SHALL filter per actor when fog is enabled: entity detail, need breakdown, and transition eligibility SHALL return no result for an entity at a location unknown to the actor; the location summary of an unknown location SHALL carry only its entity ID and `knowledge: unknown`; planning metrics SHALL exclude producers at locations unknown to the actor. The transport detail and order-list read models expose only entity and station IDs and SHALL remain unfiltered.
+
+Source: ARCH-8.3, PIC-9.3, PIC-10.1, PIC-10.2, PIC-10.5
+
+#### Scenario: An entity at an unknown location has no detail
+- **WHEN** entity detail is requested for an entity at a location unknown to the requesting actor
+- **THEN** the read model returns no result
+
+#### Scenario: An unknown location summary is minimal
+- **WHEN** the location summary is requested for a location unknown to the requesting actor
+- **THEN** it carries only the entity ID and `knowledge: unknown`
+
+#### Scenario: Planning ignores unknown producers
+- **WHEN** planning metrics are computed for an actor and a producer sits at a location unknown to that actor
+- **THEN** the producer contributes no row
+
+### Requirement: INV-19 fog safety
+The invariant that no projection, delta, read model, or event for an actor contains attributes of a location unknown to that actor SHALL be covered by unit tests per read model and event type, and by the P-09 property on generated multi-location worlds with mixed knowledge states.
+
+Source: INV-19, ARCH-8.3, P-09, VER-9.4
+
+#### Scenario: P-09 holds on generated worlds
+- **WHEN** projections, deltas, read models, and filtered event streams are built for actors on generated multi-location worlds with mixed knowledge states
+- **THEN** no unknown location's attributes appear in any of them
+
+### Requirement: Owner visibility
+When fog is enabled, every projection is filtered by the requesting actor's knowledge state, and the filtering happens while building in the application layer; the simulation always holds full state. An event is visible to an actor when it names that actor as its owner, or when it carries no owner and its location, if any, is known to that actor.
+
+Source: ARCH-8.3, PIC-9.3, TDS-17
+
+#### Scenario: A foreign arrival is invisible
+- **WHEN** another owner's transport unit arrives at a location and the event stream is filtered for an actor that does not own the unit and has not discovered the location
+- **THEN** the event is not visible to that actor
+
+#### Scenario: A discovery event is visible to its owner
+- **WHEN** a `LocationDiscovered` event names an actor as its owner
+- **THEN** the event is visible to that actor

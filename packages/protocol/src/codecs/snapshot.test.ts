@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeSnapshot, decodeSnapshotDelta } from '../index.js';
+import { applyDelta, decodeSnapshot, decodeSnapshotDelta } from '../index.js';
 
 describe('[PIC-9] snapshot codec', () => {
   it('[PIC-9] a minimal snapshot decodes', () => {
@@ -161,6 +161,57 @@ it('[PIC-9.1][CONT-6.18] a malformed location property value is rejected', () =>
     entities: [],
   });
   expect(decoded.ok).toBe(false);
+});
+
+it('[PIC-9.2][PIC-9.3] a delta with location updates decodes and applies', () => {
+  const delta = {
+    session_id: 's1',
+    from_revision: 1,
+    to_revision: 2,
+    tick: 5,
+    entity_updates: [],
+    inventory_updates: [],
+    location_updates: [
+      {
+        entity_id: 1,
+        knowledge: 'discovered',
+        active: true,
+        properties: { tags: [], region: 'test.region.alpha' },
+      },
+    ],
+  };
+  const decoded = decodeSnapshotDelta(delta);
+  expect(decoded.ok).toBe(true);
+  if (!decoded.ok) return;
+  expect(decoded.value.location_updates?.[0]?.knowledge).toBe('discovered');
+  const applied = applyDelta(
+    {
+      session_id: 's1',
+      tick: 4,
+      revision: 1,
+      configuration_checksum: 'abc',
+      owners: [],
+      locations: [{ entity_id: 1, knowledge: 'unknown', inventories: [] }],
+      entities: [],
+    },
+    decoded.value,
+  );
+  expect(applied.locations[0]?.knowledge).toBe('discovered');
+  expect(applied.locations[0]?.properties?.region).toBe('test.region.alpha');
+});
+
+it('[PIC-9.1][PIC-9.3] a location with knowledge decodes', () => {
+  const decoded = decodeSnapshot({
+    session_id: 's1',
+    tick: 0,
+    revision: 0,
+    configuration_checksum: 'abc',
+    owners: [],
+    locations: [{ entity_id: 1, knowledge: 'unknown', inventories: [] }],
+    entities: [],
+  });
+  expect(decoded.ok).toBe(true);
+  if (decoded.ok) expect(decoded.value.locations[0]?.knowledge).toBe('unknown');
 });
 
 describe('[PIC-9] snapshot delta codec', () => {

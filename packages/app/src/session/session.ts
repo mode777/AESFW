@@ -530,6 +530,7 @@ export function createSession(
       actor: options.actor,
       actorId: options.actorId,
       tickDurationMs: options.tickDurationMs,
+      fog: options.fog ?? true,
     },
   });
 }

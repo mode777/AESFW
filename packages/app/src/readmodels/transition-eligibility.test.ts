@@ -154,7 +154,7 @@ const session = (progress: number) => {
 
 describe('[PIC-10.1][GDD-13.1] transition eligibility', () => {
   it('[PIC-10.1] reports sustained progress below the threshold as ineligible', () => {
-    const detail = entityDetail(session(2), 3);
+    const detail = entityDetail(session(2), ids.ownerHandle(0), 3);
     const eligibility = detail?.residence?.transition_eligibility ?? [];
     expect(eligibility).toHaveLength(1);
     expect(eligibility[0]?.transition_id).toBe('test.transition.up');
@@ -169,7 +169,7 @@ describe('[PIC-10.1][GDD-13.1] transition eligibility', () => {
   });
 
   it('[PIC-10.1] reports sustained progress at the threshold as eligible', () => {
-    const detail = entityDetail(session(3), 3);
+    const detail = entityDetail(session(3), ids.ownerHandle(0), 3);
     const eligibility = detail?.residence?.transition_eligibility ?? [];
     expect(eligibility[0]?.eligible).toBe(true);
     expect(eligibility[0]?.conditions[0]?.met).toBe(true);

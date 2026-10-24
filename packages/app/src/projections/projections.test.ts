@@ -113,6 +113,19 @@ const session = (options: { grid?: boolean } = {}) => {
   state.world.stores
     .get<{ definition: ReturnType<typeof ids.definitionHandle> }>('definition')
     .set(ids.entityId(3), { definition: ids.definitionHandle(9) });
+  // Tests below assume a fully known world; the fog tests seed their own.
+  state.world.owners = {
+    owners: [
+      {
+        handle: ids.ownerHandle(0),
+        knowledge: [{ location: ids.entityId(1), level: 'established' }],
+        accounts: [],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      },
+    ],
+  };
   return state;
 };
 
@@ -285,6 +298,15 @@ describe('[PIC-9.1] spatial projection', () => {
   it('[PIC-9.3] the grid is projected per actor', () => {
     const state = session({ grid: true });
     instantiateWorld(state.world, { owner: ids.ownerHandle(1), locations: [] });
+    const owners = [...state.world.owners.owners];
+    const secondOwner = owners[1];
+    if (secondOwner !== undefined) {
+      owners[1] = {
+        ...secondOwner,
+        knowledge: [{ location: ids.entityId(1), level: 'established' }],
+      };
+      state.world.owners = { owners };
+    }
     const first = project(state, ids.ownerHandle(0));
     const second = project(state, ids.ownerHandle(1));
     expect(second.locations[0]?.grid).toBeDefined();
@@ -606,5 +628,106 @@ describe('[PIC-9.1][GDD-6.3] connection details and transport summaries', () => 
     const entity = snapshot.entities.find((entry) => entry.entity_id === 3);
     expect(entity?.location_id).toBe(1);
     expect(entity?.transport).toEqual({ state: 'moving', order_id: 5 });
+  });
+});
+
+describe('[PIC-9.3][ARCH-8.3] fog-filtered projection', () => {
+  const stateWithKnowledge = (
+    knowledge: { location: number; level: 'discovered' | 'established' }[],
+    fog = true,
+  ) => {
+    const state = session(fog ? {} : {});
+    if (!fog) {
+      const settings = state.settings;
+      (state.settings as unknown as Record<string, unknown>)['fog'] = false;
+      void settings;
+    }
+    state.world.owners = {
+      owners: [
+        {
+          handle: ids.ownerHandle(0),
+          knowledge: knowledge.map((entry) => ({
+            location: ids.entityId(entry.location),
+            level: entry.level,
+          })),
+          accounts: [],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: [],
+        },
+      ],
+    };
+    return state;
+  };
+
+  it('[PIC-9.3] an unknown location exposes only its identity and connections', () => {
+    const state = stateWithKnowledge([]);
+    const snapshot = project(state, ids.ownerHandle(0));
+    const location = snapshot.locations[0];
+    expect(location?.knowledge).toBe('unknown');
+    expect(location?.definition_id).toBeUndefined();
+    expect(location?.owner_id).toBeUndefined();
+    expect(location?.active).toBeUndefined();
+    expect(location?.properties).toBeUndefined();
+    expect(location?.grid).toBeUndefined();
+    expect(location?.inventories).toEqual([]);
+  });
+
+  it('[PIC-9.3] a discovered location exposes everything', () => {
+    const state = stateWithKnowledge([{ location: 1, level: 'discovered' }]);
+    const snapshot = project(state, ids.ownerHandle(0));
+    const location = snapshot.locations[0];
+    expect(location?.knowledge).toBe('discovered');
+    expect(location?.active).toBe(true);
+    expect(location?.properties).toBeDefined();
+    expect(location?.inventories).toHaveLength(1);
+  });
+
+  it('[PIC-9.3] entities at unknown locations are omitted', () => {
+    const state = stateWithKnowledge([]);
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.entities).toEqual([]);
+    const discovered = stateWithKnowledge([{ location: 1, level: 'discovered' }]);
+    expect(project(discovered, ids.ownerHandle(0)).entities).toHaveLength(1);
+  });
+
+  it('[PIC-9.3] disabling fog restores the full projection', () => {
+    const state = session();
+    state.world.owners = {
+      owners: [
+        {
+          handle: ids.ownerHandle(0),
+          knowledge: [],
+          accounts: [],
+          purposeLocks: [],
+          unlocks: [],
+          deficitPaused: [],
+        },
+      ],
+    };
+    (state.settings as unknown as Record<string, unknown>)['fog'] = false;
+    const snapshot = project(state, ids.ownerHandle(0));
+    expect(snapshot.locations[0]?.active).toBe(true);
+    expect(snapshot.entities).toHaveLength(1);
+  });
+
+  it('[PIC-9.3] a discovery re-sends the location in the next delta', () => {
+    const before = stateWithKnowledge([]);
+    const previous = project(before, ids.ownerHandle(0));
+    const after = stateWithKnowledge([{ location: 1, level: 'discovered' }]);
+    const next = project(after, ids.ownerHandle(0));
+    const delta = diffProjection(previous, next);
+    expect(delta.location_updates).toHaveLength(1);
+    expect(delta.location_updates?.[0]?.knowledge).toBe('discovered');
+    expect(delta.location_updates?.[0]?.active).toBe(true);
+    const applied = applyDelta(previous, delta);
+    expect(applied.locations[0]?.knowledge).toBe('discovered');
+  });
+
+  it('[PIC-9.3] an unchanged location is not re-sent', () => {
+    const state = stateWithKnowledge([{ location: 1, level: 'discovered' }]);
+    const snapshot = project(state, ids.ownerHandle(0));
+    const delta = diffProjection(snapshot, project(state, ids.ownerHandle(0)));
+    expect(delta.location_updates ?? []).toEqual([]);
   });
 });

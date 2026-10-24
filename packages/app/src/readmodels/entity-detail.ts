@@ -30,11 +30,28 @@ const stringIdOf = (
  *
  * Source: PIC-10.1
  */
-export function entityDetail(session: SessionState, entity: number): EntityDetailDto | null {
+export function entityDetail(
+  session: SessionState,
+  actor: number,
+  entity: number,
+): EntityDetailDto | null {
   const world = session.world;
   const registry = session.content.registry;
   const reader = readWorld(world, registry);
   const id = entity as never;
+  // Fog (PIC-9.3, ARCH-8.3): an entity at a location unknown to the actor has
+  // no readable detail.
+  const producerLocation =
+    reader.producer(id)?.location ??
+    world.stores.get<Residence>('residence').get(id)?.location ??
+    null;
+  if (
+    session.settings.fog &&
+    producerLocation !== null &&
+    reader.knowledge(actor as never, producerLocation) === 'unknown'
+  ) {
+    return null;
+  }
   const producer = reader.producer(id);
   const residence = world.stores.get<Residence>('residence').get(id);
   const definition = reader.definition(id);
@@ -72,7 +89,7 @@ export function entityDetail(session: SessionState, entity: number): EntityDetai
           population: group.count,
           satisfaction: satisfaction?.z ?? 0,
           band: '',
-          transition_eligibility: transitionEligibility(session, entity),
+          transition_eligibility: transitionEligibility(session, actor, entity),
         };
 
   const maintenance = world.stores.get<Maintenance>('maintenance').get(id);

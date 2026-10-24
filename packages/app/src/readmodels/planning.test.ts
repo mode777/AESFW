@@ -91,7 +91,21 @@ const makeSession = () => {
     actorId: 'test.owner.1',
   });
   if (!created.ok) throw new Error('session creation failed');
-  return created.value;
+  const state = created.value;
+  // Planning tests assume a fully known world.
+  state.world.owners = {
+    owners: [
+      {
+        handle: ids.ownerHandle(0),
+        knowledge: [{ location: ids.entityId(1), level: 'established' }],
+        accounts: [],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      },
+    ],
+  };
+  return state;
 };
 
 const addProducer = (

@@ -9,6 +9,7 @@ import type {
   EntityUpdateDto,
   InventoryUpdateDto,
   JsonObject,
+  LocationDto,
   OwnerDto,
   SnapshotDeltaDto,
   SnapshotDto,
@@ -48,9 +49,11 @@ const inventoryEntries = (
 };
 
 /**
- * Computes the delta from `prev` to `next` (PIC-9.2).
+ * Computes the delta from `prev` to `next` (PIC-9.2). Locations are diffed
+ * whole: a location whose filtered DTO changed is re-sent entire, so newly
+ * visible attributes follow a `LocationDiscovered` event (PIC-9.3).
  *
- * Source: PIC-9.2, TDS-18.4
+ * Source: PIC-9.2, PIC-9.3, TDS-18.4
  */
 export function diffProjection(prev: SnapshotDto, next: SnapshotDto): SnapshotDeltaDto {
   const before = new Map<number, EntityDto>(
@@ -100,6 +103,18 @@ export function diffProjection(prev: SnapshotDto, next: SnapshotDto): SnapshotDe
     }
   }
 
+  const previousLocations = new Map<number, LocationDto>(
+    prev.locations.map((location) => [location.entity_id, location]),
+  );
+  const locationUpdates: LocationDto[] = [];
+  for (const location of next.locations) {
+    const previous = previousLocations.get(location.entity_id);
+    if (previous === undefined) continue;
+    if (JSON.stringify(previous) !== JSON.stringify(location)) {
+      locationUpdates.push(location);
+    }
+  }
+
   return {
     session_id: next.session_id,
     from_revision: prev.revision,
@@ -108,5 +123,6 @@ export function diffProjection(prev: SnapshotDto, next: SnapshotDto): SnapshotDe
     entity_updates: entityUpdates,
     inventory_updates: inventoryUpdates,
     ...(ownerUpdates.length === 0 ? {} : { owner_updates: ownerUpdates }),
+    ...(locationUpdates.length === 0 ? {} : { location_updates: locationUpdates }),
   };
 }

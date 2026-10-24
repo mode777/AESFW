@@ -140,6 +140,7 @@ const session = (): SessionState => {
     journal: false,
     actor: ids.ownerHandle(0),
     actorId: 'test.owner.1',
+    fog: false,
   });
   if (!created.ok) throw new Error('session creation failed');
   const state = created.value;
@@ -159,7 +160,7 @@ describe('[GDD-10.3][GDD-12.4] disabling a producer lowers satisfaction', () => 
     if (producerId === undefined || residenceId === undefined) return;
 
     state = advance(state, 300).session;
-    const before = needBreakdown(state, residenceId)[0]?.fulfillment ?? 0;
+    const before = needBreakdown(state, ids.ownerHandle(0), residenceId)[0]?.fulfillment ?? 0;
     expect(before).toBeGreaterThan(0);
 
     const submitted = submitCommand(state, {
@@ -172,7 +173,7 @@ describe('[GDD-10.3][GDD-12.4] disabling a producer lowers satisfaction', () => 
 
     const producer = state.world.stores.get<Producer>('producer').get(producerId);
     expect(producer?.blockReasons).toContain('entity_disabled');
-    const after = needBreakdown(state, residenceId)[0]?.fulfillment ?? 0;
+    const after = needBreakdown(state, ids.ownerHandle(0), residenceId)[0]?.fulfillment ?? 0;
     expect(after).toBeLessThan(before);
   });
 });

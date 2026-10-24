@@ -24,6 +24,7 @@ import {
   transportDetail,
   transportOrders,
 } from '@aesfw/app';
+import { visibleEvents } from '@aesfw/app';
 import type { SaveDocument, SessionState } from '@aesfw/app';
 import { buildUnlockSystem, createMemorySource, loadContent } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
@@ -132,10 +133,18 @@ const answerQuery = (
   const kind = query['kind'];
   const entity = typeof query['entity_id'] === 'number' ? query['entity_id'] : null;
   if (kind === 'entity_detail' && entity !== null) {
-    return { entity_detail: entityDetail(session, entity) as unknown as JsonValue };
+    return {
+      entity_detail: entityDetail(session, session.settings.actor, entity) as unknown as JsonValue,
+    };
   }
   if (kind === 'need_breakdown' && entity !== null) {
-    return { need_breakdown: needBreakdown(session, entity) as unknown as JsonValue };
+    return {
+      need_breakdown: needBreakdown(
+        session,
+        session.settings.actor,
+        entity,
+      ) as unknown as JsonValue,
+    };
   }
   if (kind === 'location_summary' && typeof query['location_id'] === 'number') {
     return {
@@ -197,7 +206,7 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
   let session: SessionState | null = null;
   let content: CompiledContent | null = null;
   let lastPublished: SnapshotDto | null = null;
-  let pendingEvents: EventDto[] = [];
+  let pendingEvents: DomainEvent[] = [];
   let lastGoodHash = '';
   let speed = 1;
   let running = false;
@@ -210,6 +219,15 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
   const publish = (): void => {
     if (session === null) return;
     const snapshot = project(session, options.actor);
+    const sessionId = session.sessionId;
+    // Fog (PIC-9.3): only events visible to the session's actor are posted.
+    const events = visibleEvents(
+      session.world,
+      session.content.registry,
+      options.actor,
+      pendingEvents,
+      session.settings.fog,
+    ).map((event) => toEventDto(sessionId, event));
     if (lastPublished === null) {
       post({ kind: 'snapshot', protocol_version: PROTOCOL_VERSION, snapshot });
     } else {
@@ -218,7 +236,7 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
         kind: 'delta',
         protocol_version: PROTOCOL_VERSION,
         delta,
-        events: pendingEvents,
+        events,
         ...(lastGoodHash === '' ? {} : { hash: lastGoodHash }),
       });
     }
@@ -241,7 +259,7 @@ export function createSessionHost(options: SessionHostOptions): SessionHost {
       session = result.session;
       for (const output of result.outputs) {
         for (const event of output.events) {
-          pendingEvents.push(toEventDto(session.sessionId, event));
+          pendingEvents.push(event);
         }
         if (output.hash !== null) lastGoodHash = output.hash;
       }

@@ -4,6 +4,7 @@
  *
  * Source: PIC-10.3, TDS-18.4
  */
+import { readWorld } from '@aesfw/core';
 import type { NeedStates, Registry, Residence, Satisfaction } from '@aesfw/core';
 import type { NeedBreakdownDto } from '@aesfw/protocol';
 import type { SessionState } from '../session/types.js';
@@ -21,11 +22,22 @@ const idOf = (
  *
  * Source: PIC-10.3
  */
-export function needBreakdown(session: SessionState, entity: number): readonly NeedBreakdownDto[] {
+export function needBreakdown(
+  session: SessionState,
+  actor: number,
+  entity: number,
+): readonly NeedBreakdownDto[] {
   const world = session.world;
   const registry = session.content.registry;
   const residence = world.stores.get<Residence>('residence').get(entity as never);
   if (residence === undefined) return [];
+  const reader = readWorld(world, registry);
+  if (
+    session.settings.fog &&
+    reader.knowledge(actor as never, residence.location as never) === 'unknown'
+  ) {
+    return [];
+  }
   const states = world.stores.get<NeedStates>('needStates').get(entity as never);
   const satisfaction = world.stores.get<Satisfaction>('satisfaction').get(entity as never);
 

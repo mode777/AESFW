@@ -169,4 +169,5 @@ export interface SnapshotDeltaDto {
   readonly entity_updates: readonly EntityUpdateDto[];
   readonly inventory_updates: readonly InventoryUpdateDto[];
   readonly owner_updates?: readonly OwnerDto[];
+  readonly location_updates?: readonly LocationDto[];
 }

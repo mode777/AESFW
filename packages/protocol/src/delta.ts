@@ -100,5 +100,18 @@ export function applyDelta(base: SnapshotDto, delta: SnapshotDeltaDto): Snapshot
     }
   }
 
+  if (delta.location_updates !== undefined) {
+    const locations = clone.locations as unknown as MutableRecord[];
+    const byLocationId = new Map<number, number>();
+    locations.forEach((location, index) =>
+      byLocationId.set(location['entity_id'] as number, index),
+    );
+    for (const update of delta.location_updates) {
+      const index = byLocationId.get(update.entity_id);
+      if (index === undefined) continue;
+      locations[index] = update as unknown as MutableRecord;
+    }
+  }
+
   return { ...clone, revision: delta.to_revision, tick: delta.tick };
 }

@@ -5,7 +5,7 @@
  *
  * Source: PIC-10.1, GDD-13.1, TDS-14.3
  */
-import { declineTransitionsOf, transitionDefinitionOf } from '@aesfw/core';
+import { declineTransitionsOf, readWorld, transitionDefinitionOf } from '@aesfw/core';
 import type { DefinitionHandle, World } from '@aesfw/core';
 import { compileCondition } from '@aesfw/content';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
@@ -66,14 +66,24 @@ const collectSustained = (expr: Expr, out: { slot: number; ticks: number }[]): v
  */
 export function transitionEligibility(
   session: SessionState,
+  actor: number,
   entity: number,
 ): readonly TransitionEligibilityDto[] {
   const world = session.world;
   const registry = registryOf(session.content);
   const residence = world.stores
-    .get<{ readonly tier: DefinitionHandle }>('residence')
+    .get<{ readonly tier: DefinitionHandle; readonly location?: number }>('residence')
     .get(entity as never);
   if (residence === undefined) return [];
+  const reader = readWorld(world, registry);
+  if (
+    session.settings.fog &&
+    residence.location !== undefined &&
+    residence.location !== null &&
+    reader.knowledge(actor as never, residence.location as never) === 'unknown'
+  ) {
+    return [];
+  }
   const bandState = world.stores
     .get<{ readonly advancementEnabled: boolean }>('bandState')
     .get(entity as never);

@@ -5,3 +5,5 @@
  */
 export { project } from './project.js';
 export { diffProjection } from './diff.js';
+export { visibleEvents } from './fog.js';
+export type { FilterableEvent } from './fog.js';

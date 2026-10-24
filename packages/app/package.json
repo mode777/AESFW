@@ -17,5 +17,8 @@
     "@aesfw/content": "workspace:*",
     "@aesfw/core": "workspace:*",
     "@aesfw/protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2"
   }
 }

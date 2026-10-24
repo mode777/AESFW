@@ -96,6 +96,19 @@ const session = () => {
       },
     ],
   });
+  // Tests below assume a fully known world.
+  state.world.owners = {
+    owners: [
+      {
+        handle: ids.ownerHandle(0),
+        knowledge: [{ location: ids.entityId(1), level: 'established' }],
+        accounts: [],
+        purposeLocks: [],
+        unlocks: [],
+        deficitPaused: [],
+      },
+    ],
+  };
   const entity = ids.entityId(3);
   state.world.stores
     .get<{ definition: ReturnType<typeof ids.definitionHandle> }>('definition')
@@ -150,7 +163,7 @@ describe('[PIC-4] definitionMetadata', () => {
 
 describe('[PIC-10.1] entityDetail', () => {
   it('[PIC-10.1] returns entity detail for a residence', () => {
-    const detail = entityDetail(session(), 3);
+    const detail = entityDetail(session(), ids.ownerHandle(0), 3);
     expect(detail?.definition_id).toBe('test.entity.residence');
     expect(detail?.enabled).toBe(true);
     expect(detail?.residence?.population).toBe(50);
@@ -158,7 +171,7 @@ describe('[PIC-10.1] entityDetail', () => {
   });
 
   it('[PIC-10.1] returns null for an unknown entity', () => {
-    expect(entityDetail(session(), 999)).toBeNull();
+    expect(entityDetail(session(), ids.ownerHandle(0), 999)).toBeNull();
   });
 
   it('[PIC-10.1][GDD-20.1] exposes the maintenance summary', () => {
@@ -173,7 +186,7 @@ describe('[PIC-10.1] entityDetail', () => {
       shortagePolicy: 'owner_deficit_policy',
       arrears: [],
     });
-    const detail = entityDetail(state, 3);
+    const detail = entityDetail(state, ids.ownerHandle(0), 3);
     expect(detail?.maintenance).toEqual({ amount: 500, policy: 'while_enabled' });
   });
 });
@@ -223,7 +236,7 @@ describe('[PIC-10.2] locationSummary', () => {
 
 describe('[PIC-10.3] needBreakdown', () => {
   it('[PIC-10.3] computes fulfillment from the window', () => {
-    const breakdown = needBreakdown(session(), 3);
+    const breakdown = needBreakdown(session(), ids.ownerHandle(0), 3);
     expect(breakdown).toHaveLength(1);
     expect(breakdown[0]?.demand).toBe(1000);
     expect(breakdown[0]?.delivered).toBe(800);
@@ -232,7 +245,7 @@ describe('[PIC-10.3] needBreakdown', () => {
   });
 
   it('[PIC-10.3] returns an empty array for a non-residence', () => {
-    expect(needBreakdown(session(), 1)).toEqual([]);
+    expect(needBreakdown(session(), ids.ownerHandle(0), 1)).toEqual([]);
   });
 });
 
@@ -246,7 +259,7 @@ describe('[PIC-10.1] deficit-paused entity detail', () => {
       owners: [
         {
           handle: ids.ownerHandle(0),
-          knowledge: [],
+          knowledge: [{ location: ids.entityId(1), level: 'established' }],
           accounts: [],
           purposeLocks: [],
           unlocks: [],
@@ -254,13 +267,13 @@ describe('[PIC-10.1] deficit-paused entity detail', () => {
         },
       ],
     };
-    const detail = entityDetail(state, 3);
+    const detail = entityDetail(state, ids.ownerHandle(0), 3);
     expect(detail?.paused_by_deficit).toBe(true);
     expect(detail?.available_commands).toContain('ResumeDeficitPausedEntities');
   });
 
   it('[PIC-10.1] a running entity reports no pause', () => {
-    const detail = entityDetail(session(), 3);
+    const detail = entityDetail(session(), ids.ownerHandle(0), 3);
     expect(detail?.paused_by_deficit).toBeUndefined();
     expect(detail?.available_commands).not.toContain('ResumeDeficitPausedEntities');
   });

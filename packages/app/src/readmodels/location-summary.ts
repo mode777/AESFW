@@ -36,6 +36,14 @@ export function locationSummary(
   const reader = readWorld(world, registry);
   const loc = reader.location(location as never);
   if (loc === undefined) return null;
+  // Fog (PIC-9.3): an unknown location exposes only its identity.
+  if (session.settings.fog && reader.knowledge(actor, location as never) === 'unknown') {
+    return {
+      entity_id: location,
+      knowledge: 'unknown',
+      active: false,
+    };
+  }
 
   const inventoryTotals: Record<string, number> = {};
   const hub = reader.locationHub(location as never);

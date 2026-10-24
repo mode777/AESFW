@@ -259,6 +259,11 @@ function decodeLocation(value: unknown, path: string, errors: ProtocolError[]): 
     return null;
   }
   const location: { entity_id: number } & Record<string, unknown> = { entity_id: entityId };
+  const knowledge = value['knowledge'];
+  if (knowledge !== undefined) {
+    if (isString(knowledge)) location['knowledge'] = knowledge;
+    else errors.push(invalidField(`${path}.knowledge`));
+  }
   const definitionId = value['definition_id'];
   if (definitionId !== undefined) {
     if (isString(definitionId)) location['definition_id'] = definitionId;
@@ -573,6 +578,19 @@ export function decodeSnapshotDelta(value: unknown): DecodeResult<SnapshotDeltaD
     });
   }
 
+  const locationUpdates: LocationDto[] = [];
+  const rawLocationUpdates = value['location_updates'];
+  if (rawLocationUpdates !== undefined) {
+    if (!Array.isArray(rawLocationUpdates)) {
+      errors.push(invalidField('location_updates'));
+    } else {
+      rawLocationUpdates.forEach((raw, index) => {
+        const decoded = decodeLocation(raw, `location_updates[${index}]`, errors);
+        if (decoded !== null) locationUpdates.push(decoded);
+      });
+    }
+  }
+
   const ownerUpdates: OwnerDto[] = [];
   const rawOwnerUpdates = value['owner_updates'];
   if (rawOwnerUpdates !== undefined) {
@@ -595,5 +613,6 @@ export function decodeSnapshotDelta(value: unknown): DecodeResult<SnapshotDeltaD
     entity_updates: entityUpdates,
     inventory_updates: inventoryUpdates,
     ...(rawOwnerUpdates === undefined ? {} : { owner_updates: ownerUpdates }),
+    ...(rawLocationUpdates === undefined ? {} : { location_updates: locationUpdates }),
   });
 }

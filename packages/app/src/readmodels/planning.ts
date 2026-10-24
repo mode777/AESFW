@@ -6,7 +6,7 @@
  *
  * Source: PIC-10.5, TDS-18.5, GDD-3.8, GDD-10.6
  */
-import { det } from '@aesfw/core';
+import { det, readWorld } from '@aesfw/core';
 import type { DefinitionHandle, EntityId, OwnerHandle, World, fx } from '@aesfw/core';
 
 type Int = fx.Int;
@@ -219,7 +219,16 @@ const stringIdOf = (
  */
 export function planningMetrics(session: SessionState, actor: OwnerHandle): PlanningDto {
   const world = session.world;
-  const producers = producerRows(world, actor);
+  let producers = producerRows(world, actor);
+  if (session.settings.fog) {
+    // Fog (PIC-9.3): producers at locations unknown to the actor contribute
+    // no row.
+    const reader = readWorld(world, session.content.registry);
+    producers = producers.filter(
+      (row) =>
+        row.location === null || reader.knowledge(actor, row.location as never) !== 'unknown',
+    );
+  }
   const residences = residenceRows(world, actor);
 
   // Resources consumed by resource_consumption needs (PIC-10.5).

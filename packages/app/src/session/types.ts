@@ -25,6 +25,8 @@ export interface SessionSettings {
   readonly actor: OwnerHandle;
   readonly actorId: string;
   readonly tickDurationMs: number;
+  /** Owner-filtered projections and read models (GDD-16.1); enabled by default. */
+  readonly fog: boolean;
 }
 
 /** One accepted command, kept for replay (TDS-18.2, 02 §16.2). */
@@ -65,6 +67,7 @@ export interface SessionOptions {
   readonly journal: boolean;
   readonly actor: OwnerHandle;
   readonly actorId: string;
+  readonly fog?: boolean;
 }
 
 /** The result of `submitCommand` (TDS-18.1). */

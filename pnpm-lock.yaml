@@ -53,6 +53,10 @@ importers:
       '@aesfw/protocol':
         specifier: workspace:*
         version: link:../protocol
+    devDependencies:
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
 
   packages/content:
     dependencies:

@@ -7,6 +7,7 @@
 import {
   curveMultiplier,
   effectiveInventoryCapacity,
+  ids,
   isCharging,
   isConnected,
   readWorld,
@@ -181,14 +182,37 @@ const locationDto = (
   registry: Registry,
   id: EntityId,
   actor: OwnerHandle,
+  fog: boolean,
 ): LocationDto => {
   const location = reader.location(id);
   const hub = reader.locationHub(id);
   const inventories = (hub?.inventories ?? []).map((inventoryId) =>
     inventoryDto(reader, world, registry, inventoryId),
   );
-  const dto: LocationDto = { entity_id: id, knowledge: reader.knowledge(actor, id), inventories };
+  const knowledge = reader.knowledge(actor, id);
+  const dto: LocationDto = { entity_id: id, knowledge, inventories };
   if (location !== undefined) {
+    // Fog (PIC-9.3): an unknown location exposes only its identity and its
+    // connections; discovered and established locations expose everything.
+    if (fog && knowledge === 'unknown') {
+      return {
+        entity_id: id,
+        knowledge,
+        inventories: [],
+        ...(location.connections === undefined || location.connections.length === 0
+          ? {}
+          : {
+              connections: location.connections.map((connection) => connection.id),
+              connection_details: location.connections.map((connection): ConnectionDto => ({
+                connection_id: connection.id,
+                origin_id: connection.origin,
+                destination_id: connection.destination,
+                base_duration_ticks: connection.baseDurationTicks,
+                enabled: connection.enabled,
+              })),
+            }),
+      };
+    }
     const template = definitionId(registry, 'location', location.template);
     const throughput = throughputDto(world, id);
     return {
@@ -345,13 +369,26 @@ export function project(session: SessionState, actor: OwnerHandle): SnapshotDto 
   const world = session.world;
   const registry = session.content.registry;
   const reader = readWorld(world, registry);
+  const fog = session.settings.fog;
+  const locationById = new Map<EntityId, LocationDto>();
+  for (const id of reader.locationIds) {
+    locationById.set(id, locationDto(reader, world, registry, id, actor, fog));
+  }
   return {
     session_id: session.sessionId,
     tick: world.tick,
     revision: session.revision,
     configuration_checksum: session.content.checksum,
     owners: reader.ownerHandles.map((handle) => ownerDto(world, registry, handle)),
-    locations: reader.locationIds.map((id) => locationDto(reader, world, registry, id, actor)),
-    entities: reader.entityIds.map((id) => entityDto(reader, world, registry, id)),
+    locations: reader.locationIds.map((id) => locationById.get(id) as LocationDto),
+    entities: reader.entityIds
+      .map((id) => entityDto(reader, world, registry, id))
+      .filter((entity) => {
+        if (!fog) return true;
+        const at = entity.location_id;
+        if (at === undefined) return true;
+        const dto = locationById.get(ids.entityId(at));
+        return dto !== undefined && dto.knowledge !== 'unknown';
+      }),
   };
 }
