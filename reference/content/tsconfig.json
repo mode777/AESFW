@@ -10,7 +10,9 @@
     "typeRoots": ["../../packages/host-node/node_modules/@types"],
     "paths": {
       "@aesfw/content": ["../../packages/content/src/index.ts"],
-      "@aesfw/testkit/scenario": ["../../packages/testkit/src/scenario/index.ts"]
+      "@aesfw/testkit/scenario": ["../../packages/testkit/src/scenario/index.ts"],
+      "@aesfw/core": ["../../packages/core/src/index.ts"],
+      "@aesfw/app": ["../../packages/app/src/index.ts"]
     }
   },
   "include": ["test"]
