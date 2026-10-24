@@ -278,7 +278,7 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 8.2 | `add-knowledge-and-exploration` | sim/exploration | owner knowledge state, discovery on arrival (phase 18), explore mode; INV-14 ✓ archived 2026-10-23 | GDD-16.1, GDD-16.2, ARCH-14.4 | 6.4 | M |
 | 8.3 | `add-location-establishment` | sim/exploration | establish mode, establishment transaction, hub creation, exclusive ownership ✓ archived 2026-10-23 | GDD-16.3, CONT-6.20 | 8.2 | M |
 | 8.4 | `add-fog-filtered-projections` | app/projections | per-actor filtering of all projections, read models, and events; INV-19; P-09 ✓ archived 2026-10-24 | ARCH-8.3, PIC-9.3 | 8.2, 2.3 | M |
-| 8.5 | `add-golden-exploration` | testkit/scenarios | SCN-05 | VER-9.3 | 8.3 | S |
+| 8.5 | `add-golden-exploration` | testkit/scenarios | SCN-05 ✓ archived 2026-10-24 | VER-9.3 | 8.3 | S |
 | 8.6 | `add-client-fog-and-expansion` | reference/client | fog rendering, explore and establish flows | REF-12.1 | 8.4, 6.9 | M |
 
 **Exit criteria:** SCN-05 and fog properties pass; no projection leaks unknown attributes.

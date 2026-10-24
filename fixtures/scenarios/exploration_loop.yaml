@@ -1,0 +1,55 @@
+scenario:
+  id: test.scenario.exploration_loop
+  requirements: [GDD-16.1, GDD-16.3, SCN-05]
+  content:
+    packages: [fixtures/content/demo-exploration]
+  setup:
+    seed: [3, 7]
+    tick_duration_ms: 1000
+    world: demo.world.exploration
+  commands:
+    - tick: 1
+      actor: owner.a
+      type: CreateTransportOrder
+      payload:
+        mode: route
+        stations:
+          - endpoint: 3
+            actions:
+              - resource: demo.resource.package
+                action: load
+                rule: { mode: fixed, quantity: 500 }
+    - tick: 2
+      actor: owner.a
+      type: CreateTransportOrder
+      payload:
+        mode: explore
+        stations:
+          - endpoint: 1
+            actions: []
+    - tick: 3
+      actor: owner.a
+      type: CreateTransportOrder
+      payload:
+        mode: establish
+        stations:
+          - endpoint: 1
+            actions: []
+    - tick: 4
+      actor: owner.a
+      type: AssignTransport
+      payload: { unit_id: 7, order_id: 8 }
+    - tick: 12
+      actor: owner.a
+      type: AssignTransport
+      payload: { unit_id: 6, order_id: 9 }
+    - tick: 16
+      actor: owner.a
+      type: AssignTransport
+      payload: { unit_id: 7, order_id: 10 }
+  run:
+    ticks: 40
+    hash_interval: 5
+    invariants: true
+  golden:
+    hashes: fixtures/scenarios/exploration_loop.hashes.json

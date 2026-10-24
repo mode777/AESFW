@@ -53,6 +53,10 @@ export const phase18ResolveArrivals: SystemDescriptor = {
         });
       }
     }
-    runEstablishOrders(ctx.world, ctx.registry, ctx.scratch, ctx.events, ctx.establishmentSystem);
+    if (
+      runEstablishOrders(ctx.world, ctx.registry, ctx.scratch, ctx.events, ctx.establishmentSystem)
+    ) {
+      ctx.world.caches.dirty = true;
+    }
   },
 };

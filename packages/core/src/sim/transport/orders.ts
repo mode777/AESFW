@@ -739,9 +739,10 @@ export function runEstablishOrders(
   scratch: TickScratch,
   events: EventWriter,
   system: EstablishmentSystem | null,
-): void {
+): boolean {
   const arrivals = readTransportArrivals(scratch);
-  if (arrivals.length === 0) return;
+  if (arrivals.length === 0) return false;
+  let established = false;
   const locationStore = world.stores.get<Location>('location');
   const ownerStore = world.stores.get<{ owner: OwnerHandle }>('owner');
   for (const arrival of arrivals) {
@@ -803,6 +804,9 @@ export function runEstablishOrders(
     locationStore.set(arrival.location, { ...location, owner, active: true });
     raiseKnowledge(world, owner, arrival.location, 'established');
     advanceEstablishmentCursor(world, arrival.unit, order, cursor);
+    // The hub's components may feed the derived caches; rebuild in phase 04.
+    world.caches.dirty = true;
+    established = true;
     events.emit({
       type: 'LocationEstablished',
       subjects: [arrival.location],
@@ -811,4 +815,5 @@ export function runEstablishOrders(
       payload: { owner, location: arrival.location, hub },
     });
   }
+  return established;
 }

@@ -47,6 +47,12 @@ entity_definitions:
     components: {}
   - id: demo.entity.hub
     components: {}
+  - id: demo.entity.packager
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: demo.resource.package, quantity_per_tick: 50 }
 
 transport_units:
   - id: demo.transport.basic
@@ -80,4 +86,6 @@ worlds:
       - id: owner.a
         established_locations: [demo.loc.home]
         initial_entities:
+          - { definition: demo.entity.packager, location: demo.loc.home }
+          - { definition: demo.entity.transport, location: demo.loc.home }
           - { definition: demo.entity.transport, location: demo.loc.home }

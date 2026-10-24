@@ -128,7 +128,7 @@ describe('[GDD-16.3][ARCH-14.4] establish order through the gateway', () => {
     ]);
 
     carryPackage(state, unitId, 500);
-    orderAndAssign(state, 'cmd.order.1', frontierId, unitId, 6);
+    orderAndAssign(state, 'cmd.order.1', frontierId, unitId, state.world.nextEntityId);
     advance(state, 12);
 
     const after = state.world.stores.get<Location>('location').get(ids.entityId(frontierId));
@@ -160,7 +160,7 @@ describe('[GDD-16.3][ARCH-14.4] establish order through the gateway', () => {
     if (frontier === undefined) throw new Error('frontier missing');
     locationStore.set(ids.entityId(frontierId), { ...frontier, owner: ids.ownerHandle(0) });
     carryPackage(state, unitId, 500);
-    orderAndAssign(state, 'cmd.order.1', frontierId, unitId, 6);
+    orderAndAssign(state, 'cmd.order.1', frontierId, unitId, state.world.nextEntityId);
     advance(state, 12);
     const cargoAfter = state.world.stores.get<Cargo>('cargo').get(ids.entityId(unitId));
     expect(cargoAfter?.entries).toEqual([{ resource: packageResource, quantity: 500 }]);

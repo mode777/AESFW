@@ -1,0 +1,14 @@
+{
+  "algorithm": "fnv1a64-canonical-json-v1",
+  "scenario": "test.scenario.exploration_loop",
+  "checkpoints": {
+    "5": "4fa8e4b15c30626d",
+    "10": "c55463062d82b6a5",
+    "15": "2fe2bf05f792fe49",
+    "20": "37cfd363a94249d7",
+    "25": "60bcc0e9a2fbd969",
+    "30": "05f94c4bd27e5f28",
+    "35": "f63a01e7b8d84383",
+    "40": "72554c5c65510a2e"
+  }
+}
