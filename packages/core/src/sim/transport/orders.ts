@@ -7,7 +7,11 @@
  * Source: GDD-15.2, GDD-15.5, GDD-15.6, GDD-15.7, ARCH-14.4, TDS-11.1
  */
 import { allocateEntity } from '../../world/create.js';
-import type { EntityId, OwnerHandle } from '../../ids/index.js';
+import type { DefinitionHandle, EntityId, OwnerHandle } from '../../ids/index.js';
+import type { EstablishmentSystem } from '../../pipeline/types.js';
+import type { Registry } from '../../registry/types.js';
+import type { Location } from '../location.js';
+import { readTransportArrivals } from './route.js';
 import type { EventWriter } from '../../events/event-writer.js';
 import type { TickScratch } from '../../pipeline/types.js';
 import type { TransactionWriter } from '../../tx/index.js';
@@ -274,7 +278,7 @@ export function planTransportOrders(world: World): void {
     const movement = movementStore.get(unit);
     if (
       order === undefined ||
-      (order.mode !== 'route' && order.mode !== 'explore') ||
+      (order.mode !== 'route' && order.mode !== 'explore' && order.mode !== 'establish') ||
       movement?.location === undefined
     )
       continue;
@@ -588,4 +592,223 @@ export function stationCursorOf(world: World, unit: EntityId): StationCursor | u
 /** Returns an order component by entity. */
 export function transportOrderOf(world: World, order: EntityId): TransportOrder | undefined {
   return orderOf(world, order);
+}
+
+/** The knowledge-level order `unknown < discovered < established` (INV-14). */
+const KNOWLEDGE_RANK: Readonly<Record<string, number>> = {
+  unknown: 0,
+  discovered: 1,
+  established: 2,
+};
+
+/**
+ * Raises an owner's knowledge of a location to at least `level`, keeping the
+ * entries sorted by ascending location (GDD-16.1).
+ *
+ * Source: GDD-16.1, ARCH-14.4
+ */
+export function raiseKnowledge(
+  world: World,
+  owner: OwnerHandle,
+  location: EntityId,
+  level: 'discovered' | 'established',
+): 'changed' | 'unchanged' {
+  const owners = [...world.owners.owners];
+  const state = owners[owner];
+  if (state === undefined) return 'unchanged';
+  const existing = state.knowledge.find((entry) => entry.location === location);
+  const current = existing?.level ?? 'unknown';
+  if ((KNOWLEDGE_RANK[current] ?? 0) >= (KNOWLEDGE_RANK[level] ?? 0)) return 'unchanged';
+  const knowledge = [
+    ...state.knowledge.filter((entry) => entry.location !== location),
+    { location, level },
+  ].sort((a, b) => a.location - b.location);
+  owners[owner] = { ...state, knowledge };
+  world.owners = { owners };
+  return 'changed';
+}
+
+/** Applies a failure policy for an establishment guard (GDD-15.7). */
+function applyEstablishmentFailure(
+  world: World,
+  unit: EntityId,
+  order: TransportOrder,
+  cursor: StationCursor,
+  key: FailureKey,
+): void {
+  applyFailure(world, unit, order, cursor, key);
+}
+
+/** Advances the station cursor after a completed establishment. */
+function advanceEstablishmentCursor(
+  world: World,
+  unit: EntityId,
+  order: TransportOrder,
+  cursor: StationCursor,
+): void {
+  advanceStationCursor(world, unit, order, cursor);
+}
+
+interface EstablishmentCost {
+  readonly resource: DefinitionHandle;
+  readonly quantity: number;
+}
+
+/** Parses the establishment costs into resolved resource handles. */
+const establishmentCosts = (
+  registry: Registry,
+  data: Record<string, unknown>,
+): EstablishmentCost[] => {
+  const costs: EstablishmentCost[] = [];
+  for (const raw of asCostArray(data['costs'])) {
+    const record = asCostRecord(raw);
+    const resourceId = typeof record?.['resource'] === 'string' ? record['resource'] : null;
+    const quantity = record?.['quantity'];
+    if (resourceId === null || typeof quantity !== 'number' || !Number.isInteger(quantity))
+      continue;
+    const handle = registry.handleOf('resource', resourceId as never);
+    if (handle === null) continue;
+    costs.push({ resource: handle, quantity });
+  }
+  return costs.sort((a, b) => a.resource - b.resource);
+};
+
+const asCostArray = (value: unknown): readonly unknown[] => (Array.isArray(value) ? value : []);
+
+const asCostRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+/** True when the cargo covers every establishment cost. */
+const cargoCovers = (cargo: Cargo, costs: readonly EstablishmentCost[]): boolean =>
+  costs.every((cost) => cargoQuantity(cargo, cost.resource) >= cost.quantity);
+
+/** Deducts the establishment costs from the cargo (resource-handle ascending). */
+const deductCargo = (
+  world: World,
+  unit: EntityId,
+  cargo: Cargo,
+  costs: readonly EstablishmentCost[],
+): void => {
+  let entries = [...cargo.entries];
+  let slots = [...cargo.slots];
+  for (const cost of costs) {
+    let remaining = cost.quantity;
+    if (cargo.policy === 'typed_slots') {
+      slots = slots.map((slot) => {
+        if (slot.resource !== cost.resource || remaining <= 0 || slot === undefined) return slot;
+        const take = Math.min(slot.quantity, remaining);
+        remaining -= take;
+        return { ...slot, quantity: slot.quantity - take };
+      });
+    }
+    if (remaining > 0) {
+      entries = entries.map((entry) => {
+        if (entry.resource !== cost.resource || remaining <= 0) return entry;
+        const take = Math.min(entry.quantity, remaining);
+        remaining -= take;
+        return { ...entry, quantity: entry.quantity - take };
+      });
+    }
+  }
+  world.stores
+    .get<Cargo>('cargo')
+    .set(unit, { ...cargo, entries: entries.filter((entry) => entry.quantity > 0), slots });
+};
+
+const establishmentDataOf = (
+  registry: Registry,
+  handle: DefinitionHandle,
+): Record<string, unknown> | null => {
+  const raw = registry.definitionDataOf?.('establishment', handle);
+  return typeof raw === 'object' && raw !== null && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : null;
+};
+
+/**
+ * Executes establish orders for the tick's arrivals (phase 18, GDD-16.3).
+ * Guards are checked before any mutation, so the transaction is atomic.
+ *
+ * Source: GDD-16.3, ARCH-14.4, ARCH-5.2
+ */
+export function runEstablishOrders(
+  world: World,
+  registry: Registry,
+  scratch: TickScratch,
+  events: EventWriter,
+  system: EstablishmentSystem | null,
+): void {
+  const arrivals = readTransportArrivals(scratch);
+  if (arrivals.length === 0) return;
+  const locationStore = world.stores.get<Location>('location');
+  const ownerStore = world.stores.get<{ owner: OwnerHandle }>('owner');
+  for (const arrival of arrivals) {
+    const assignment = assignmentOf(world, arrival.unit);
+    if (assignment?.order == null) continue;
+    const order = orderOf(world, assignment.order);
+    if (order === undefined || order.mode !== 'establish') continue;
+    const cursor = cursorOf(world, arrival.unit);
+    if (cursor === undefined) continue;
+    const station = order.stations[cursor.station];
+    if (station === undefined || station.endpoint !== arrival.location) continue;
+    const fail = (key: FailureKey): void =>
+      applyEstablishmentFailure(world, arrival.unit, order, cursor, key);
+
+    const owner = ownerStore.get(arrival.unit)?.owner;
+    if (owner === undefined) {
+      fail('origin_unavailable');
+      continue;
+    }
+    const location = locationStore.get(arrival.location);
+    if (location === undefined || location.establishment === undefined) {
+      fail('origin_unavailable');
+      continue;
+    }
+    const data = establishmentDataOf(registry, location.establishment);
+    if (data === null) {
+      fail('origin_unavailable');
+      continue;
+    }
+    if (data['requires_unoccupied'] !== false && location.owner !== null) {
+      fail('establishment_target_occupied');
+      continue;
+    }
+    const required =
+      typeof data['requires_knowledge'] === 'string' ? data['requires_knowledge'] : 'discovered';
+    const current = world.owners.owners[owner]?.knowledge.find(
+      (entry) => entry.location === arrival.location,
+    )?.level;
+    if ((KNOWLEDGE_RANK[current ?? 'unknown'] ?? 0) < (KNOWLEDGE_RANK[required] ?? 1)) {
+      fail('origin_unavailable');
+      continue;
+    }
+    const costs = establishmentCosts(registry, data);
+    const cargo = world.stores.get<Cargo>('cargo').get(arrival.unit);
+    if (cargo === undefined || !cargoCovers(cargo, costs)) {
+      fail('origin_unavailable');
+      continue;
+    }
+    if (system === null) {
+      fail('origin_unavailable');
+      continue;
+    }
+    const hub = system.createHub(world, arrival.location, owner, location.establishment);
+    if (hub === null) {
+      fail('origin_unavailable');
+      continue;
+    }
+    deductCargo(world, arrival.unit, cargo, costs);
+    locationStore.set(arrival.location, { ...location, owner, active: true });
+    raiseKnowledge(world, owner, arrival.location, 'established');
+    advanceEstablishmentCursor(world, arrival.unit, order, cursor);
+    events.emit({
+      type: 'LocationEstablished',
+      subjects: [arrival.location],
+      owner,
+      location: arrival.location,
+      payload: { owner, location: arrival.location, hub },
+    });
+  }
 }

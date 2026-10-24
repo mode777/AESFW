@@ -238,6 +238,7 @@ describe('[TDS-7] definition collection catalogue', () => {
       'transport_order_templates',
       'regions',
       'distribution_rules',
+      'location_establishments',
     ]);
     expect(DEFINITION_COLLECTIONS.resources).toBe('resource');
     expect(DEFINITION_COLLECTIONS.location_templates).toBe('location');

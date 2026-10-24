@@ -28,6 +28,7 @@ import { TransportOrderTemplateSchema } from './order.js';
 import { TransportUnitSchema } from './transport.js';
 import { WorldDefinitionSchema } from './world.js';
 import { DistributionRuleSchema, RegionSchema } from './region.js';
+import { EstablishmentSchema } from './establishment.js';
 
 /** Maps a top-level document key to its core definition type (TDS-7). */
 export const DEFINITION_COLLECTIONS = {
@@ -52,6 +53,7 @@ export const DEFINITION_COLLECTIONS = {
   transport_order_templates: 'transportOrder',
   regions: 'region',
   distribution_rules: 'distributionRule',
+  location_establishments: 'establishment',
 } as const satisfies Readonly<Record<string, DefinitionType>>;
 
 /** A top-level document key of the M1 content set. */
@@ -85,6 +87,7 @@ export const DEFINITION_SCHEMAS = {
   transport_order_templates: TransportOrderTemplateSchema,
   regions: RegionSchema,
   distribution_rules: DistributionRuleSchema,
+  location_establishments: EstablishmentSchema,
 } as const satisfies Readonly<Record<DefinitionCollection, TSchema>>;
 
 /** True when `key` names a known definition collection. */

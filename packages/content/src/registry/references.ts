@@ -93,6 +93,28 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             }),
           );
         }
+      } else if (collection === 'location_templates') {
+        check(
+          id,
+          definition['establishment'],
+          'establishment',
+          `/location_templates/${id}/establishment`,
+        );
+      } else if (collection === 'location_establishments') {
+        check(
+          id,
+          definition['creates_hub'],
+          'entity',
+          `/location_establishments/${id}/creates_hub`,
+        );
+        asArray(definition['costs']).forEach((entry, index) =>
+          check(
+            id,
+            asRecord(entry)?.['resource'],
+            'resource',
+            `/location_establishments/${id}/costs/${index}/resource`,
+          ),
+        );
       } else if (collection === 'recipes') {
         for (const field of ['inputs', 'outputs'] as const) {
           asArray(definition[field]).forEach((entry, index) =>

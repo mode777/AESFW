@@ -1,0 +1,69 @@
+{
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "requires_knowledge",
+    "requires_unoccupied",
+    "cost_source",
+    "costs",
+    "creates_hub",
+    "activation",
+    "ownership"
+  ],
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "requires_knowledge": {
+      "anyOf": [
+        {
+          "const": "discovered",
+          "type": "string"
+        },
+        {
+          "const": "established",
+          "type": "string"
+        }
+      ]
+    },
+    "requires_unoccupied": {
+      "type": "boolean"
+    },
+    "cost_source": {
+      "const": "transport_cargo",
+      "type": "string"
+    },
+    "costs": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["resource", "quantity"],
+        "properties": {
+          "resource": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "creates_hub": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "activation": {
+      "const": "on_completion",
+      "type": "string"
+    },
+    "ownership": {
+      "const": "exclusive",
+      "type": "string"
+    }
+  }
+}

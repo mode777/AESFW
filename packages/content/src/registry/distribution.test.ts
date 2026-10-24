@@ -193,3 +193,65 @@ describe('[CONT-6.18][GDD-6.4] distribution-rule validation', () => {
     expect(codes(result)).toContain('distribution_not_disjoint');
   });
 });
+
+describe('[CONT-6.20] establishment references', () => {
+  const resources = [
+    {
+      id: 'test.resource.package',
+      quantity: { precision: 'fixed', scale: 1000 },
+      storage: { policy: 'normal', scope: 'inventory' },
+      transportable: true,
+    },
+  ];
+
+  it('[CONT-6.20] establishment references resolve', () => {
+    const result = load({
+      resources,
+      entity_definitions: [{ id: 'test.entity.hub', components: {} }],
+      location_establishments: [
+        {
+          id: 'test.establishment.default',
+          requires_knowledge: 'discovered',
+          requires_unoccupied: true,
+          cost_source: 'transport_cargo',
+          costs: [{ resource: 'test.resource.package', quantity: 1000 }],
+          creates_hub: 'test.entity.hub',
+          activation: 'on_completion',
+          ownership: 'exclusive',
+        },
+      ],
+      location_templates: [
+        template('test.location.a', { establishment: 'test.establishment.default' }),
+      ],
+    });
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it('[CONT-6.20] a hub that is not an entity definition is reported', () => {
+    const result = load({
+      resources,
+      location_establishments: [
+        {
+          id: 'test.establishment.default',
+          requires_knowledge: 'discovered',
+          requires_unoccupied: true,
+          cost_source: 'transport_cargo',
+          costs: [{ resource: 'test.resource.package', quantity: 1000 }],
+          creates_hub: 'test.resource.package',
+          activation: 'on_completion',
+          ownership: 'exclusive',
+        },
+      ],
+    });
+    expect(codes(result)).toContain('reference_type_mismatch');
+  });
+
+  it('[CONT-6.20] a template establishment that does not resolve is reported', () => {
+    const result = load({
+      location_templates: [
+        template('test.location.a', { establishment: 'test.establishment.missing' }),
+      ],
+    });
+    expect(codes(result)).toContain('unresolved_reference');
+  });
+});

@@ -8,7 +8,7 @@
  */
 import type { JsonValue } from '../det/index.js';
 import type { DomainEvent, EventWriter } from '../events/event-writer.js';
-import type { OwnerHandle, StringId, Tick } from '../ids/index.js';
+import type { DefinitionHandle, EntityId, OwnerHandle, StringId, Tick } from '../ids/index.js';
 import type { DefinitionType, Registry } from '../registry/types.js';
 import type { AtomicBuilder, Transaction, TransactionWriter, TxError } from '../tx/index.js';
 import type { StateHash } from '../world/codec.js';
@@ -96,6 +96,21 @@ export interface UnlockSystem {
   ) => boolean;
 }
 
+/**
+ * Creates the hub entity of a location establishment (GDD-16.3, design D4).
+ * `@aesfw/app` builds the implementation from compiled content; core declares
+ * the seam and treats absence as "cannot establish".
+ */
+export interface EstablishmentSystem {
+  /** Creates the hub entity at the location; returns its ID or `null`. */
+  readonly createHub: (
+    world: World,
+    location: EntityId,
+    owner: OwnerHandle,
+    establishment: DefinitionHandle,
+  ) => EntityId | null;
+}
+
 /** Re-exported transaction types (TDS-12); implemented by `../tx`. */
 export type { AtomicBuilder, Transaction, TransactionWriter, TxError };
 
@@ -114,6 +129,8 @@ export interface TickContext {
   readonly sustainedTimerUpdater: SustainedTimerUpdater;
   /** Evaluates unlocks and gates definitions (GDD-19, design D4). */
   readonly unlockSystem: UnlockSystem | null;
+  /** Creates establishment hub entities in phase 18 (GDD-16.3, design D4). */
+  readonly establishmentSystem: EstablishmentSystem | null;
 }
 
 /** A registered system (TDS-11.2). */
@@ -145,6 +162,7 @@ export interface TickInput {
   readonly sustainedTimerUpdater?: SustainedTimerUpdater;
   /** Optional unlock system (GDD-19, design D4). Defaults to ungated. */
   readonly unlockSystem?: UnlockSystem;
+  readonly establishmentSystem?: EstablishmentSystem;
 }
 
 /** Output of one tick (TDS-10.1). */

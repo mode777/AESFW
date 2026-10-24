@@ -99,6 +99,7 @@ const context = (world: World, registry: ContentRegistry): TickContext => ({
   conditionEvaluator: () => true,
   sustainedTimerUpdater: () => undefined,
   unlockSystem: null,
+  establishmentSystem: null,
 });
 
 describe('[GDD-19] unlock evaluation', () => {

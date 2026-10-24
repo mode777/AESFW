@@ -36,7 +36,8 @@ export type DefinitionType =
   | 'world'
   | 'module'
   | 'region'
-  | 'distributionRule';
+  | 'distributionRule'
+  | 'establishment';
 
 /** Resolves definition handles to string IDs and back (TDS-7, TDS-8.5). */
 export interface Registry {

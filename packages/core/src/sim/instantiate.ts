@@ -113,8 +113,10 @@ export type LocationPlan = {
   readonly internalLogistics?: InternalLogisticsPlan;
   /** Seeded distribution-rule generation, present for seeded-rule regions. */
   readonly generated?: GeneratedAttributesPlan;
-  /** The location's owner; defaults to the plan's default owner. */
-  readonly owner?: OwnerHandle;
+  /** The establishment governing founding, present when the template declares one. */
+  readonly establishment?: DefinitionHandle;
+  /** The location's owner; `null` is unowned, otherwise defaults to the plan default. */
+  readonly owner?: OwnerHandle | null;
 };
 
 /** A world plan: a default owner, optional additional owners, locations, and connections. */
@@ -286,8 +288,11 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
       used: 0,
       properties: locationPlan.properties,
       region: locationPlan.region,
+      ...(locationPlan.establishment === undefined
+        ? {}
+        : { establishment: locationPlan.establishment }),
       active: locationPlan.active,
-      owner: locationPlan.owner ?? plan.owner,
+      owner: locationPlan.owner === null ? null : (locationPlan.owner ?? plan.owner),
       ...(grid === null ? {} : { grid }),
       ...(locationPlan.sourceSlots === undefined || locationPlan.sourceSlots.length === 0
         ? {}

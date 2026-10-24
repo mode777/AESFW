@@ -330,7 +330,7 @@ world:
         - { definition: example.entity.transport_basic, location: example.loc.a1 }
 ```
 
-Instance fields override template fields. Connection instances may override `base_duration_ticks`. Validation checks that the graph is connected where required and that distribution rules hold for every instance. If no world definition is present, each location template with `activation.initial: true` is instantiated once for a single default owner (used by minimal fixtures such as Section 14).
+Instance fields override template fields. Connection instances may override `base_duration_ticks`. Validation checks that the graph is connected where required and that distribution rules hold for every instance. A location no owner lists in `established_locations` has no owner (unestablished; 01 §16.3) instead of defaulting to the first owner (A13, 05 §26). If no world definition is present, each location template with `activation.initial: true` is instantiated once for a single default owner (used by minimal fixtures such as Section 14).
 
 ### 6.7 Recipe
 

@@ -31,6 +31,8 @@ import { decodeCommandEnvelope } from '@aesfw/protocol';
 import type { CommandEnvelopeDto } from '@aesfw/protocol';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { buildSustainedTimerUpdater, buildUnlockSystem, unlockQueryValue } from '@aesfw/content';
+
+import { buildEstablishmentSystem } from '../content/establishment.js';
 import { buildConditionEvaluator } from './placement.js';
 import type {
   AdvanceResult,
@@ -623,6 +625,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
     (world, owner, query) => unlockQueryValue(registry, world, owner, query),
   );
   const unlockSystem = buildUnlockSystem(session.content);
+  const establishmentSystem = buildEstablishmentSystem(session.content);
   let revision = session.revision;
   for (let index = 0; index < ticks; index += 1) {
     const due = session.world.commandQueue.filter(
@@ -634,6 +637,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
       conditionEvaluator,
       sustainedTimerUpdater,
       unlockSystem,
+      establishmentSystem,
     });
     revision += 1;
     if (

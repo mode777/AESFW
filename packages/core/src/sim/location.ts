@@ -42,6 +42,8 @@ export type Location = {
   readonly used: Int;
   readonly properties: readonly LocationProperty[];
   readonly region: DefinitionHandle | null;
+  /** The establishment governing founding, present only when declared (CONT-6.20). */
+  readonly establishment?: DefinitionHandle;
   readonly active: boolean;
   readonly owner: OwnerHandle | null;
   /** Grid geometry, present only for a grid-policy location (GDD-6.1). */

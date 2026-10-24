@@ -28,6 +28,10 @@
       "minLength": 1,
       "type": "string"
     },
+    "establishment": {
+      "minLength": 1,
+      "type": "string"
+    },
     "properties": {
       "type": "object",
       "patternProperties": {

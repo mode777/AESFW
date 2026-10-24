@@ -177,6 +177,23 @@ const templatePlan = (
       }),
     );
   }
+  // The establishment governing founding (CONT-6.20); validated at load, so a
+  // dangling name here resolves to null and is reported the same way.
+  const establishmentId =
+    typeof merged['establishment'] === 'string' ? merged['establishment'] : null;
+  const establishmentHandle =
+    establishmentId === null
+      ? null
+      : registry.handleOf('establishment', ids.stringId(establishmentId));
+  if (establishmentId !== null && establishmentHandle === null) {
+    diagnostics.push(
+      diag('unresolved_reference', {
+        definition: definition.id,
+        path: `/location_templates/${definition.id}/establishment`,
+        args: { reference: establishmentId, expected: 'establishment' },
+      }),
+    );
+  }
   const activation = asRecord(merged['activation']);
   const active = activation?.['initial'] !== false;
   const spatialPolicy =
@@ -201,6 +218,9 @@ const templatePlan = (
       properties: mapProperties(merged['properties']),
       sourceSlots: mapSourceSlots(merged['source_slots']),
       region: regionHandle,
+      ...(establishmentHandle === undefined || establishmentHandle === null
+        ? {}
+        : { establishment: establishmentHandle }),
       active,
       inventories: mapInventories(merged['inventories']),
       grid,
@@ -224,6 +244,7 @@ const templatePlan = (
     properties: mapProperties(merged['properties']),
     sourceSlots: mapSourceSlots(merged['source_slots']),
     region: regionHandle,
+    ...(establishmentHandle === null ? {} : { establishment: establishmentHandle }),
     active,
     inventories: mapInventories(merged['inventories']),
     ...(internalLogistics === undefined ? {} : { internalLogistics }),
@@ -408,7 +429,8 @@ export function worldPlan(
     if (definition === null) continue;
     const plan = templatePlan(registry, definition, entry, diagnostics);
     if (plan === null) continue;
-    const owner = ids.ownerHandle(locationOwnerByIndex.get(locationIndex) ?? 0);
+    const establishedOwner = locationOwnerByIndex.get(locationIndex);
+    const owner = establishedOwner === undefined ? null : ids.ownerHandle(establishedOwner);
     locations.push({ ...plan, owner });
   }
 

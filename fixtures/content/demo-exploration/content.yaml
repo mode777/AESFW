@@ -1,0 +1,83 @@
+# Theme-free exploration and establishment fixture (roadmap 8.2/8.3).
+resources:
+  - id: demo.resource.package
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+connections:
+  - id: demo.connection.exploration
+    direction: bidirectional
+    traversal: { base_duration_ticks: 2 }
+    allowed_transport_tags: [demo.transport.standard]
+
+location_establishments:
+  - id: demo.establishment.default
+    requires_knowledge: discovered
+    requires_unoccupied: true
+    cost_source: transport_cargo
+    costs:
+      - { resource: demo.resource.package, quantity: 500 }
+    creates_hub: demo.entity.hub
+    activation: on_completion
+    ownership: exclusive
+
+location_templates:
+  - id: demo.location.home
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+  - id: demo.location.frontier
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    establishment: demo.establishment.default
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: false }
+
+entity_definitions:
+  - id: demo.entity.transport
+    components: {}
+  - id: demo.entity.hub
+    components: {}
+
+transport_units:
+  - id: demo.transport.basic
+    entity_definition: demo.entity.transport
+    cargo:
+      compartment_policy: unrestricted
+      slots: 1
+      slot_capacity: 1000
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 1000
+      allowed_connection_tags: [demo.transport.standard]
+    handling:
+      loading_rate_per_tick: 100
+      unloading_rate_per_tick: 100
+    order_modes: [route, explore, establish]
+
+worlds:
+  - id: demo.world.exploration
+    locations:
+      - id: demo.loc.home
+        template: demo.location.home
+      - id: demo.loc.frontier
+        template: demo.location.frontier
+    connections:
+      - id: demo.conn.a_b
+        definition: demo.connection.exploration
+        origin: demo.loc.home
+        destination: demo.loc.frontier
+    owners:
+      - id: owner.a
+        established_locations: [demo.loc.home]
+        initial_entities:
+          - { definition: demo.entity.transport, location: demo.loc.home }

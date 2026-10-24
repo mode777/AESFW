@@ -457,7 +457,7 @@ const instantiateTransport = (
   }
 };
 
-const instantiateDefinition = (
+export const instantiateDefinition = (
   world: World,
   registry: ContentRegistry,
   definition: CompiledDefinition,
