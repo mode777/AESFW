@@ -313,6 +313,91 @@ describe('[TDS-21.1] session host', () => {
     }
   });
 
+  it('[PIC-10.7] an exchange-quotes query yields the read model', () => {
+    const exchangeRegistry: ContentRegistry = {
+      ...registry,
+      stringIdOf: (type, handle) =>
+        type === 'exchange' && handle === ids.definitionHandle(0)
+          ? ids.stringId('test.exchange.a')
+          : type === 'resource'
+            ? ids.stringId(`test.resource.${handle}`)
+            : null,
+      handleOf: (type, id) =>
+        type === 'exchange' && id === 'test.exchange.a'
+          ? ids.definitionHandle(0)
+          : type === 'resource' && id === 'test.resource.credits'
+            ? ids.definitionHandle(1)
+            : null,
+      definitionDataOf: (type, handle) =>
+        type === 'exchange' && handle === ids.definitionHandle(0)
+          ? {
+              id: 'test.exchange.a',
+              location: 'test.location.a',
+              currency: 'test.resource.credits',
+              goods: [
+                {
+                  resource: 'test.resource.credits',
+                  buy_from_exchange: { base_price: 1000, enabled: true },
+                  sell_to_exchange: { base_price: 800, enabled: true },
+                },
+              ],
+              elasticity: {
+                window_ticks: 10,
+                step_quantity: 100,
+                step_change_permille: 100,
+                recovery_permille_per_interval: 200,
+                recovery_interval_ticks: 5,
+                min_price_permille: 500,
+                max_price_permille: 1500,
+              },
+              shared_between_owners: true,
+            }
+          : null,
+    };
+    const { port } = setup(
+      (session) => {
+        session.world.stores
+          .get('exchangeRef')
+          .set(ids.entityId(9), { exchange: ids.definitionHandle(0), location: ids.entityId(1) });
+        session.world.exchanges = {
+          prices: [
+            {
+              exchange: ids.entityId(9),
+              resource: ids.definitionHandle(1),
+              buy: 1000,
+              sell: 800,
+              soldVolume: [],
+              boughtVolume: [],
+            },
+          ],
+        };
+        const owners = [...session.world.owners.owners];
+        const first = owners[0];
+        if (first !== undefined) {
+          owners[0] = {
+            ...first,
+            knowledge: [{ location: ids.entityId(1), level: 'established' }],
+          };
+        }
+        session.world.owners = { owners };
+      },
+      { ...content, registry: exchangeRegistry },
+    );
+    init(port);
+    port.send({ kind: 'subscribe', protocol_version: PROTOCOL_VERSION, actor_id: 'test.owner.1' });
+    port.send({
+      kind: 'query',
+      protocol_version: PROTOCOL_VERSION,
+      actor_id: 'test.owner.1',
+      query: { kind: 'exchange_quotes', entity_id: 9 },
+    });
+    const results = port.of('query_result');
+    expect(results).toHaveLength(1);
+    if (results[0]?.kind === 'query_result') {
+      expect(results[0].result['exchange_quotes']).toMatchObject({ entity_id: 9 });
+    }
+  });
+
   it('[PIC-12.1] a placement query yields a valid result', () => {
     const { port } = setup(addPlacementGridLocation, placementContent);
     init(port);

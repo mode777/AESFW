@@ -22,6 +22,7 @@ import {
   save,
   submitCommand,
   transportDetail,
+  exchangeQuotes,
   transportOrders,
 } from '@aesfw/app';
 import { visibleEvents } from '@aesfw/app';
@@ -176,6 +177,15 @@ const answerQuery = (
   }
   if (kind === 'transport_orders') {
     return { transport_orders: transportOrders(session) as unknown as JsonValue };
+  }
+  if (kind === 'exchange_quotes' && entity !== null) {
+    return {
+      exchange_quotes: exchangeQuotes(
+        session,
+        session.settings.actor,
+        entity,
+      ) as unknown as JsonValue,
+    };
   }
   if (kind === 'placement_query') {
     const dto = parsePlacementQuery(query);

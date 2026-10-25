@@ -171,6 +171,7 @@ describe('[GDD-17.4] exchange trades through the command gateway', () => {
       type: 'CreateTransportOrder',
       payload: {
         mode: 'trade',
+        repeat: false,
         stations: [
           {
             endpoint: exchange,

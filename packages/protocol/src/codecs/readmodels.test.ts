@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   decodeEntityDetail,
+  decodeExchangeQuotes,
   decodeLocationSummary,
   decodeNeedBreakdown,
   decodePlanning,
@@ -122,5 +123,43 @@ describe('[PIC-10.2] location summary codec', () => {
     const decoded = decodeLocationSummary({ entity_id: 1, knowledge: 'unknown', active: false });
     expect(decoded.ok).toBe(true);
     if (decoded.ok) expect(decoded.value.region).toBeUndefined();
+  });
+});
+
+describe('[PIC-10.7] exchange quotes codec', () => {
+  it('[PIC-10.7] decodes exchange quotes', () => {
+    const decoded = decodeExchangeQuotes({
+      entity_id: 9,
+      location_id: 2,
+      region_id: 'test.region.alpha',
+      currency_id: 'test.resource.credits',
+      revision: 41,
+      goods: [
+        {
+          resource_id: 'test.resource.a',
+          buy: 1200,
+          sell: 640,
+          base_buy: 1000,
+          base_sell: 800,
+          recent_sold: 300,
+          recent_bought: 0,
+          buy_recovery_ticks: 0,
+          sell_recovery_ticks: 5,
+        },
+      ],
+    });
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) return;
+    expect(decoded.value.region_id).toBe('test.region.alpha');
+    expect(decoded.value.goods[0]?.sell).toBe(640);
+    expect(decoded.value.goods[0]?.sell_recovery_ticks).toBe(5);
+  });
+
+  it('[PIC-10.7] rejects a malformed exchange quotes DTO', () => {
+    expect(decodeExchangeQuotes({ entity_id: 9 }).ok).toBe(false);
+    expect(
+      decodeExchangeQuotes({ entity_id: 9, location_id: 2, currency_id: 1, revision: 0, goods: [] })
+        .ok,
+    ).toBe(false);
   });
 });

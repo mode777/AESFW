@@ -133,6 +133,29 @@ export interface TransportDetailDto {
   readonly failure_reasons?: readonly string[];
 }
 
+/** One good of the exchange-quotes read model (PIC-10.7). */
+export interface ExchangeGoodQuoteDto {
+  readonly resource_id: WireId;
+  readonly buy: WireInt;
+  readonly sell: WireInt;
+  readonly base_buy: WireInt;
+  readonly base_sell: WireInt;
+  readonly recent_sold: WireInt;
+  readonly recent_bought: WireInt;
+  readonly buy_recovery_ticks?: WireInt;
+  readonly sell_recovery_ticks?: WireInt;
+}
+
+/** Exchange quotes read model (PIC-10.7). Quotes are informative. */
+export interface ExchangeQuotesDto {
+  readonly entity_id: WireInt;
+  readonly location_id: WireInt;
+  readonly region_id?: WireId;
+  readonly currency_id: WireId;
+  readonly revision: WireInt;
+  readonly goods: readonly ExchangeGoodQuoteDto[];
+}
+
 /** A transport order summary for the logistics view (PIC-10.4, REF-12.4). */
 export interface TransportOrderDto {
   readonly order_id: WireInt;

@@ -10,4 +10,5 @@ export { locationSummary } from './location-summary.js';
 export { needBreakdown } from './need-breakdown.js';
 export { transportDetail } from './transport-detail.js';
 export { transportOrders } from './transport-orders.js';
+export { exchangeQuotes } from './exchange-quotes.js';
 export { transitionEligibility } from './transition-eligibility.js';

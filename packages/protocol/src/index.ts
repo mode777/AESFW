@@ -67,6 +67,8 @@ export type {
   PlanningScopeDto,
   PlanningTierDto,
   ResidenceDto,
+  ExchangeGoodQuoteDto,
+  ExchangeQuotesDto,
   TransportActionDto,
   TransportCargoDto,
   TransportCargoSlotDto,
@@ -105,6 +107,7 @@ export { decodeEvent } from './codecs/events.js';
 export { decodeDefinitionMetadata } from './codecs/metadata.js';
 export {
   decodeEntityDetail,
+  decodeExchangeQuotes,
   decodeLocationSummary,
   decodeNeedBreakdown,
   decodePlanning,

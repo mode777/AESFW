@@ -7,6 +7,8 @@
 import type { ProtocolError } from '../errors.js';
 import type {
   EntityDetailDto,
+  ExchangeGoodQuoteDto,
+  ExchangeQuotesDto,
   LocationSummaryDto,
   NeedBreakdownDto,
   PlanningChainDto,
@@ -507,4 +509,104 @@ export function decodeTransportDetail(value: unknown): DecodeResult<TransportDet
   }
   if (errors.length > 0) return err(errors);
   return ok(detail as unknown as TransportDetailDto);
+}
+
+/** Decodes the exchange-quotes read model (PIC-10.7). */
+export function decodeExchangeQuotes(value: unknown): DecodeResult<ExchangeQuotesDto> {
+  if (!isObject(value)) return err([invalidField('')]);
+  const errors: ProtocolError[] = [];
+  const entityId = value['entity_id'];
+  if (!isNonNegativeInteger(entityId)) errors.push(invalidField('entity_id'));
+  const locationId = value['location_id'];
+  if (!isNonNegativeInteger(locationId)) errors.push(invalidField('location_id'));
+  const currencyId = value['currency_id'];
+  if (!isString(currencyId)) errors.push(invalidField('currency_id'));
+  const revision = value['revision'];
+  if (!isNonNegativeInteger(revision)) errors.push(invalidField('revision'));
+  const rawGoods = value['goods'];
+  if (!Array.isArray(rawGoods)) errors.push(invalidField('goods'));
+  if (
+    errors.length > 0 ||
+    !isNonNegativeInteger(entityId) ||
+    !isNonNegativeInteger(locationId) ||
+    !isString(currencyId) ||
+    !isNonNegativeInteger(revision) ||
+    !Array.isArray(rawGoods)
+  ) {
+    return err(errors.length > 0 ? errors : [invalidField('entity_id')]);
+  }
+  const goods: ExchangeGoodQuoteDto[] = [];
+  rawGoods.forEach((raw, index) => {
+    if (!isObject(raw)) {
+      errors.push(invalidField(`goods[${index}]`));
+      return;
+    }
+    const resource = raw['resource_id'];
+    const buy = raw['buy'];
+    const sell = raw['sell'];
+    const baseBuy = raw['base_buy'];
+    const baseSell = raw['base_sell'];
+    const recentSold = raw['recent_sold'];
+    const recentBought = raw['recent_bought'];
+    if (!isString(resource)) errors.push(invalidField(`goods[${index}].resource_id`));
+    for (const field of ['buy', 'sell', 'base_buy', 'base_sell', 'recent_sold', 'recent_bought']) {
+      if (!isNonNegativeInteger(raw[field])) errors.push(invalidField(`goods[${index}].${field}`));
+    }
+    if (
+      !isString(resource) ||
+      !isNonNegativeInteger(buy) ||
+      !isNonNegativeInteger(sell) ||
+      !isNonNegativeInteger(baseBuy) ||
+      !isNonNegativeInteger(baseSell) ||
+      !isNonNegativeInteger(recentSold) ||
+      !isNonNegativeInteger(recentBought)
+    ) {
+      return;
+    }
+    const quote: {
+      resource_id: string;
+      buy: number;
+      sell: number;
+      base_buy: number;
+      base_sell: number;
+      recent_sold: number;
+      recent_bought: number;
+      buy_recovery_ticks?: number;
+      sell_recovery_ticks?: number;
+    } = {
+      resource_id: resource,
+      buy,
+      sell,
+      base_buy: baseBuy,
+      base_sell: baseSell,
+      recent_sold: recentSold,
+      recent_bought: recentBought,
+    };
+    const buyRecovery = raw['buy_recovery_ticks'];
+    if (buyRecovery !== undefined) {
+      if (isNonNegativeInteger(buyRecovery)) quote.buy_recovery_ticks = buyRecovery;
+      else errors.push(invalidField(`goods[${index}].buy_recovery_ticks`));
+    }
+    const sellRecovery = raw['sell_recovery_ticks'];
+    if (sellRecovery !== undefined) {
+      if (isNonNegativeInteger(sellRecovery)) quote.sell_recovery_ticks = sellRecovery;
+      else errors.push(invalidField(`goods[${index}].sell_recovery_ticks`));
+    }
+    goods.push(quote);
+  });
+  const detail: {
+    entity_id: number;
+    location_id: number;
+    region_id?: string;
+    currency_id: string;
+    revision: number;
+    goods: ExchangeGoodQuoteDto[];
+  } = { entity_id: entityId, location_id: locationId, currency_id: currencyId, revision, goods };
+  const regionId = value['region_id'];
+  if (regionId !== undefined) {
+    if (isString(regionId)) detail.region_id = regionId;
+    else errors.push(invalidField('region_id'));
+  }
+  if (errors.length > 0) return err(errors);
+  return ok(detail as unknown as ExchangeQuotesDto);
 }
