@@ -1,0 +1,4 @@
+expect:
+  - code: breadth_depth_collapse
+    severity: warning
+    definition: test.need_category.flat

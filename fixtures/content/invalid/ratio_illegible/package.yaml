@@ -1,0 +1,7 @@
+package:
+  id: test.invalid.ratio_illegible
+  version: 1.0.0
+  schema_version: 1
+  type: simulation_content
+  files:
+    - content.yaml

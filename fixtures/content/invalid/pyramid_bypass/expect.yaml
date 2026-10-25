@@ -1,0 +1,4 @@
+expect:
+  - code: pyramid_bypass
+    severity: warning
+    definition: test.cap.a

@@ -240,11 +240,13 @@ export function validateSpatialGraph(definitions: RawDefinitions): readonly Diag
             reachableFrom(location, edges, resource, localProducers, carrier),
         );
         if (!usable) {
+          const reason = carriers.length === 0 ? 'no_transport' : 'tag_mismatch';
+          const code = carriers.length === 0 ? 'resource_unreachable' : 'transport_tag_mismatch';
           diagnostics.push(
-            diag('transport_tag_mismatch', {
+            diag(code, {
               definition: world.id,
               path: `/worlds/${world.id}`,
-              args: { resource, location },
+              args: { resource, location, reason },
             }),
           );
         }

@@ -1,0 +1,4 @@
+expect:
+  - code: self_sufficient_region
+    severity: warning
+    definition: test.world

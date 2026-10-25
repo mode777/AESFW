@@ -1,0 +1,13 @@
+expect:
+  - code: inactive_scarcities
+    severity: warning
+    args:
+      {
+        scarcities: asymmetric_decline,
+        disjoint_distribution,
+        exact_capability_binding,
+        finite_source_slots,
+        finite_space,
+        maintenance_while_idle,
+        throughput_limit,
+      }

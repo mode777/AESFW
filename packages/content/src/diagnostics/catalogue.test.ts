@@ -32,15 +32,33 @@ interface Expectation {
 const fixtureDirectories = (): readonly string[] =>
   readdirSync(fixtureRoot).filter((entry) => statSync(join(fixtureRoot, entry)).isDirectory());
 
-const loadFixture = (dir: string): ReturnType<typeof loadContent> => {
+const loadFixture = (
+  dir: string,
+  options: Record<string, unknown> = {},
+): ReturnType<typeof loadContent> => {
   const files: Record<string, string> = {};
   for (const entry of readdirSync(dir)) {
     if (entry.endsWith('.yaml')) {
       files[entry] = readFileSync(join(dir, entry), 'utf8');
     }
   }
-  return loadContent([createMemorySource('test.invalid', files)], { strictness: 'strict' });
+  return loadContent([createMemorySource('test.invalid', files)], {
+    strictness: 'strict',
+    ...options,
+  });
 };
+
+/** Loads a fixture with the loader options its stage requires. */
+const loadForCode = (code: string, dir: string): ReturnType<typeof loadContent> => {
+  const design = new Set(
+    DIAGNOSTIC_CODES.filter((entry) => entry.stage === 'design_intent').map((entry) => entry.code),
+  );
+  return design.has(code) ? loadFixture(dir, { design_intent: 'warning' }) : loadFixture(dir);
+};
+
+/** True when the code belongs to the design-intent stage. */
+const isDesignIntent = (code: string): boolean =>
+  DIAGNOSTIC_CODES.some((entry) => entry.stage === 'design_intent' && entry.code === code);
 
 const matches = (
   finding: Expectation,
@@ -109,7 +127,7 @@ describe('[VER-10.2] diagnostic catalogue', () => {
         continue;
       }
 
-      const result = loadFixture(dir);
+      const result = loadForCode(directory, dir);
       for (const finding of expected) {
         expect(
           matches(finding, result.diagnostics as never),
@@ -125,10 +143,10 @@ describe('[VER-10.2] diagnostic catalogue', () => {
     );
     for (const directory of fixtureDirectories()) {
       if (directory === 'composition_schema_violation') continue;
-      const result = loadFixture(join(fixtureRoot, directory));
+      const result = loadForCode(directory, join(fixtureRoot, directory));
       const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
       expect(codes, `${directory} missing its own code`).toContain(directory);
-      if (economic.has(directory)) {
+      if (economic.has(directory) || isDesignIntent(directory)) {
         expect(result.content, `${directory} should still load`).not.toBeNull();
         const finding = result.diagnostics.find((diagnostic) => diagnostic.code === directory);
         expect(finding?.severity, `${directory} should be a warning`).toBe('warning');
@@ -136,6 +154,16 @@ describe('[VER-10.2] diagnostic catalogue', () => {
         expect(result.content, `${directory} unexpectedly loaded`).toBeNull();
       }
     }
+  });
+
+  it('[VER-10.2] the design-intent valid fixture activates every idea', () => {
+    const validDir = fileURLToPath(
+      new URL('../../../../fixtures/content/valid/design-intent/', import.meta.url),
+    );
+    const result = loadFixture(validDir, { design_intent: 'warning' });
+    const findings = result.diagnostics.filter((diagnostic) => isDesignIntent(diagnostic.code));
+    expect(findings).toEqual([]);
+    expect(result.content).not.toBeNull();
   });
 
   it('[CONT-11.6] shipped fixture packages report no economic findings', () => {

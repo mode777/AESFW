@@ -1,0 +1,30 @@
+resources:
+  - id: test.resource.a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+recipes:
+  - id: test.recipe.idle
+    mode: batch
+    duration_ticks: 10
+    inputs: [{ resource: test.resource.a, quantity: 1000 }]
+    outputs: []
+entity_definitions:
+  - id: test.entity.proc
+    components:
+      producer:
+        recipes: [test.recipe.idle]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+      maintenance:
+        interval_ticks: 10
+        inputs: [{ resource: test.resource.a, quantity: 100 }]
+        charge_policy: while_processing
+        shortage_policy: ignore

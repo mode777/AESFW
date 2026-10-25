@@ -1,0 +1,32 @@
+growth_policies:
+  - id: test.growth.none
+    interval_ticks: 10
+population_tiers:
+  - id: test.tier.1
+    need_categories: []
+    outputs: []
+  - id: test.tier.2
+    need_categories: []
+    decline_transitions:
+      - test.transition.down
+    outputs: []
+transitions:
+  - id: test.transition.up
+    source_tier: test.tier.1
+    target_tier: test.tier.2
+    duration_ticks: 5
+    conversion:
+      population: retain_count
+  - id: test.transition.down
+    source_tier: test.tier.2
+    target_tier: test.tier.1
+    duration_ticks: 5
+    conversion:
+      population: retain_count
+entity_definitions:
+  - id: test.entity.residence
+    components:
+      residence:
+        population_tier: test.tier.1
+        capacity: 10
+        growth_policy: test.growth.none

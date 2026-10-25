@@ -1,0 +1,4 @@
+expect:
+  - code: decline_symmetric
+    severity: warning
+    definition: test.transition.down

@@ -1,0 +1,4 @@
+expect:
+  - code: ratio_illegible
+    severity: warning
+    definition: test.recipe.long

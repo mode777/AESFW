@@ -14,10 +14,12 @@ export type JsonValue = det.JsonValue;
 /** The three kinds of independently loadable package (CONT-2, CONT-3). */
 export type PackageType = 'simulation_content' | 'optional_module' | 'presentation';
 
-/** Loader options; `strictness` governs unknown-field handling (CONT-11.2); `economic_diagnostics` promotes CONT-11.6 findings to errors. */
+/** Loader options; `strictness` governs unknown-field handling (CONT-11.2); the diagnostic knobs promote or enable CONT-11.6/11.7 findings. */
 export interface LoadOptions {
   readonly strictness: 'strict' | 'lenient';
   readonly economic_diagnostics?: 'warning' | 'error';
+  readonly design_intent?: 'off' | 'warning' | 'error';
+  readonly ratio_legibility_threshold?: number;
 }
 
 /** The default loader options: strict. */

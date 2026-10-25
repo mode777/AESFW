@@ -1,0 +1,4 @@
+expect:
+  - code: unbounded_trade
+    severity: warning
+    definition: test.exchange.flat

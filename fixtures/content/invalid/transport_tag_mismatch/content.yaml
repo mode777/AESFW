@@ -65,3 +65,17 @@ worlds:
           - { definition: test.entity.source, location: test.loc.0 }
           - { definition: test.entity.heavy_source, location: test.loc.0 }
           - { definition: test.entity.refiner, location: test.loc.1 }
+transport_units:
+  - id: test.transport.road
+    entity_definition: test.entity.src
+    cargo:
+      compartment_policy: unrestricted
+      slots: 1
+      slot_capacity: 100
+      acceptance: all
+    movement:
+      speed_permille: 500
+      allowed_connection_tags: [test.tag.road]
+    handling:
+      loading_rate_per_tick: 10
+      unloading_rate_per_tick: 10

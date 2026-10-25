@@ -1,0 +1,3 @@
+expect:
+  - code: idle_cost_absent
+    severity: warning

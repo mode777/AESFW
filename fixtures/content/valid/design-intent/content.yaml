@@ -1,0 +1,276 @@
+resources:
+  - id: test.resource.raw_a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+  - id: test.resource.raw_b
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+  - id: test.resource.goods
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+  - id: test.resource.credits
+    tags:
+      - balance
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: owner
+    transportable: false
+    allow_negative: true
+  - id: test.cap.t1
+    tags:
+      - virtual
+      - capability
+    quantity:
+      precision: integer
+      scale: 1
+    storage:
+      policy: recomputed
+      scope: location
+    transportable: false
+regions:
+  - id: test.region.north
+  - id: test.region.south
+distribution_rules:
+  - id: test.rule.deposits
+    regions:
+      - test.region.north
+      - test.region.south
+    disjoint:
+      properties:
+        - 'test.property.deposits_*'
+      source_slot_types: false
+    generation:
+      mode: fixed
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    region: test.region.north
+    internal_logistics:
+      policy: framework.logistics.pooled
+      base_throughput: 1000
+    source_slots:
+      - type: test.slot.deposit
+        count: 2
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+  - id: test.location.b
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    region: test.region.south
+    internal_logistics:
+      policy: framework.logistics.pooled
+      base_throughput: 1000
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+connections:
+  - id: test.connection.road
+    direction: bidirectional
+    traversal:
+      base_duration_ticks: 5
+recipes:
+  - id: test.recipe.craft
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      - resource: test.resource.raw_a
+        quantity: 1000
+      - resource: test.resource.raw_b
+        quantity: 1000
+    outputs:
+      - resource: test.resource.goods
+        quantity: 1000
+    capability_requirements:
+      - resource: test.cap.t1
+        quantity: 1
+entity_definitions:
+  - id: test.entity.mine_a
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - resource: test.resource.raw_a
+            quantity_per_tick: 100
+  - id: test.entity.mine_b
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - resource: test.resource.raw_b
+            quantity_per_tick: 100
+  - id: test.entity.craft
+    components:
+      producer:
+        recipes:
+          - test.recipe.craft
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+      maintenance:
+        interval_ticks: 10
+        inputs:
+          - resource: test.resource.credits
+            quantity: 100
+        charge_policy: while_exists
+        shortage_policy: ignore
+  - id: test.entity.home
+    components:
+      residence:
+        population_tier: test.tier.1
+        capacity: 10
+        growth_policy: test.growth.none
+growth_policies:
+  - id: test.growth.none
+    interval_ticks: 10
+transitions:
+  - id: test.transition.up
+    source_tier: test.tier.1
+    target_tier: test.tier.2
+    duration_ticks: 5
+    conversion:
+      population: retain_count_clamped
+  - id: test.transition.down
+    source_tier: test.tier.2
+    target_tier: test.tier.1
+    duration_ticks: 5
+    conversion:
+      population: retain_count_clamped
+    refund_policy:
+      policy: none
+population_tiers:
+  - id: test.tier.1
+    need_categories:
+      - test.need_category.basic
+    decline_transitions: []
+    outputs:
+      - resource: test.cap.t1
+        scope: location
+        rate_per_population_per_tick: 1
+      - resource: test.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 10
+  - id: test.tier.2
+    need_categories:
+      - test.need_category.basic
+    decline_transitions:
+      - test.transition.down
+    outputs:
+      - resource: test.cap.t1
+        scope: location
+        rate_per_population_per_tick: 1
+      - resource: test.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 10
+needs:
+  - id: test.need.goods
+    category: test.need_category.basic
+    applies_to:
+      - test.tier.1
+      - test.tier.2
+    demand:
+      type: resource_consumption
+      resource: test.resource.goods
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+  - id: test.need.watch
+    category: test.need_category.basic
+    applies_to:
+      - test.tier.1
+      - test.tier.2
+    demand:
+      type: spatial_coverage
+      service: test.service.watch
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+need_categories:
+  - id: test.need_category.basic
+    evaluation:
+      mode: weighted_score
+      required_score: 1000
+    members:
+      - need: test.need.goods
+        weight: 3000
+      - need: test.need.watch
+        weight: 1000
+services:
+  - id: test.service.watch
+    mode: coverage
+    default_relation: { type: radius, cells: 3 }
+worlds:
+  - id: test.world
+    locations:
+      - id: test.loc.0
+        template: test.location.a
+      - id: test.loc.1
+        template: test.location.b
+    connections:
+      - id: test.conn.0
+        definition: test.connection.road
+        origin: test.loc.0
+        destination: test.loc.1
+    owners:
+      - id: test.owner
+        initial_entities:
+          - definition: test.entity.mine_a
+            location: test.loc.0
+          - definition: test.entity.mine_b
+            location: test.loc.1
+          - definition: test.entity.craft
+            location: test.loc.0
+          - definition: test.entity.home
+            location: test.loc.0
+transport_units:
+  - id: test.transport.wagon
+    entity_definition: test.entity.mine_a
+    cargo:
+      compartment_policy: unrestricted
+      slots: 2
+      slot_capacity: 500
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 500
+    handling:
+      loading_rate_per_tick: 10
+      unloading_rate_per_tick: 10
+    order_modes: [route]

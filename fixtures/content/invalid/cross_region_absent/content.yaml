@@ -1,0 +1,110 @@
+resources:
+  - id: test.resource.a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+  - id: test.resource.b
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+entity_definitions:
+  - id: test.entity.src_a
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - resource: test.resource.a
+            quantity_per_tick: 100
+  - id: test.entity.src_b
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - resource: test.resource.b
+            quantity_per_tick: 100
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+    region: test.region.west
+  - id: test.location.b
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+    region: test.region.east
+regions:
+  - id: test.region.west
+  - id: test.region.east
+connections:
+  - id: test.connection.road
+    direction: bidirectional
+    traversal:
+      base_duration_ticks: 5
+worlds:
+  - id: test.world
+    locations:
+      - id: test.loc.0
+        template: test.location.a
+      - id: test.loc.1
+        template: test.location.b
+    connections:
+      - id: test.conn.0
+        definition: test.connection.road
+        origin: test.loc.0
+        destination: test.loc.1
+    owners:
+      - id: test.owner
+        initial_entities:
+          - definition: test.entity.src_a
+            location: test.loc.0
+          - definition: test.entity.src_b
+            location: test.loc.1
+need_categories:
+  - id: test.need_category.basic
+    evaluation: { mode: all }
+    members: [{ need: test.need.top, weight: 1000 }]
+needs:
+  - id: test.need.top
+    category: test.need_category.basic
+    applies_to:
+      - test.tier.top
+    demand:
+      type: resource_consumption
+      resource: test.resource.a
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+population_tiers:
+  - id: test.tier.top
+    need_categories: []
+    outputs: []

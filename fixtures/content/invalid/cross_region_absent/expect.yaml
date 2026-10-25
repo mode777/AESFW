@@ -1,0 +1,4 @@
+expect:
+  - code: cross_region_absent
+    severity: warning
+    definition: test.world

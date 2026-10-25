@@ -1,0 +1,35 @@
+resources:
+  - id: test.resource.a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+needs:
+  - id: test.need.a
+    category: test.need_category.flat
+    applies_to:
+      - test.tier.a
+    demand:
+      type: resource_consumption
+      resource: test.resource.a
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 5
+      target_ratio: 1000
+need_categories:
+  - id: test.need_category.flat
+    evaluation:
+      mode: weighted_score
+      required_score: 1000
+    members:
+      - need: test.need.a
+        weight: 1000
+population_tiers:
+  - id: test.tier.a
+    need_categories: []
+    outputs: []

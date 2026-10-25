@@ -11,6 +11,7 @@ import type { RawDefinitions } from '../schemas/validate.js';
 import { DEFAULT_LOAD_OPTIONS } from '../types.js';
 import type { LoadOptions } from '../types.js';
 import { validateCompositionCompatibility } from './composition.js';
+import { validateDesignIntent } from './design-intent.js';
 import { validateEconomics } from './economic.js';
 import { validateExchangeGraph } from './exchange.js';
 import { validatePopulationGraph } from './population.js';
@@ -20,6 +21,7 @@ import { validateUnlockGraph } from './unlock.js';
 
 export { GRAPH_VALIDATION_CODES } from '../diagnostics/catalogue.js';
 export { validateCompositionCompatibility } from './composition.js';
+export { validateDesignIntent } from './design-intent.js';
 export { validateEconomics } from './economic.js';
 export { validateExchangeGraph } from './exchange.js';
 export { validatePopulationGraph } from './population.js';
@@ -28,10 +30,10 @@ export { validateSpatialGraph } from './spatial.js';
 export { validateUnlockGraph } from './unlock.js';
 
 /**
- * Runs every graph and economic check over a composed definition set
- * (CONT-12 step 9).
+ * Runs every graph, economic, and design-intent check over a composed
+ * definition set (CONT-12 step 9).
  *
- * Source: CONT-11.4, CONT-11.5, CONT-11.6
+ * Source: CONT-11.4, CONT-11.5, CONT-11.6, CONT-11.7
  */
 export function validateGraphs(
   definitions: RawDefinitions,
@@ -45,5 +47,6 @@ export function validateGraphs(
     ...validateExchangeGraph(definitions),
     ...validateUnlockGraph(definitions),
     ...validateEconomics(definitions, options),
+    ...validateDesignIntent(definitions, options),
   ];
 }

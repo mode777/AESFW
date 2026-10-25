@@ -19,6 +19,7 @@ export interface DiagnosticCodeInfo {
     | 'condition'
     | 'graph'
     | 'economic'
+    | 'design_intent'
     | 'world';
   readonly description: string;
 }
@@ -36,6 +37,11 @@ const entry = (
  * Source: CONT-11, VER-10.2
  */
 export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
+  entry(
+    'design_intent',
+    'breadth_depth_collapse',
+    'A weighted category has one member or equal weights.',
+  ),
   entry('economic', 'capability_deficit', 'A recipe requires a capability no provider produces.'),
   entry(
     'graph',
@@ -48,10 +54,21 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
     'A sustained-condition tick bound is out of range.',
   ),
   entry('condition', 'condition_type_error', 'A condition expression does not type-check.'),
+  entry('design_intent', 'coverage_absent', 'No need is satisfied by spatial coverage.'),
+  entry(
+    'design_intent',
+    'cross_region_absent',
+    'The highest tier needs no inter-region transport.',
+  ),
   entry(
     'condition',
     'curve_extrapolation_error',
     'A curve sample is evaluated outside its domain without extrapolation.',
+  ),
+  entry(
+    'design_intent',
+    'decline_symmetric',
+    'A decline refunds its advancement costs or retains population.',
   ),
   entry(
     'manifest',
@@ -86,6 +103,8 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
     'A recipe sells above its exchange-purchased input cost.',
   ),
   entry('graph', 'exchange_unreachable', 'An exchange location is unreachable in its world.'),
+  entry('design_intent', 'idle_cost_absent', 'No maintenance charges while idle.'),
+  entry('design_intent', 'inactive_scarcities', 'One or more of the seven scarcities is inactive.'),
   entry(
     'economic',
     'inadequate_production',
@@ -127,6 +146,16 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
   entry('manifest', 'missing_manifest', 'A package has no manifest.'),
   entry('economic', 'negative_maintenance_balance', 'A charged balance has no income source.'),
   entry('graph', 'no_initial_content', 'Every entity definition is gated behind an unlock.'),
+  entry(
+    'design_intent',
+    'pyramid_bypass',
+    'Capabilities substitute or no producer binds a capability.',
+  ),
+  entry(
+    'design_intent',
+    'ratio_illegible',
+    'A production stage needs more entities than the threshold.',
+  ),
   entry('graph', 'recipe_cycle_unseeded', 'A recipe cycle has no seeded member resource.'),
   entry(
     'reference',
@@ -135,6 +164,7 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
   ),
   entry('graph', 'resource_unreachable', 'A consumed resource cannot reach its consumer location.'),
   entry('schema', 'schema_invalid', 'A definition violates its collection schema.'),
+  entry('design_intent', 'self_sufficient_region', 'A region produces every demanded resource.'),
   entry('economic', 'storage_below_batch', 'A producer inventory holds less than one batch.'),
   entry(
     'economic',
@@ -155,6 +185,11 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
     'graph',
     'transport_tag_mismatch',
     'No transport unit can traverse the tags of a required path.',
+  ),
+  entry(
+    'design_intent',
+    'unbounded_trade',
+    'An exchange good can absorb volume without price change.',
   ),
   entry('schema', 'unknown_definition_type', 'A document key is not a definition collection.'),
   entry('world', 'unknown_location_template', 'A location references an unknown template.'),
@@ -182,5 +217,8 @@ export const isKnownDiagnosticCode = (code: string): boolean =>
 
 /** The catalogue entries of the graph and economic validation stages (CONT-11.4–11.6). */
 export const GRAPH_VALIDATION_CODES: readonly string[] = DIAGNOSTIC_CODES.filter(
-  (candidate) => candidate.stage === 'graph' || candidate.stage === 'economic',
+  (candidate) =>
+    candidate.stage === 'graph' ||
+    candidate.stage === 'economic' ||
+    candidate.stage === 'design_intent',
 ).map((candidate) => candidate.code);

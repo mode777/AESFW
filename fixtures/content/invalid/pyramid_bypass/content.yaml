@@ -1,0 +1,25 @@
+resources:
+  - id: test.cap.a
+    tags:
+      - virtual
+      - capability
+    substitutes:
+      - test.cap.b
+    quantity:
+      precision: integer
+      scale: 1
+    storage:
+      policy: recomputed
+      scope: location
+    transportable: false
+  - id: test.cap.b
+    tags:
+      - virtual
+      - capability
+    quantity:
+      precision: integer
+      scale: 1
+    storage:
+      policy: recomputed
+      scope: location
+    transportable: false
