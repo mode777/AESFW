@@ -11,6 +11,7 @@ import { join, relative } from 'node:path';
 import {
   COLLECTION_ORDER,
   createMemorySource,
+  formatReport,
   loadContent,
   validatePresentationPackage,
 } from '@aesfw/content';
@@ -66,10 +67,39 @@ const simulationIdSets = (registry: ContentRegistry): ReadonlyMap<string, Readon
   return sets;
 };
 
+const VALUE_OPTIONS: readonly string[] = [
+  '--format',
+  '--against',
+  '--design-intent',
+  '--economic-diagnostics',
+];
+
+/** Positional arguments: everything except options and their values. */
+const positionalArgs = (args: readonly string[]): readonly string[] => {
+  const positional: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === undefined) continue;
+    if (arg.startsWith('--')) {
+      if (VALUE_OPTIONS.includes(arg)) index += 1;
+      continue;
+    }
+    positional.push(arg);
+  }
+  return positional;
+};
+
 const runValidate = (args: readonly string[], io: CliIo): CliResult => {
-  const dirs = args.filter((arg) => !arg.startsWith('--'));
+  const dirs = positionalArgs(args);
   const format = optionValue(args, '--format') ?? 'text';
-  const strictness = args.includes('--strict') ? 'strict' : 'lenient';
+  const strictness: 'strict' | 'lenient' = args.includes('--strict') ? 'strict' : 'lenient';
+  const designIntent = optionValue(args, '--design-intent') ?? 'off';
+  const economicDiagnostics = optionValue(args, '--economic-diagnostics') ?? 'warning';
+  const loadOptions = {
+    strictness,
+    ...(designIntent !== 'off' ? { design_intent: designIntent as 'warning' | 'error' } : {}),
+    ...(economicDiagnostics === 'error' ? { economic_diagnostics: 'error' as const } : {}),
+  };
   const against = optionValue(args, '--against');
   const packageDirs = against === null ? dirs : dirs.filter((dir) => dir !== against);
   const sources = packageDirs.map((dir) => io.readPackage(dir));
@@ -97,16 +127,14 @@ const runValidate = (args: readonly string[], io: CliIo): CliResult => {
     );
     const diagnostics = validatePresentationPackage(files, { simulationIds });
     const hasError = diagnostics.some((diagnostic) => diagnostic.severity === 'error');
-    const output =
-      format === 'json' ? JSON.stringify(diagnostics, null, 2) : formatDiagnostics(diagnostics);
+    const output = formatReport(diagnostics, { format: format === 'json' ? 'json' : 'text' });
     return { exitCode: hasError ? 1 : 0, output };
   }
-  const result = loadContent(sources, { strictness });
+  const result = loadContent(sources, loadOptions);
   const hasError = result.diagnostics.some((diagnostic) => diagnostic.severity === 'error');
-  const output =
-    format === 'json'
-      ? JSON.stringify(result.diagnostics, null, 2)
-      : formatDiagnostics(result.diagnostics);
+  const output = formatReport(result.diagnostics, {
+    format: format === 'json' ? 'json' : 'text',
+  });
   return { exitCode: hasError ? 1 : 0, output };
 };
 
@@ -192,7 +220,11 @@ export function runCli(args: readonly string[], io: CliIo): CliResult {
   if (command === 'validate') return runValidate(rest, io);
   if (command === 'run') return runRun(rest, io);
   if (command === 'bench') return runBench(rest, io);
-  return { exitCode: 1, output: 'usage: aesfw <validate|run|bench> ...' };
+  return {
+    exitCode: 1,
+    output:
+      'usage: aesfw <validate|run|bench> ...\n  validate <dir...> [--strict] [--format text|json] [--against dir] [--design-intent off|warning|error] [--economic-diagnostics warning|error]',
+  };
 }
 
 /** The Node file-system I/O implementation. */

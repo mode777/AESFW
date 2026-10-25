@@ -118,6 +118,52 @@ describe('[TDS-21.2] aesfw CLI', () => {
     expect(result.output).toContain('presentation_target_missing');
   });
 
+  it('[CONT-15][TDS-21.2] design-intent findings appear on demand', () => {
+    const result = runCli(['validate', 'pkg', '--design-intent', 'warning'], io(validContent));
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('inactive_scarcities');
+    expect(result.output).toContain('summary:');
+  });
+
+  it('[CONT-15][TDS-21.2] promoted economic findings fail', () => {
+    const economicContent = [
+      'resources:',
+      '  - id: test.cap.missing',
+      '    tags: [virtual, capability]',
+      '    quantity: { precision: integer, scale: 1 }',
+      '    storage: { policy: recomputed, scope: location }',
+      '    transportable: false',
+      'recipes:',
+      '  - id: test.recipe.a',
+      '    mode: batch',
+      '    duration_ticks: 10',
+      '    inputs: []',
+      '    outputs: []',
+      '    capability_requirements: [{ resource: test.cap.missing, quantity: 1 }]',
+      '',
+    ].join('\n');
+    const promoted = runCli(
+      ['validate', 'pkg', '--economic-diagnostics', 'error'],
+      io(economicContent),
+    );
+    expect(promoted.exitCode).toBe(1);
+    const warning = runCli(['validate', 'pkg'], io(economicContent));
+    expect(warning.exitCode).toBe(0);
+    expect(warning.output).toContain('capability_deficit');
+  });
+
+  it('[CONT-15][TDS-21.2] defaults are unchanged and the JSON report carries summaries', () => {
+    const plain = runCli(['validate', 'pkg'], io(validContent));
+    expect(plain.output).not.toContain('inactive_scarcities');
+    const json = runCli(['validate', 'pkg', '--format', 'json'], io(validContent));
+    const report = JSON.parse(json.output) as {
+      diagnostics: { code: string }[];
+      summary: { errors: number; warnings: number };
+    };
+    expect(report.summary).toEqual({ errors: 0, warnings: 0 });
+    expect(Array.isArray(report.diagnostics)).toBe(true);
+  });
+
   it('[TDS-21.2] a scenario runs from the CLI', () => {
     const result = runCli(['run', 'scenario.yaml'], io(validContent));
     expect(result.exitCode).toBe(0);
