@@ -77,6 +77,7 @@ export function drawerAction(current: string | null, key: string): string | null
   if (normalized === 'p') return current === 'planning' ? null : 'planning';
   if (normalized === 'l') return current === 'logistics' ? null : 'logistics';
   if (normalized === 'v') return current === 'population' ? null : 'population';
+  if (normalized === 'x') return current === 'exchange' ? null : 'exchange';
   return current;
 }
 

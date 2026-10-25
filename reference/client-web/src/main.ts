@@ -7,6 +7,7 @@
 import { PROTOCOL_VERSION } from '@aesfw/protocol';
 import type {
   DefinitionMetadataDto,
+  ExchangeQuotesDto,
   EntityDetailDto,
   LocationDto,
   LocationSummaryDto,
@@ -37,6 +38,7 @@ import {
   pushTrend,
 } from './selectors/index.js';
 import type { Footprint, PaletteEntry, ShapeArchetype } from './selectors/index.js';
+import { tradeDraft, exchangeEntities, exchangeView } from './selectors/exchange.js';
 import { createWorkerClient } from './session/client.js';
 import { createMirror } from './store/mirror.js';
 import { createViewState, drawerAction, nextMode, toggleOverlay } from './store/view-state.js';
@@ -45,6 +47,7 @@ import { coverageOverlay } from './selectors/progression.js';
 import { createBuildPalette } from './views/build-palette.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
 import { createEconomyView } from './views/economy.js';
+import { createExchangeView } from './views/exchange.js';
 import { createInspector } from './views/inspector.js';
 import { createInventoryTable } from './views/inventory-table.js';
 import { createLocationGrid } from './views/location-grid.js';
@@ -100,6 +103,15 @@ const CLIENT_STRINGS: Readonly<Record<string, string>> = {
   'progression.lock': 'Lock',
   'progression.unlock': 'Unlock',
   'overlay.coverage': 'Coverage',
+  'exchange.title': 'Exchange',
+  'exchange.empty': 'No known exchange',
+  'exchange.node': 'Exchange',
+  'exchange.sell': 'Sell',
+  'exchange.buy': 'Buy',
+  'exchange.volume': 'Volume sold/bought',
+  'exchange.recovery': 'Recovery in {ticks} ticks',
+  'exchange.trade_sell': 'Sell',
+  'exchange.trade_buy': 'Buy',
   'planning.maintenance': 'maintenance',
 };
 
@@ -112,6 +124,7 @@ interface QueryResult {
   readonly planning?: PlanningDto;
   readonly transport_detail?: TransportDetailDto | null;
   readonly transport_orders?: readonly TransportOrderDto[];
+  readonly exchange_quotes?: ExchangeQuotesDto | null;
 }
 
 /**
@@ -184,6 +197,14 @@ export function mount(root: HTMLElement): void {
       client.query(ACTOR_ID, { kind: 'transport_detail', entity_id: unitId });
     },
   });
+  let exchangeDefinitionIds: readonly string[] = [];
+  const exchangeQuotesById = new Map<number, ExchangeQuotesDto>();
+  let metadataRequest: 'palette' | 'exchange' = 'palette';
+  const exchange = createExchangeView(i18n, (exchangeId, resourceId, direction, quantity) => {
+    logistics.prefill(tradeDraft(exchangeId, resourceId, direction, quantity));
+    view.drawer.set('logistics');
+    refreshDrawer();
+  });
   const drawer = h(
     'div',
     { class: 'drawer', 'data-testid': 'drawer' },
@@ -191,6 +212,7 @@ export function mount(root: HTMLElement): void {
     planning.el,
     logistics.el,
     progression.el,
+    exchange.el,
   );
   let trend: readonly number[] = [];
   const archetypes = new Map<string, ShapeArchetype>();
@@ -204,6 +226,7 @@ export function mount(root: HTMLElement): void {
     planning.el.hidden = kind !== 'planning';
     logistics.el.hidden = kind !== 'logistics';
     progression.el.hidden = kind !== 'population';
+    exchange.el.hidden = kind !== 'exchange';
     drawer.hidden = kind === null;
     if (kind === 'economy') {
       economy.show(economyView(mirror.projection(), ACTOR_ID, trend));
@@ -214,6 +237,14 @@ export function mount(root: HTMLElement): void {
     if (kind === 'logistics') {
       refreshLogistics();
       client.query(ACTOR_ID, { kind: 'transport_orders' });
+    }
+    if (kind === 'exchange') {
+      metadataRequest = 'exchange';
+      client.query(ACTOR_ID, { kind: 'definition_metadata', definition_type: 'exchange' });
+      for (const id of exchangeEntities(mirror.projection(), exchangeDefinitionIds)) {
+        client.query(ACTOR_ID, { kind: 'exchange_quotes', entity_id: id });
+      }
+      exchange.show(exchangeView([...exchangeQuotesById.values()]));
     }
     if (kind === 'population') {
       progression.show(
@@ -499,15 +530,25 @@ export function mount(root: HTMLElement): void {
           }
         }
         if (result.definition_metadata !== undefined) {
-          definitions = result.definition_metadata;
-          for (const definition of result.definition_metadata) {
-            archetypes.set(definition.definition_id, archetypeOf(definition));
-            const footprint = placementFootprint(definition);
-            if (footprint !== null) footprints.set(definition.definition_id, footprint);
+          if (metadataRequest === 'exchange') {
+            metadataRequest = 'palette';
+            exchangeDefinitionIds = result.definition_metadata.map(
+              (definition) => definition.definition_id,
+            );
+            for (const id of exchangeEntities(mirror.projection(), exchangeDefinitionIds)) {
+              client.query(ACTOR_ID, { kind: 'exchange_quotes', entity_id: id });
+            }
+          } else {
+            definitions = result.definition_metadata;
+            for (const definition of result.definition_metadata) {
+              archetypes.set(definition.definition_id, archetypeOf(definition));
+              const footprint = placementFootprint(definition);
+              if (footprint !== null) footprints.set(definition.definition_id, footprint);
+            }
+            palette = paletteEntries(result.definition_metadata, i18n);
+            paletteView.show(palette, view.placement().definitionId);
+            grid.update();
           }
-          palette = paletteEntries(result.definition_metadata, i18n);
-          paletteView.show(palette, view.placement().definitionId);
-          grid.update();
         }
         if (result.planning !== undefined) {
           planning.show(planningView(result.planning));
@@ -519,6 +560,12 @@ export function mount(root: HTMLElement): void {
         if (result.transport_detail !== undefined) {
           transportDetailModel = result.transport_detail;
           refreshLogistics();
+        }
+        if (result.exchange_quotes !== undefined && result.exchange_quotes !== null) {
+          exchangeQuotesById.set(result.exchange_quotes.entity_id, result.exchange_quotes);
+          if (view.drawer() === 'exchange') {
+            exchange.show(exchangeView([...exchangeQuotesById.values()]));
+          }
         }
         if (result.placement_result !== undefined) {
           const placement = view.placement();
@@ -605,7 +652,9 @@ export function mount(root: HTMLElement): void {
       event.key === 'p' ||
       event.key === 'P' ||
       event.key === 'l' ||
-      event.key === 'L'
+      event.key === 'L' ||
+      event.key === 'x' ||
+      event.key === 'X'
     ) {
       const next = drawerAction(view.drawer(), event.key);
       if (next !== view.drawer()) {
