@@ -8,8 +8,13 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { createMemorySource, loadContent } from '@aesfw/content';
-import type { Diagnostic, PackageSource } from '@aesfw/content';
+import {
+  COLLECTION_ORDER,
+  createMemorySource,
+  loadContent,
+  validatePresentationPackage,
+} from '@aesfw/content';
+import type { ContentRegistry, Diagnostic, PackageSource } from '@aesfw/content';
 import { runBenchmark } from '@aesfw/testkit/bench';
 import { parseScenario, runScenario } from '@aesfw/testkit/scenario';
 import { parse as parseYaml } from 'yaml';
@@ -48,11 +53,54 @@ const optionValue = (args: readonly string[], name: string): string | null => {
   return index < 0 ? null : (args[index + 1] ?? null);
 };
 
+/** The definition-type to string-ID sets the presentation validator consumes. */
+const simulationIdSets = (registry: ContentRegistry): ReadonlyMap<string, ReadonlySet<string>> => {
+  const sets = new Map<string, ReadonlySet<string>>();
+  for (const type of COLLECTION_ORDER) {
+    const definitionType = type as never;
+    sets.set(
+      type,
+      new Set(registry.definitionsOf(definitionType).map((definition) => definition.id)),
+    );
+  }
+  return sets;
+};
+
 const runValidate = (args: readonly string[], io: CliIo): CliResult => {
   const dirs = args.filter((arg) => !arg.startsWith('--'));
   const format = optionValue(args, '--format') ?? 'text';
   const strictness = args.includes('--strict') ? 'strict' : 'lenient';
-  const sources = dirs.map((dir) => io.readPackage(dir));
+  const against = optionValue(args, '--against');
+  const packageDirs = against === null ? dirs : dirs.filter((dir) => dir !== against);
+  const sources = packageDirs.map((dir) => io.readPackage(dir));
+  const manifestText =
+    packageDirs.length === 1 ? io.readFile(join(packageDirs[0] ?? '', 'package.yaml')) : null;
+  const manifest =
+    manifestText === null ? null : (parseYaml(manifestText) as { package?: { type?: string } });
+  if (manifest?.package?.type === 'presentation') {
+    const simulationIds = new Map<string, ReadonlySet<string>>();
+    if (against !== null) {
+      const loaded = loadContent([io.readPackage(against)], { strictness });
+      const registry = loaded.content?.registry as ContentRegistry | undefined;
+      if (registry !== undefined) {
+        for (const [type, set] of simulationIdSets(registry)) {
+          simulationIds.set(type, set);
+        }
+      }
+    }
+    const files = sources.flatMap((source) =>
+      source.list().map((path) => ({
+        package: source.packageRoot,
+        path,
+        document: parseYaml(source.read(path) ?? '') as never,
+      })),
+    );
+    const diagnostics = validatePresentationPackage(files, { simulationIds });
+    const hasError = diagnostics.some((diagnostic) => diagnostic.severity === 'error');
+    const output =
+      format === 'json' ? JSON.stringify(diagnostics, null, 2) : formatDiagnostics(diagnostics);
+    return { exitCode: hasError ? 1 : 0, output };
+  }
   const result = loadContent(sources, { strictness });
   const hasError = result.diagnostics.some((diagnostic) => diagnostic.severity === 'error');
   const output =

@@ -17,6 +17,7 @@ import { composeDefinitions } from '../composition/compose.js';
 import { createMemorySource } from '../package/source.js';
 import { loadContent } from '../registry/load.js';
 import { validateCompositionCompatibility } from '../validation/composition.js';
+import { validatePresentationPackage } from '../presentation/validate.js';
 
 const fixtureRoot = fileURLToPath(
   new URL('../../../../fixtures/content/invalid/', import.meta.url),
@@ -63,6 +64,10 @@ const isDesignIntent = (code: string): boolean =>
 /** True when the code belongs to the determinism stage. */
 const isDeterminism = (code: string): boolean =>
   DIAGNOSTIC_CODES.some((entry) => entry.stage === 'determinism' && entry.code === code);
+
+/** True when the code belongs to the presentation stage. */
+const isPresentation = (code: string): boolean =>
+  DIAGNOSTIC_CODES.some((entry) => entry.stage === 'presentation' && entry.code === code);
 
 const matches = (
   finding: Expectation,
@@ -131,6 +136,31 @@ describe('[VER-10.2] diagnostic catalogue', () => {
         continue;
       }
 
+      if (isPresentation(directory)) {
+        // Presentation packages are not definition documents; the fixture
+        // exercises the presentation validator directly (design D4).
+        const files = readdirSync(dir)
+          .filter((entry) => entry.endsWith('.yaml') && entry !== 'expect.yaml')
+          .map((entry) => ({
+            package: `test.invalid.${directory}`,
+            path: entry,
+            document: parseYaml(readFileSync(join(dir, entry), 'utf8')) as never,
+          }));
+        const simulationIds = new Map([['entity', new Set(['test.entity.a'])]]);
+        const knownCommands = new Set(['SetEntityEnabled']);
+        const diagnostics = validatePresentationPackage(files, {
+          simulationIds,
+          knownCommands,
+        });
+        for (const finding of expected) {
+          expect(
+            matches(finding, diagnostics as never),
+            `${directory}: ${finding.code} not reported`,
+          ).toBe(true);
+        }
+        continue;
+      }
+
       const result = loadForCode(directory, dir);
       for (const finding of expected) {
         expect(
@@ -146,7 +176,7 @@ describe('[VER-10.2] diagnostic catalogue', () => {
       DIAGNOSTIC_CODES.filter((entry) => entry.stage === 'economic').map((entry) => entry.code),
     );
     for (const directory of fixtureDirectories()) {
-      if (directory === 'composition_schema_violation') continue;
+      if (directory === 'composition_schema_violation' || isPresentation(directory)) continue;
       const result = loadForCode(directory, join(fixtureRoot, directory));
       const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
       expect(codes, `${directory} missing its own code`).toContain(directory);

@@ -74,6 +74,50 @@ describe('[TDS-21.2] aesfw CLI', () => {
     expect(result.output).toContain('unresolved');
   });
 
+  it('[PIC-19][TDS-21.2] a presentation package validates with --against', () => {
+    const presentationManifest = [
+      'package:',
+      '  id: test.presentation',
+      '  version: 1.0.0',
+      '  schema_version: 1',
+      '  type: presentation',
+      '  files:',
+      '    - presentation.yaml',
+      '',
+    ].join('\n');
+    const presentation = [
+      'presentation_mapping:',
+      '  - target_definition: test.entity.absent',
+      '    localization: { name_key: test.key.a }',
+      'localization:',
+      '  locale: en',
+      '  entries: { test.key.a: A }',
+      'fallback: { shape: box }',
+      '',
+    ].join('\n');
+    const files: Record<string, string> = {
+      'pkg/package.yaml': presentationManifest,
+      'pkg/presentation.yaml': presentation,
+      'sim/package.yaml': manifest,
+      'sim/content.yaml': validContent,
+    };
+    const io: CliIo = {
+      readPackage: (dir) =>
+        createMemorySource(
+          dir,
+          Object.fromEntries(
+            Object.entries(files)
+              .filter(([path]) => path.startsWith(`${dir}/`))
+              .map(([path, text]) => [path.slice(dir.length + 1), text]),
+          ),
+        ),
+      readFile: (path) => files[path] ?? null,
+    };
+    const result = runCli(['validate', 'pkg', '--against', 'sim'], io);
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('presentation_target_missing');
+  });
+
   it('[TDS-21.2] a scenario runs from the CLI', () => {
     const result = runCli(['run', 'scenario.yaml'], io(validContent));
     expect(result.exitCode).toBe(0);

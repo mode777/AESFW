@@ -1,0 +1,16 @@
+presentation_mapping:
+  - target_definition: test.entity.a
+    localization:
+      name_key: test.entity.a
+      description_key: test.entity.a
+    visual:
+      model_key: test.model.a
+      icon_key: test.icon.a
+      fallback_shape: box
+localization:
+  locale: en
+  entries:
+    bad key: X
+fallback:
+  shape: box
+  locale: en

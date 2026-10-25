@@ -1,0 +1,3 @@
+expect:
+  - code: presentation_modifies_simulation
+    severity: error

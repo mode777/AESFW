@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { createMemorySource, loadContent, parseYamlStrict } from '@aesfw/content';
+import {
+  createMemorySource,
+  loadContent,
+  parseYamlStrict,
+  validatePresentationPackage,
+} from '@aesfw/content';
 import type { ContentRegistry, JsonValue } from '@aesfw/content';
 import { runScenario } from '@aesfw/testkit/scenario';
 import type { Scenario } from '@aesfw/testkit/scenario';
@@ -159,6 +164,30 @@ describe('[REF-5] presentation skeleton', () => {
     const dependencies = pkg['dependencies'] as readonly Record<string, JsonValue>[];
     expect(dependencies.some((entry) => entry['package'] === 'ref.tier')).toBe(true);
     expect(pkg['files']).toEqual(['localization.en.yaml', 'mappings.yaml', 'formatting.yaml']);
+  });
+
+  it('[PIC-19] the presentation package validates against the simulation package', () => {
+    const manifest = readPresentation('package.yaml') as Record<string, JsonValue>;
+    expect((manifest['package'] as Record<string, JsonValue>)['type']).toBe('presentation');
+    const files = ['package.yaml', 'localization.en.yaml', 'mappings.yaml', 'formatting.yaml'].map(
+      (name) => ({
+        package: 'ref.tier.presentation',
+        path: name,
+        document: readPresentation(name),
+      }),
+    );
+    const loaded = loadContent([source], { strictness: 'strict' });
+    const registry = loaded.content?.registry;
+    expect(registry).not.toBeNull();
+    const simulationIds = new Map<string, ReadonlySet<string>>();
+    for (const type of ['resources', 'entity_definitions'] as const) {
+      simulationIds.set(
+        type,
+        new Set((registry as ContentRegistry).definitionsOf(type as never).map((d) => d.id)),
+      );
+    }
+    const diagnostics = validatePresentationPackage(files, { simulationIds });
+    expect(diagnostics.filter((diagnostic) => diagnostic.severity === 'error')).toEqual([]);
   });
 
   it('[REF-5] the presentation formatting uses the reference base scale', () => {

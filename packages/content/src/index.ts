@@ -41,6 +41,8 @@ export * from './validation/index.js';
 export { DIAGNOSTIC_CODES, isKnownDiagnosticCode } from './diagnostics/catalogue.js';
 export type { DiagnosticCodeInfo } from './diagnostics/catalogue.js';
 export { buildUnlockSystem, unlockQueryValue } from './unlocks/system.js';
+export { validatePresentationPackage } from './presentation/validate.js';
+export type { PresentationValidationOptions } from './presentation/validate.js';
 export { defaultWorldPlan, worldPlan } from './world/plan.js';
 export type { DefaultWorldPlanResult } from './world/plan.js';
 

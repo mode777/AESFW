@@ -1,0 +1,7 @@
+package:
+  id: test.invalid.presentation_key_missing
+  version: 1.0.0
+  schema_version: 1
+  type: presentation
+  files:
+    - presentation.yaml

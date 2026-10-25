@@ -2,7 +2,7 @@ package:
   id: ref.tier.presentation
   version: 0.1.0
   schema_version: 1
-  type: presentation_content
+  type: presentation
   dependencies:
     - package: ref.tier
       version: '>=0.1.0 <2.0.0'
