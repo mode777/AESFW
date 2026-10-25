@@ -32,7 +32,7 @@ export function loadContent(
   const parsed = parseFiles(manifests.manifests, options);
   const validated = validateSchemas(parsed.files, options);
   const composed = composeDefinitions(validated.definitions, options);
-  const graphDiagnostics = validateGraphs(composed.definitions);
+  const graphDiagnostics = validateGraphs(composed.definitions, options);
   const built = buildRegistry(composed.definitions, options);
   const expressionDiagnostics = compileExpressions(composed.definitions, built.registry);
 

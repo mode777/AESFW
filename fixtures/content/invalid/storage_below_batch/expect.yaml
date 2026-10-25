@@ -1,0 +1,4 @@
+expect:
+  - code: storage_below_batch
+    severity: warning
+    definition: test.entity.producer

@@ -1,0 +1,41 @@
+resources:
+  - id: test.resource.a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+  - id: test.cap.missing
+    tags:
+      - virtual
+      - capability
+    quantity:
+      precision: integer
+      scale: 1
+    storage:
+      policy: recomputed
+      scope: location
+    transportable: false
+recipes:
+  - id: test.recipe.needy
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      - resource: test.resource.a
+        quantity: 1000
+    outputs: []
+    capability_requirements:
+      - resource: test.cap.missing
+        quantity: 1
+entity_definitions:
+  - id: test.entity.src
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - resource: test.resource.a
+            quantity_per_tick: 100

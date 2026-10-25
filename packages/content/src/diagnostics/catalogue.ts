@@ -11,7 +11,15 @@ export interface DiagnosticCodeInfo {
   readonly code: string;
   readonly severity: 'error' | 'warning' | 'info';
   readonly stage:
-    'manifest' | 'parse' | 'schema' | 'composition' | 'reference' | 'condition' | 'graph' | 'world';
+    | 'manifest'
+    | 'parse'
+    | 'schema'
+    | 'composition'
+    | 'reference'
+    | 'condition'
+    | 'graph'
+    | 'economic'
+    | 'world';
   readonly description: string;
 }
 
@@ -28,6 +36,7 @@ const entry = (
  * Source: CONT-11, VER-10.2
  */
 export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
+  entry('economic', 'capability_deficit', 'A recipe requires a capability no provider produces.'),
   entry(
     'graph',
     'composition_schema_violation',
@@ -71,7 +80,17 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
     'establishment_cost_invalid',
     'An establishment cost is not transportable or not sourced.',
   ),
+  entry(
+    'economic',
+    'exchange_arbitrage_risk',
+    'A recipe sells above its exchange-purchased input cost.',
+  ),
   entry('graph', 'exchange_unreachable', 'An exchange location is unreachable in its world.'),
+  entry(
+    'economic',
+    'inadequate_production',
+    'A need demands more per tick than production can supply.',
+  ),
   entry('composition', 'include_cycle', 'An include graph contains a cycle.'),
   entry(
     'graph',
@@ -106,6 +125,7 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
   entry('manifest', 'missing_dependency', 'A manifest dependency is not present.'),
   entry('parse', 'missing_file', 'A manifest-listed file is absent.'),
   entry('manifest', 'missing_manifest', 'A package has no manifest.'),
+  entry('economic', 'negative_maintenance_balance', 'A charged balance has no income source.'),
   entry('graph', 'no_initial_content', 'Every entity definition is gated behind an unlock.'),
   entry('graph', 'recipe_cycle_unseeded', 'A recipe cycle has no seeded member resource.'),
   entry(
@@ -115,6 +135,17 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
   ),
   entry('graph', 'resource_unreachable', 'A consumed resource cannot reach its consumer location.'),
   entry('schema', 'schema_invalid', 'A definition violates its collection schema.'),
+  entry('economic', 'storage_below_batch', 'A producer inventory holds less than one batch.'),
+  entry(
+    'economic',
+    'throughput_below_equilibrium',
+    'Carrier round-trip capacity is below import demand.',
+  ),
+  entry(
+    'economic',
+    'transition_self_lock',
+    'A transition cost is produced only by its own target tier.',
+  ),
   entry(
     'graph',
     'transition_unreachable',
@@ -145,12 +176,11 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
   entry('parse', 'yaml_duplicate_key', 'A YAML document contains a duplicate key.'),
   entry('parse', 'yaml_merge_key', 'A YAML merge key appears where strict parsing forbids it.'),
   entry('parse', 'yaml_parse_error', 'A YAML document does not parse.'),
-];
-/** True when the code is in the catalogue. */
+]; /** True when the code is in the catalogue. */
 export const isKnownDiagnosticCode = (code: string): boolean =>
   DIAGNOSTIC_CODES.some((candidate) => candidate.code === code);
 
-/** The catalogue entries of the graph-validation stage (CONT-11.4, CONT-11.5). */
+/** The catalogue entries of the graph and economic validation stages (CONT-11.4–11.6). */
 export const GRAPH_VALIDATION_CODES: readonly string[] = DIAGNOSTIC_CODES.filter(
-  (candidate) => candidate.stage === 'graph',
+  (candidate) => candidate.stage === 'graph' || candidate.stage === 'economic',
 ).map((candidate) => candidate.code);

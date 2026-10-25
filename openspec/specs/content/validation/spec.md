@@ -136,3 +136,75 @@ Source: CONT-11.5
 #### Scenario: A package with no initial entity is reported
 - **WHEN** every entity definition in the package is targeted by an unlock
 - **THEN** validation reports `no_initial_content`
+
+### Requirement: Economic diagnostics stage
+The validation stage SHALL run the CONT-11.6 economic checks after the graph checks over the composed definition set. Every economic finding SHALL have warning severity by default and SHALL be reported with severity `error` instead when the loader option `economic_diagnostics` is `'error'`. Warning-severity findings SHALL never make `loadContent` return `content: null`.
+
+Source: CONT-11.6, CONT-12
+
+#### Scenario: Warnings are reported but the package loads
+- **WHEN** a package triggers an economic finding and `economic_diagnostics` is `'warning'`
+- **THEN** the load succeeds with a warning-severity diagnostic
+
+#### Scenario: Promoted findings fail the load
+- **WHEN** a package triggers an economic finding and `economic_diagnostics` is `'error'`
+- **THEN** the diagnostic has error severity and `loadContent` returns `content: null`
+
+#### Scenario: Clean packages report nothing
+- **WHEN** a closed, balanced package is loaded
+- **THEN** no economic diagnostic is reported
+
+### Requirement: Guaranteed capability and balance deficits
+Validation SHALL report `capability_deficit` when a recipe's capability requirement names a capability no population output or resource source produces anywhere. Validation SHALL report `negative_maintenance_balance` when an owner-scoped balance resource is charged by an entity or transport-unit maintenance while no population output, source output, or exchange grants income in that resource.
+
+Source: CONT-11.6
+
+#### Scenario: A capability with no provider is reported
+- **WHEN** a recipe requires a capability resource that no tier output or source produces
+- **THEN** validation reports `capability_deficit` naming the recipe and capability
+
+#### Scenario: A chargeable balance with no income is reported
+- **WHEN** maintenance charges an owner-scoped balance that no output or exchange grants
+- **THEN** validation reports `negative_maintenance_balance` naming the resource
+
+#### Scenario: An income-bearing balance passes
+- **WHEN** a balance is charged by maintenance and a population output grants it income
+- **THEN** validation reports no `negative_maintenance_balance` finding
+
+### Requirement: Inadequate production and throughput
+Validation SHALL report `inadequate_production` when a need's `quantity_per_population_per_tick` exceeds the maximum static production rate of its demand resource (source outputs plus one-instance recipe throughput). Validation SHALL report `throughput_below_equilibrium` when a world must import a consumed resource and the round-trip capacity of the transport units that can carry it is below the importing location's demand rate.
+
+Source: CONT-11.6
+
+#### Scenario: A need whose demand outruns production is reported
+- **WHEN** a need demands `5` per inhabitant per tick of a resource whose sources supply `2` per tick
+- **THEN** validation reports `inadequate_production` naming the need
+
+#### Scenario: A balanced need passes
+- **WHEN** production capacity meets or exceeds the demand rate
+- **THEN** validation reports no `inadequate_production` finding
+
+#### Scenario: Import demand above carrier capacity is reported
+- **WHEN** a location imports a resource whose consumers demand more per tick than the carriers' round-trip capacity
+- **THEN** validation reports `throughput_below_equilibrium` naming the world and resource
+
+### Requirement: Storage, transition, and arbitrage diagnostics
+Validation SHALL report `storage_below_batch` when a producer's referenced inventory capacity holds less than one batch of its recipe's inputs or outputs. Validation SHALL report `transition_self_lock` when a transition's cost resource is produced only by content of its own target tier. Validation SHALL report `exchange_arbitrage_risk` when a recipe's inputs are all exchange-buyable and the base-price sale value of its outputs is not below the base-price purchase value of its inputs.
+
+Source: CONT-11.6
+
+#### Scenario: An inventory too small for a batch is reported
+- **WHEN** a producer's input inventory holds less than its recipe's input quantity
+- **THEN** validation reports `storage_below_batch` naming the entity
+
+#### Scenario: A transition locked by its own target is reported
+- **WHEN** a transition's cost resource is produced only by its target tier's output
+- **THEN** validation reports `transition_self_lock` naming the transition
+
+#### Scenario: A recipe-mediated arbitrage loop is reported
+- **WHEN** a recipe buys all inputs from an exchange and sells its output above the input cost
+- **THEN** validation reports `exchange_arbitrage_risk` naming the recipe
+
+#### Scenario: A balanced production chain reports nothing
+- **WHEN** storage, transitions, and exchange prices do not admit the conditions above
+- **THEN** validation reports none of these diagnostics

@@ -1,0 +1,109 @@
+resources:
+  - id: test.resource.a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+  - id: test.resource.out
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+recipes:
+  - id: test.recipe.refine
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      - resource: test.resource.a
+        quantity: 1000
+    outputs:
+      - resource: test.resource.out
+        quantity: 1000
+entity_definitions:
+  - id: test.entity.src
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - resource: test.resource.a
+            quantity_per_tick: 100
+  - id: test.entity.refiner
+    components:
+      producer:
+        recipes:
+          - test.recipe.refine
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+  - id: test.location.b
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+connections:
+  - id: test.connection.long
+    direction: bidirectional
+    traversal:
+      base_duration_ticks: 100
+worlds:
+  - id: test.world
+    locations:
+      - id: test.loc.0
+        template: test.location.a
+      - id: test.loc.1
+        template: test.location.b
+    connections:
+      - id: test.conn.0
+        definition: test.connection.long
+        origin: test.loc.0
+        destination: test.loc.1
+    owners:
+      - id: test.owner
+        initial_entities:
+          - definition: test.entity.src
+            location: test.loc.0
+          - definition: test.entity.refiner
+            location: test.loc.1
+transport_units:
+  - id: test.transport.small
+    entity_definition: test.entity.src
+    cargo:
+      compartment_policy: unrestricted
+      slots: 1
+      slot_capacity: 100
+      acceptance: all
+    movement:
+      speed_permille: 1000
+    handling:
+      loading_rate_per_tick: 10
+      unloading_rate_per_tick: 10

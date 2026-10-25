@@ -1,0 +1,4 @@
+expect:
+  - code: transition_self_lock
+    severity: warning
+    definition: test.transition.locked

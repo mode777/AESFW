@@ -1,0 +1,4 @@
+expect:
+  - code: inadequate_production
+    severity: warning
+    definition: test.need.food

@@ -119,13 +119,41 @@ describe('[VER-10.2] diagnostic catalogue', () => {
     }
   });
 
-  it('[VER-10.2] each fixture fails the load with its code present', () => {
+  it('[VER-10.2] graph fixtures fail the load, economic fixtures load with warnings', () => {
+    const economic = new Set(
+      DIAGNOSTIC_CODES.filter((entry) => entry.stage === 'economic').map((entry) => entry.code),
+    );
     for (const directory of fixtureDirectories()) {
       if (directory === 'composition_schema_violation') continue;
       const result = loadFixture(join(fixtureRoot, directory));
-      expect(result.content, `${directory} unexpectedly loaded`).toBeNull();
       const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
       expect(codes, `${directory} missing its own code`).toContain(directory);
+      if (economic.has(directory)) {
+        expect(result.content, `${directory} should still load`).not.toBeNull();
+        const finding = result.diagnostics.find((diagnostic) => diagnostic.code === directory);
+        expect(finding?.severity, `${directory} should be a warning`).toBe('warning');
+      } else {
+        expect(result.content, `${directory} unexpectedly loaded`).toBeNull();
+      }
+    }
+  });
+
+  it('[CONT-11.6] shipped fixture packages report no economic findings', () => {
+    const demoRoot = fileURLToPath(new URL('../../../../fixtures/content/', import.meta.url));
+    const demos = readdirSync(demoRoot)
+      .filter((entry) => entry.startsWith('demo-'))
+      .sort();
+    expect(demos.length).toBeGreaterThan(5);
+    for (const demo of demos) {
+      const dir = join(demoRoot, demo);
+      if (!statSync(dir).isDirectory()) continue;
+      const result = loadFixture(dir);
+      const economic = result.diagnostics.filter((diagnostic) =>
+        DIAGNOSTIC_CODES.some(
+          (entry) => entry.stage === 'economic' && entry.code === diagnostic.code,
+        ),
+      );
+      expect(economic, `${demo} has economic findings`).toEqual([]);
     }
   });
 });

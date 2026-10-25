@@ -1,0 +1,4 @@
+expect:
+  - code: throughput_below_equilibrium
+    severity: warning
+    definition: test.world

@@ -1,0 +1,4 @@
+expect:
+  - code: capability_deficit
+    severity: warning
+    definition: test.recipe.needy

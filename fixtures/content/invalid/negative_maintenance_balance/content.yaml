@@ -1,0 +1,22 @@
+resources:
+  - id: test.resource.credits
+    tags:
+      - balance
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: owner
+    transportable: false
+    allow_negative: true
+entity_definitions:
+  - id: test.entity.paying
+    components:
+      maintenance:
+        interval_ticks: 10
+        inputs:
+          - resource: test.resource.credits
+            quantity: 100
+        charge_policy: while_exists
+        shortage_policy: ignore

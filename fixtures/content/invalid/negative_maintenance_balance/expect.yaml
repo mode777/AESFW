@@ -1,0 +1,4 @@
+expect:
+  - code: negative_maintenance_balance
+    severity: warning
+    definition: test.entity.paying

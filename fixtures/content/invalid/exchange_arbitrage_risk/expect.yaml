@@ -1,0 +1,4 @@
+expect:
+  - code: exchange_arbitrage_risk
+    severity: warning
+    definition: test.recipe.arb
