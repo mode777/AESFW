@@ -1,0 +1,68 @@
+# SCN-06: exchange trade and elasticity; repeated sales lower the price,
+# which then recovers (roadmap 9.4).
+scenario:
+  id: test.scenario.exchange_loop
+  requirements: [SCN-06, GDD-17.3, GDD-17.4]
+  content:
+    packages: [fixtures/content/demo-exchanges]
+  setup:
+    seed: [5, 11]
+    tick_duration_ms: 1000
+    world: demo.world.exchange
+  commands:
+    - tick: 1
+      actor: owner.a
+      type: CreateTransportOrder
+      payload:
+        mode: trade
+        repeat: false
+        stations:
+          - endpoint: 6
+            actions:
+              - resource: demo.resource.trade_goods
+                action: buy
+                rule: { mode: fixed, quantity: 400 }
+    - tick: 2
+      actor: owner.a
+      type: AssignTransport
+      payload: { unit_id: 5, order_id: 7 }
+    - tick: 6
+      actor: owner.a
+      type: CreateTransportOrder
+      payload:
+        mode: trade
+        repeat: false
+        stations:
+          - endpoint: 6
+            actions:
+              - resource: demo.resource.trade_goods
+                action: sell
+                rule: { mode: fixed, quantity: 300 }
+                price_limit: 400
+    - tick: 7
+      actor: owner.a
+      type: AssignTransport
+      payload: { unit_id: 5, order_id: 8 }
+    - tick: 21
+      actor: owner.a
+      type: CreateTransportOrder
+      payload:
+        mode: trade
+        repeat: false
+        stations:
+          - endpoint: 6
+            actions:
+              - resource: demo.resource.trade_goods
+                action: sell
+                rule: { mode: fixed, quantity: 100 }
+                price_limit: 8000
+    - tick: 22
+      actor: owner.a
+      type: AssignTransport
+      payload: { unit_id: 5, order_id: 9 }
+  run:
+    ticks: 25
+    hash_interval: 5
+    invariants: true
+  golden:
+    hashes: fixtures/scenarios/exchange_loop.hashes.json

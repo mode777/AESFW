@@ -46,10 +46,10 @@ exchanges:
         sell_to_exchange: { base_price: 8000, enabled: true }
     elasticity:
       window_ticks: 600
-      step_quantity: 100000
-      step_change_permille: 20
-      recovery_permille_per_interval: 50
-      recovery_interval_ticks: 60
+      step_quantity: 100
+      step_change_permille: 100
+      recovery_permille_per_interval: 200
+      recovery_interval_ticks: 5
       min_price_permille: 100
       max_price_permille: 5000
     shared_between_owners: true
@@ -89,3 +89,7 @@ worlds:
     owners:
       - id: owner.a
         established_locations: [demo.loc.port]
+        initial_resources:
+          - { resource: demo.resource.credits, quantity: 10000000 }
+        initial_entities:
+          - { definition: demo.entity.trader, location: demo.loc.port }
