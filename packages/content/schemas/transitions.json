@@ -35,6 +35,9 @@
         }
       ]
     },
+    "optional": {
+      "type": "boolean"
+    },
     "condition": {
       "minLength": 1,
       "type": "string"

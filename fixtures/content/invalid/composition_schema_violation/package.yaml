@@ -1,0 +1,7 @@
+package:
+  id: test.invalid.composition_schema_violation
+  version: 1.0.0
+  schema_version: 1
+  type: simulation_content
+  files:
+    - content.yaml

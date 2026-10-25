@@ -1,0 +1,26 @@
+growth_policies:
+  - id: test.growth.none
+    interval_ticks: 10
+population_tiers:
+  - id: test.tier.root
+    need_categories: []
+    outputs: []
+  - id: test.tier.orphan_a
+    need_categories: []
+    outputs: []
+  - id: test.tier.orphan_b
+    need_categories: []
+    outputs: []
+transitions:
+  - id: test.transition.orphan
+    source_tier: test.tier.orphan_a
+    target_tier: test.tier.orphan_b
+    duration_ticks: 5
+    conversion: { population: retain_count }
+entity_definitions:
+  - id: test.entity.residence
+    components:
+      residence:
+        population_tier: test.tier.root
+        capacity: 10
+        growth_policy: test.growth.none

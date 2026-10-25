@@ -1,0 +1,4 @@
+expect:
+  - code: incompatible_components
+    severity: error
+    definition: test.entity.empty_producer

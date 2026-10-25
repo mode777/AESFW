@@ -1,0 +1,4 @@
+expect:
+  - code: establishment_cost_invalid
+    severity: error
+    definition: test.establishment.a

@@ -1,0 +1,4 @@
+expect:
+  - code: no_initial_content
+    severity: error
+    definition: test.entity.gated_one

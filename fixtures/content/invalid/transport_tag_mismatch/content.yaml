@@ -1,0 +1,67 @@
+resources:
+  - id: test.resource.movable
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: test.resource.precious
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+entity_definitions:
+  - id: test.entity.source
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: test.resource.movable, quantity_per_tick: 100 }
+  - id: test.entity.heavy_source
+    components:
+      resource_source:
+        policy: infinite_rate
+        outputs:
+          - { resource: test.resource.precious, quantity_per_tick: 100 }
+  - id: test.entity.refiner
+    components:
+      producer:
+        recipes: [test.recipe.refine]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+recipes:
+  - id: test.recipe.refine
+    mode: batch
+    duration_ticks: 10
+    inputs: [{ resource: test.resource.precious, quantity: 1000 }]
+    outputs: [{ resource: test.resource.movable, quantity: 1000 }]
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+connections:
+  - id: test.connection.road
+    direction: bidirectional
+    traversal: { base_duration_ticks: 5 }
+    allowed_transport_tags: [test.tag.rail]
+worlds:
+  - id: test.world
+    locations:
+      - { id: test.loc.0, template: test.location.a }
+      - { id: test.loc.1, template: test.location.a }
+    connections:
+      - id: test.conn.0
+        definition: test.connection.road
+        origin: test.loc.0
+        destination: test.loc.1
+    owners:
+      - id: test.owner
+        initial_entities:
+          - { definition: test.entity.source, location: test.loc.0 }
+          - { definition: test.entity.heavy_source, location: test.loc.0 }
+          - { definition: test.entity.refiner, location: test.loc.1 }

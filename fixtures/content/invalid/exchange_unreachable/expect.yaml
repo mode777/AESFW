@@ -1,0 +1,4 @@
+expect:
+  - code: exchange_unreachable
+    severity: error
+    definition: test.exchange.lonely

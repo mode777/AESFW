@@ -1,0 +1,4 @@
+expect:
+  - code: recipe_cycle_unseeded
+    severity: error
+    definition: test.recipe.a

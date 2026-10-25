@@ -1,0 +1,4 @@
+expect:
+  - code: invalid_output_storage
+    severity: error
+    definition: test.recipe.caps

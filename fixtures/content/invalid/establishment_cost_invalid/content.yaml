@@ -1,0 +1,19 @@
+resources:
+  - id: test.resource.heavy
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: false
+entity_definitions:
+  - id: test.entity.hub
+    components: {}
+location_establishments:
+  - id: test.establishment.a
+    requires_knowledge: discovered
+    requires_unoccupied: true
+    cost_source: transport_cargo
+    costs:
+      - { resource: test.resource.heavy, quantity: 100 }
+    creates_hub: test.entity.hub
+    activation: on_completion
+    ownership: exclusive

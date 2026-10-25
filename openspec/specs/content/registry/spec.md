@@ -80,9 +80,9 @@ Source: TDS-7, CONT-5
 - **THEN** the mutation throws or has no effect
 
 ### Requirement: Content load orchestration
-`loadContent(sources, options)` SHALL run manifest resolution, strict parsing, schema validation, composition, registry compilation, and expression compilation in order, concatenating their diagnostics. When any diagnostic has error severity, `content` SHALL be `null`; otherwise `content` SHALL carry the frozen registry, the checksum, and the package list in ascending ID order.
+`loadContent(sources, options)` SHALL run manifest resolution, strict parsing, schema validation, composition, graph validation, registry compilation, and expression compilation in order, concatenating their diagnostics. Graph validation runs over the composed definition set before registry compilation (CONT-12). When any diagnostic has error severity, `content` SHALL be `null`; otherwise `content` SHALL carry the frozen registry, the checksum, and the package list in ascending ID order.
 
-Source: TDS-20.1, TDS-20.2
+Source: TDS-20.1, TDS-20.2, CONT-12
 
 #### Scenario: Valid sources compile to content
 - **WHEN** a source set defines a resource, a recipe, and a producer
@@ -95,6 +95,10 @@ Source: TDS-20.1, TDS-20.2
 #### Scenario: An invalid condition fails the load
 - **WHEN** a package defines a condition with an unknown operator
 - **THEN** `loadContent` returns `null` content and an error-severity diagnostic
+
+#### Scenario: A graph error fails the load before registry compilation
+- **WHEN** a package contains a resource with no source
+- **THEN** `loadContent` returns `content: null` with the graph-stage diagnostic
 
 ### Requirement: Default world plan
 `defaultWorldPlan(registry)` SHALL derive a `WorldPlan` from compiled location templates with `activation.initial: true`, in ascending template-ID order, for a single default owner `0`, carrying each template's policy, its capacity (a total capacity for an abstract-capacity template, or width, height, and a fixed or seeded buildable mask for a grid template), properties, and inventories, and SHALL report diagnostics for unresolved templates or unsupported spatial parameters.

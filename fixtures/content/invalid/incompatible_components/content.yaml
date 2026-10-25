@@ -1,0 +1,14 @@
+resources:
+  - id: test.resource.a
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+entity_definitions:
+  - id: test.entity.empty_producer
+    components:
+      producer:
+        recipes: []
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared

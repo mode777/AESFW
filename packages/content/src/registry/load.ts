@@ -15,6 +15,7 @@ import type { PackageSource } from '../package/source.js';
 import { validateSchemas } from '../schemas/validate.js';
 import { DEFAULT_LOAD_OPTIONS } from '../types.js';
 import type { ContentResult, LoadOptions } from '../types.js';
+import { validateGraphs } from '../validation/index.js';
 import { buildRegistry } from './build.js';
 import { checksum } from './normalize.js';
 
@@ -31,6 +32,7 @@ export function loadContent(
   const parsed = parseFiles(manifests.manifests, options);
   const validated = validateSchemas(parsed.files, options);
   const composed = composeDefinitions(validated.definitions, options);
+  const graphDiagnostics = validateGraphs(composed.definitions);
   const built = buildRegistry(composed.definitions, options);
   const expressionDiagnostics = compileExpressions(composed.definitions, built.registry);
 
@@ -39,6 +41,7 @@ export function loadContent(
     ...parsed.diagnostics,
     ...validated.diagnostics,
     ...composed.diagnostics,
+    ...graphDiagnostics,
     ...built.diagnostics,
     ...expressionDiagnostics,
   ];

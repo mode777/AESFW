@@ -7,9 +7,9 @@ Tier transitions (GDD-13, CONT-6.15) move a residence between population tiers t
 ## Requirements
 
 ### Requirement: Transition definitions
-A transition SHALL carry `source_tier`, `target_tier`, optional `trigger`, optional `condition`, optional `costs`, `refund_policy`, `duration_ticks`, and a `conversion` with a population policy and optional target `entity_definition`; every referenced tier, condition, resource, and entity definition SHALL resolve.
+A transition SHALL carry `source_tier`, `target_tier`, optional `trigger`, optional `condition`, optional `costs`, `refund_policy`, `duration_ticks`, and a `conversion` with a population policy and optional target `entity_definition`; every referenced tier, condition, resource, and entity definition SHALL resolve. A transition MAY carry an `optional` flag; an `optional` transition is exempt from population-graph reachability validation.
 
-Source: CONT-6.15, GDD-13
+Source: CONT-6.15, CONT-11.5, GDD-13
 
 #### Scenario: A well-formed transition compiles
 - **WHEN** a transition names resolvable tiers, a condition, a cost, and `conversion: { population: retain_count_clamped, entity_definition: test.entity.res2 }`
@@ -18,6 +18,10 @@ Source: CONT-6.15, GDD-13
 #### Scenario: An unresolved target definition is reported
 - **WHEN** a transition's `conversion.entity_definition` names an absent definition
 - **THEN** the load reports the unknown reference
+
+#### Scenario: An optional transition is accepted
+- **WHEN** a transition declares `optional: true`
+- **THEN** the schema accepts it and reachability validation exempts it
 
 ### Requirement: Manual transition request
 `RequestPopulationTransition { entity, transition }` SHALL be applied only when the entity is a residence, the transition's source tier equals the residence's tier, and its condition (when present) holds; otherwise it SHALL be rejected with `unknown_entity`, `unknown_definition`, `invalid_transition`, or `not_eligible`. The costs SHALL be withdrawn atomically from the location's accessible inventories with purpose `population_transition`, and a shortage SHALL reject with `insufficient_quantity` without changing state.

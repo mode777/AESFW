@@ -1,0 +1,5 @@
+expect:
+  - code: resource_unreachable
+    severity: error
+    definition: test.world
+    args: { resource: test.resource.heavy, reason: not_transportable }

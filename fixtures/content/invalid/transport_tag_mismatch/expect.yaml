@@ -1,0 +1,5 @@
+expect:
+  - code: transport_tag_mismatch
+    severity: error
+    definition: test.world
+    args: { resource: test.resource.precious }

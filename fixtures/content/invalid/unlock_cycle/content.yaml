@@ -1,0 +1,13 @@
+population_tiers:
+  - id: test.tier.locked
+    need_categories: []
+    outputs: []
+conditions:
+  - id: test.condition.count
+    expression: { gt: [{ population_count: { tier: test.tier.locked } }, 0] }
+unlocks:
+  - id: test.unlock.self
+    scope: global
+    targets:
+      - { type: population_tier, id: test.tier.locked }
+    condition: test.condition.count

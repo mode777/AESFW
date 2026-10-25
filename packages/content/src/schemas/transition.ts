@@ -58,6 +58,7 @@ export const TransitionSchema = Type.Object(
         Type.Literal('condition_duration'),
       ]),
     ),
+    optional: Type.Optional(Type.Boolean()),
     condition: Type.Optional(IdSchema),
     costs: Type.Optional(Type.Array(CostSchema)),
     cost_source: Type.Optional(Type.Literal('location_inventory')),

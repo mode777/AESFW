@@ -1,0 +1,4 @@
+expect:
+  - code: composition_schema_violation
+    severity: error
+    definition: test.unlock.broken

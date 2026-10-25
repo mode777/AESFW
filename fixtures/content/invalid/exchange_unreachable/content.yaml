@@ -1,0 +1,51 @@
+resources:
+  - id: test.resource.goods
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: test.resource.credits
+    tags: [balance]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: owner }
+    transportable: false
+    allow_negative: true
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+  - id: test.location.b
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+exchanges:
+  - id: test.exchange.lonely
+    location: test.location.b
+    currency: test.resource.credits
+    shared_between_owners: true
+    goods:
+      - resource: test.resource.goods
+        buy_from_exchange: { base_price: 100, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+    elasticity:
+      window_ticks: 10
+      step_quantity: 100
+      step_change_permille: 100
+      recovery_permille_per_interval: 100
+      recovery_interval_ticks: 5
+      min_price_permille: 500
+      max_price_permille: 2000
+worlds:
+  - id: test.world
+    locations:
+      - { id: test.loc.0, template: test.location.a }
+      - { id: test.loc.1, template: test.location.b }

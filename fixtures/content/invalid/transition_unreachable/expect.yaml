@@ -1,0 +1,4 @@
+expect:
+  - code: transition_unreachable
+    severity: error
+    definition: test.transition.orphan

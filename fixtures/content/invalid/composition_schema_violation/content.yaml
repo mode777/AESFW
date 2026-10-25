@@ -1,0 +1,13 @@
+unlocks:
+  - id: test.unlock.broken
+    scope: global
+    targets:
+      remove: [test.entity.base]
+    condition: test.condition.a
+conditions:
+  - id: test.condition.a
+    expression: { gt: [{ population_count: { tier: test.tier.a } }, 0] }
+population_tiers:
+  - id: test.tier.a
+    need_categories: []
+    outputs: []

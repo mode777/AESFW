@@ -1,0 +1,5 @@
+expect:
+  - code: unsourceable_resource
+    severity: error
+    definition: test.transition.paying
+    args: { resource: test.resource.cost }

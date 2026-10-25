@@ -1,0 +1,19 @@
+population_tiers:
+  - id: test.tier.a
+    need_categories: []
+    outputs: []
+conditions:
+  - id: test.condition.count
+    expression: { gt: [{ population_count: { tier: test.tier.a } }, 0] }
+entity_definitions:
+  - id: test.entity.gated_one
+    components: {}
+  - id: test.entity.gated_two
+    components: {}
+unlocks:
+  - id: test.unlock.gate
+    scope: global
+    targets:
+      - { type: entity_definition, id: test.entity.gated_one }
+      - { type: entity_definition, id: test.entity.gated_two }
+    condition: test.condition.count

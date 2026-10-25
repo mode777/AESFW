@@ -1,0 +1,4 @@
+expect:
+  - code: unlock_cycle
+    severity: error
+    definition: test.unlock.self

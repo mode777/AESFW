@@ -1,0 +1,41 @@
+resources:
+  - id: test.resource.cost
+    tags: [storable]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+growth_policies:
+  - id: test.growth.none
+    interval_ticks: 10
+population_tiers:
+  - id: test.tier.a
+    need_categories: []
+    outputs: []
+transitions:
+  - id: test.transition.paying
+    source_tier: test.tier.a
+    target_tier: test.tier.a
+    duration_ticks: 5
+    conversion: { population: retain_count }
+    costs:
+      - { resource: test.resource.cost, quantity: 100 }
+entity_definitions:
+  - id: test.entity.residence
+    components:
+      residence:
+        population_tier: test.tier.a
+        capacity: 10
+        growth_policy: test.growth.none
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: { total_capacity: 100 }
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+worlds:
+  - id: test.world
+    locations:
+      - { id: test.loc.0, template: test.location.a }
