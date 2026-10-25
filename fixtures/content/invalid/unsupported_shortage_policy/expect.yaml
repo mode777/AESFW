@@ -1,0 +1,3 @@
+expect:
+  - code: unsupported_shortage_policy
+    severity: error

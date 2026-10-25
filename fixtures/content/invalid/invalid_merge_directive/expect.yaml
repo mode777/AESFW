@@ -1,0 +1,3 @@
+expect:
+  - code: invalid_merge_directive
+    severity: error

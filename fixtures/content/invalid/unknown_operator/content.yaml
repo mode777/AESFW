@@ -1,0 +1,4 @@
+conditions:
+  - id: test.condition.a
+    expression:
+      telepathy: 1

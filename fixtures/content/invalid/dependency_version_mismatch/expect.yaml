@@ -1,0 +1,3 @@
+expect:
+  - code: dependency_version_mismatch
+    severity: error

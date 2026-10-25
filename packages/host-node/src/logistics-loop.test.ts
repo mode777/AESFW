@@ -25,7 +25,7 @@ interface Golden {
   readonly checkpoints: Readonly<Record<string, string>>;
 }
 
-describe('[VER-9.3][SCN-02] logistics loop golden', () => {
+describe('[VER-9.3][SCN-02][GDD-23.2] logistics loop golden', () => {
   it('[SCN-02] a resource moves between two locations and matches its golden', () => {
     const result = runCli(['run', scenarioPath], io);
     expect(result.exitCode).toBe(0);

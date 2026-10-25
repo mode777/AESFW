@@ -1,0 +1,8 @@
+package:
+    id: test.invalid.missing_file
+    version: 1.0.0
+    schema_version: 1
+    type: simulation_content
+    files:
+      - content.yaml
+      - absent.yaml

@@ -1,0 +1,3 @@
+expect:
+  - code: unresolved_reference
+    severity: error

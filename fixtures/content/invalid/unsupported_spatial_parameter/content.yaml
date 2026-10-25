@@ -1,0 +1,9 @@
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters: {}
+    inventories:
+      - id: shared
+        capacity: { mode: total, quantity: 1000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }

@@ -1,0 +1,3 @@
+expect:
+  - code: missing_manifest
+    severity: error

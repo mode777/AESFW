@@ -1,0 +1,7 @@
+curves:
+  - id: test.curve.a
+    type: piecewise_linear
+    points:
+      - [0, 0]
+      - [10, 10]
+    extrapolation: error

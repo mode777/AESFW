@@ -1,0 +1,3 @@
+expect:
+  - code: duplicate_package_id
+    severity: error

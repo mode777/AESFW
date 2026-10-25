@@ -1,0 +1,12 @@
+resources:
+  - id: test.resource.a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+    allow_negative: true

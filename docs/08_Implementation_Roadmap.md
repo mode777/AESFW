@@ -303,12 +303,12 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 
 | # | Change ID | Capability | Scope | Sources | Depends on | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 10.1 | `add-graph-validation` | content/validation | composition compatibility; production, population, spatial/logistics, exchange, and unlock graphs | CONT-11.4, CONT-11.5 | 9.1, 7.5, 8.1 | L |
-| 10.2 | `add-economic-diagnostics` | content/validation | all economic diagnostics | CONT-11.6 | 10.1 | M |
-| 10.3 | `add-design-intent-diagnostics` | content/validation | all design-intent diagnostics, strict promotion | CONT-11.7, GDD-3.2 | 10.1 | M |
-| 10.4 | `add-determinism-validation` | content/validation | determinism checks on content and modules | CONT-11.8 | 1.6 | S |
-| 10.5 | `add-presentation-package-validation` | content/validation | presentation package checks | PIC-19 | 2.7 | S |
-| 10.6 | `add-validation-report-cli` | host/cli | text and JSON reports with localized diagnostic messages | CONT-15, TDS-21.2 | 10.2, 10.3 | S |
+| 10.1 | `add-graph-validation` | content/validation | composition compatibility; production, population, spatial/logistics, exchange, and unlock graphs | CONT-11.4, CONT-11.5 | 9.1, 7.5, 8.1 | L  ✓ archived 2026-10-25 |
+| 10.2 | `add-economic-diagnostics` | content/validation | all economic diagnostics | CONT-11.6 | 10.1 | M  ✓ archived 2026-10-25 |
+| 10.3 | `add-design-intent-diagnostics` | content/validation | all design-intent diagnostics, strict promotion | CONT-11.7, GDD-3.2 | 10.1 | M  ✓ archived 2026-10-25 |
+| 10.4 | `add-determinism-validation` | content/validation | determinism checks on content and modules | CONT-11.8 | 1.6 | S  ✓ archived 2026-10-25 |
+| 10.5 | `add-presentation-package-validation` | content/validation | presentation package checks | PIC-19 | 2.7 | S  ✓ archived 2026-10-25 |
+| 10.6 | `add-validation-report-cli` | host/cli | text and JSON reports with localized diagnostic messages | CONT-15, TDS-21.2 | 10.2, 10.3 | S  ✓ archived 2026-10-25 |
 
 **Exit criteria:** every diagnostic code has an invalid fixture (06 §10.2); the trace gate switches from warning to error (06 §3.3).
 
@@ -673,3 +673,19 @@ Rows 4.1–4.7 are archived. Exit criteria and their verification:
 **Risks.** R-12 (exchanges as a money exploit) is retired: elasticity is mandatory with validated bounds and spread (9.1), trades execute at authoritative prices with limits, atomicity, and deterministic ordering (9.2), and INV-12/INV-13 plus the SCN-06 round-trip loss test enforce it continuously. R-06 has no new browser measurement (the client work is selector-only).
 
 **Next.** M10 (validation and diagnostics completeness) is unblocked: 10.1 depends on 9.1, 7.5, and 8.1 (all archived).
+
+### M10 — Validation and Diagnostics Completeness (completed 2026-10-25)
+
+**Delivered.** 10.1 `add-graph-validation` (post-composition schema re-validation, `incompatible_components`, the production graph with provider/seed analysis and Tarjan recipe-cycle detection, population reachability over residence-rooted tier graphs, per-world spatial/logistics reachability with the route planner's tag rule, exchange reachability, and the unlock dependency graph), 10.2 `add-economic-diagnostics` (the seven CONT-11.6 checks as static rate analyses with an `economic_diagnostics` warning/error knob), 10.3 `add-design-intent-diagnostics` (the seven-scarcity audit of GDD-3.2 plus nine single-idea checks behind an opt-in `design_intent` knob with promotion), 10.4 `add-determinism-validation` (wall-clock, unseeded-random, safe-integer, embedded-script, and module-override rejection), 10.5 `add-presentation-package-validation` (the six PIC-19 checks with CLI routing and `--against`), and 10.6 `add-validation-report-cli` (a message catalogue covering every code, a deterministic text/JSON report builder, and CLI knobs for both severity options).
+
+**Exit criteria.** Every diagnostic code has exactly one minimal invalid fixture under `fixtures/content/invalid/<code>/` (75 codes; cross-checked against the catalogue by test, including direct-pipeline branches for codes unreachable through `loadContent`); the trace gate runs `pnpm trace --strict` in CI and passes with 0 untraced requirements (06 §3.3).
+
+**Spec reconciliation.** No normative amendment to 01–04 was required. Interpretations recorded in change designs: need demands are CONT-11.6 economics, not CONT-11.5 sourcing errors (10.1 D2); owner/global-scoped balances are exempt from sourcing and transport checks (GDD-7.5); the sourcing requirement applies to packages that declare a world (10.1 D2); design-intent checks default to `off`, with "warnings by default" read as severity-when-run because 78 existing tests assert exactly-empty diagnostic lists and partial test content is not a design opinion (10.3 D1); CONT-11.8's order-dependent-queries bullet has no content-expressible form, since aggregates iterate ascending ID by construction (10.4 D3); merge directives cannot pass raw schema validation, so `composition_schema_violation` is exercised through the composition stage directly (10.1 D8). Reference alignment: `ref.tier.presentation` moved its manifest type to the framework's `presentation` union member and gained the global fallback document (10.5 D3). Observation for 12.7: the `fx` curve property test showed an intermittent unseeded-fast-check counterexample on clean `main` (~1 in 12 runs); give property tests fixed seeds there.
+
+**Benchmarks.** All validation runs at load time only; no per-tick work was added and `bench.small` is unchanged. Content loads pay one extra graph/economic pass over the composed definitions; no budget regression was recorded.
+
+**Traceability.** CONT-11.4–11.8, CONT-15, GDD-3.2, GDD-3.4, GDD-3.5, GDD-3.6, GDD-23.1–23.3, and PIC-19 moved from untraced to traced; the exemption list now documents parent headings, realised-by sections, and M11+ work; CI runs the strict gate.
+
+**Risks.** R-14 (late specification gaps) is retired on the content side: graph, economic, design-intent, determinism, and presentation validation reject broken packages with actionable, localised messages. R-15's containment story gains `module_redefines_core` ahead of 13.1.
+
+**Next.** M11a (reference prototype game) is unblocked: 11.1 depends on 10.3, 5.4, 7.9, 8.6, and 9.5 (all archived). M13's module row also loses its 10.4 gate.

@@ -1,0 +1,5 @@
+worlds:
+  - id: test.world
+    locations:
+      - id: test.loc.0
+        template: test.template.absent

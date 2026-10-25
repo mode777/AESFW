@@ -408,7 +408,7 @@ describe('[CONT-11.7] self-sufficiency and cross-region dependency', () => {
 });
 
 describe('[CONT-11.7] pyramid, breadth, and coverage intent', () => {
-  it('[CONT-11.7] a substitute capability is reported', () => {
+  it('[CONT-11.7][GDD-3.4] a substitute capability is reported', () => {
     const result = load(
       {
         resources: [
@@ -433,7 +433,7 @@ describe('[CONT-11.7] pyramid, breadth, and coverage intent', () => {
     expect(finding?.definition).toBe('test.cap.a');
   });
 
-  it('[CONT-11.7] a collapsed weighted category is reported', () => {
+  it('[CONT-11.7][GDD-3.5] a collapsed weighted category is reported', () => {
     const result = load(
       {
         needs: [
@@ -464,7 +464,7 @@ describe('[CONT-11.7] pyramid, breadth, and coverage intent', () => {
     expect(finding?.definition).toBe('test.need_category.flat');
   });
 
-  it('[CONT-11.7] a package without coverage needs is reported', () => {
+  it('[CONT-11.7][GDD-3.6] a package without coverage needs is reported', () => {
     const result = load(
       {
         needs: [

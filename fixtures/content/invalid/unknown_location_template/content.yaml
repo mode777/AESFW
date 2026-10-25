@@ -1,0 +1,13 @@
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.bogus_policy
+    spatial_parameters:
+      total_capacity: 100
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true

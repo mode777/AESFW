@@ -1,0 +1,3 @@
+expect:
+  - code: resource_allow_negative_scope
+    severity: error

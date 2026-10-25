@@ -1,0 +1,22 @@
+resources:
+  - id: test.resource.plain
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+recipes:
+  - id: test.recipe.a
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      []
+    outputs:
+      []
+    capability_requirements:
+      - resource: test.resource.plain
+        quantity: 1

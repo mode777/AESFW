@@ -1,0 +1,5 @@
+curves:
+  - id: test.curve.a
+    type: piecewise_linear
+    points:
+      []

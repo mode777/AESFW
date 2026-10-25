@@ -1,0 +1,45 @@
+regions:
+  - id: test.region.north
+  - id: test.region.south
+location_templates:
+  - id: test.location.a
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    region: test.region.north
+    properties:
+      test.property.suitability_x: 1
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+  - id: test.location.b
+    spatial_policy: framework.spatial.abstract_capacity
+    spatial_parameters:
+      total_capacity: 100
+    region: test.region.south
+    properties:
+      test.property.suitability_x: 1
+    inventories:
+      - id: shared
+        capacity:
+          mode: total
+          quantity: 1000
+        access_policy: framework.inventory.shared_location
+    activation:
+      initial: true
+distribution_rules:
+  - id: test.rule.a
+    regions:
+      - test.region.north
+      - test.region.south
+    disjoint:
+      properties:
+        - test.property.suitability_*
+      source_slot_types: false
+    generation:
+      mode: fixed

@@ -45,3 +45,294 @@
   reason: Non-goals for v1; a scope statement.
 - id: REF-18
   reason: Acceptance criteria summary; verified transitively.
+
+# Added at M10 close: the trace gate switches from warning to error (06 §3.3).
+# Parent headings carry their requirements in subsections; realised sections point
+# at the traced behaviour; the rest are owned by later roadmap rows.
+
+- id: ARCH-3
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-4
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-5
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-6
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-7
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-8
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-10
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-14
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-15
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-16
+  reason: Parent heading; the requirements live in its subsections.
+- id: CONT-6
+  reason: Parent heading; the requirements live in its subsections.
+- id: CONT-7
+  reason: Parent heading; the requirements live in its subsections.
+- id: CONT-11
+  reason: Parent heading; the requirements live in its subsections.
+- id: CONT-13
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-3
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-4
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-6
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-7
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-8
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-9
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-15
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-16
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-17
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-18
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-20
+  reason: Parent heading; the requirements live in its subsections.
+- id: GDD-23
+  reason: Parent heading; the requirements live in its subsections.
+- id: PIC-2
+  reason: Parent heading; the requirements live in its subsections.
+- id: PIC-10
+  reason: Parent heading; the requirements live in its subsections.
+- id: REF-10
+  reason: Parent heading; the requirements live in its subsections.
+- id: REF-12
+  reason: Parent heading; the requirements live in its subsections.
+- id: REF-13
+  reason: Parent heading; the requirements live in its subsections.
+- id: REF-14
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-4
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-5
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-6
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-8
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-9
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-10
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-11
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-14
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-16
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-18
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-19
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-20
+  reason: Parent heading; the requirements live in its subsections.
+- id: TDS-21
+  reason: Parent heading; the requirements live in its subsections.
+- id: ARCH-3.2
+  reason: Definition handles; realised and asserted by the kernel/world-state suite (0.5).
+- id: ARCH-3.3
+  reason: Component stores; realised and asserted by the kernel/world-state suite (0.5).
+- id: ARCH-4.1
+  reason: Definition data; realised by the compiled-content registry (1.4).
+- id: ARCH-4.3
+  reason: Hot reload is a host concern with no v1 surface; deferred with the host rows.
+- id: ARCH-5.1
+  reason: Fixed simulation time; realised and asserted by the tick pipeline (0.6).
+- id: ARCH-5.3
+  reason: Parallel execution is explicitly out of scope in v1 (single-threaded worker).
+- id: ARCH-7.1
+  reason: Command envelope; realised and asserted by app/session (2.2) and the protocol codecs.
+- id: ARCH-7.4
+  reason: Command rejection; realised and asserted by app/session (2.2).
+- id: ARCH-8.1
+  reason: Queries; realised and asserted by app/session and the read models (2.3/2.4).
+- id: ARCH-8.2
+  reason: Snapshot granularity; realised and asserted by app/projections (2.3).
+- id: ARCH-10.1
+  reason: Worker-side registry access; realised by @aesfw/host-web (2.6).
+- id: ARCH-10.2
+  reason: Worker-side compiled conditions; realised by @aesfw/host-web (2.6).
+- id: ARCH-10.3
+  reason: Worker-side curves; realised by @aesfw/host-web (2.6).
+- id: ARCH-15.2
+  reason: Authoritative save state; realised and asserted by app/persistence (2.5).
+- id: ARCH-15.3
+  reason: Snapshot save procedure; realised and asserted by app/persistence (2.5).
+- id: ARCH-16
+  reason: Determinism and replay; determinism is enforced from M0, replay is roadmap 12.2 (M12).
+- id: ARCH-16.1
+  reason: Determinism rules; realised and asserted by the determinism harnesses (0.7, 0.9).
+- id: ARCH-16.2
+  reason: Replay documents; owned by roadmap 12.2 (M12).
+- id: ARCH-17
+  reason: Networking readiness; no v1 networking surface; the command/projection boundary keeps the option open.
+- id: ARCH-18
+  reason: Performance model; owned by roadmap 12.6 (M12).
+- id: ARCH-19
+  reason: Error handling; realised by InvariantViolation diagnostics and asserted by the harness suites.
+- id: ARCH-20
+  reason: Debug tooling; owned by roadmap 12.3 (M12).
+- id: CONT-6.23
+  reason: Optional modules; owned by roadmap 13.1 (M13).
+- id: CONT-7.4
+  reason: State-query extension; realised by the service and coverage queries (7.6).
+- id: CONT-10
+  reason: Presentation references; realised by the definition schemas and the presentation validator (10.5).
+- id: CONT-13.2
+  reason: Id aliases; owned by roadmap 12.1 (M12).
+- id: CONT-13.3
+  reason: Data transforms; owned by roadmap 12.1 (M12).
+- id: GDD-2
+  reason: Core design statement; a summary realised by the mechanics of GDD-3/4 below.
+- id: GDD-3.1
+  reason: Five coupled layers and the decoration test; realised by the layered package boundaries (TDS-4).
+- id: GDD-3.9
+  reason: Abstraction over micromanagement; realised by the aggregate transport and population surfaces.
+- id: GDD-3.10
+  reason: Legible ratios; reported by the ratio_illegible design-intent diagnostic (10.3).
+- id: GDD-4.1
+  reason: Tiered population; asserted by the sim/population suite via GDD-11 IDs.
+- id: GDD-4.2
+  reason: Categorized needs; asserted by the sim/needs suite via GDD-12 IDs.
+- id: GDD-4.4
+  reason: Spatial resource availability; asserted by the sim/spatial and sim/world suites.
+- id: GDD-4.5
+  reason: Isolated inventories; asserted by the kernel/transactions suite (GDD-8 IDs).
+- id: GDD-4.6
+  reason: State-driven progression; asserted by the sim/transitions suite (GDD-13 IDs).
+- id: GDD-4.9
+  reason: The simulation never ends by itself; realised by the recoverable deficit and decline mechanics.
+- id: GDD-5
+  reason: Conceptual model; a summary realised by the mechanics below.
+- id: GDD-7.1
+  reason: Resource definition; asserted by the content/schemas resource tests (CONT-6.1).
+- id: GDD-7.2
+  reason: Resource roles; asserted by the content/schemas and registry tests.
+- id: GDD-7.3
+  reason: Virtual resources and capabilities; asserted by the capability allocation suite (GDD-14).
+- id: GDD-7.4
+  reason: Resource scope; asserted by the schema and transaction tests (CONT-6.1).
+- id: GDD-9.4
+  reason: Producer component; asserted by the sim/production suite (GDD-10 IDs).
+- id: GDD-9.8
+  reason: Transport endpoint; asserted by the sim/transport suite (GDD-15 IDs).
+- id: GDD-9.10
+  reason: Exchange; asserted by the sim/exchanges suite (GDD-17 IDs).
+- id: GDD-9.11
+  reason: Entity archetypes; a classification realised by the component schemas (CONT-6.8).
+- id: GDD-10.1
+  reason: Recipe definition; asserted by the content/schemas recipe tests (CONT-6.7).
+- id: GDD-10.5
+  reason: Productivity modifiers; owned by roadmap 12.4 (M12).
+- id: GDD-11.1
+  reason: Aggregate population; asserted by the sim/population suite (GDD-11 IDs).
+- id: GDD-11.2
+  reason: Population-tier definition; asserted by the content/schemas tier tests (CONT-6.10).
+- id: GDD-12.1
+  reason: Need definition; asserted by the content/schemas need tests (CONT-6.11).
+- id: GDD-13.2
+  reason: Transition triggering; asserted by the sim/transitions trigger suite (7.3).
+- id: GDD-13.5
+  reason: Initial construction; realised by the construction lifecycle (3.2).
+- id: GDD-14.1
+  reason: Capability definition; asserted by the content/schemas and capability suites (GDD-14).
+- id: GDD-14.3
+  reason: Capability shortage behavior; asserted by the capability allocation suite (GDD-14).
+- id: GDD-17.1
+  reason: Exchange purpose; asserted by the sim/exchanges suite (GDD-17 IDs).
+- id: GDD-21
+  reason: Optional modules; owned by roadmap 13.1 (M13).
+- id: GDD-22
+  reason: Player and external interactions; owned by roadmap 13.4 (M13).
+- id: GDD-23.4
+  reason: Complete game loop; owned by roadmap 11.3 (M11b).
+- id: GDD-23.5
+  reason: Minimum playable prototype; owned by roadmap 11.1 (M11a).
+- id: GDD-24
+  reason: Explicit framework boundary; realised by the module guardrails (13.1, M13).
+- id: PIC-2.1
+  reason: Presentation allowances; realised by the presentation validator (10.5).
+- id: PIC-2.2
+  reason: Presentation prohibitions; realised by the presentation validator (10.5).
+- id: PIC-5
+  reason: Presentation package; realised and asserted by the presentation validator (10.5).
+- id: PIC-6
+  reason: Presentation mapping; realised and asserted by the presentation validator (10.5).
+- id: PIC-7
+  reason: Localization; realised and asserted by the presentation validator (10.5).
+- id: PIC-8
+  reason: Asset registry; client bundle concern; owned by the reference client rows (M11).
+- id: PIC-14
+  reason: Rendering and interpolation; realised by the reference client (2.8+); client tests are smoke-level per VER-12.
+- id: PIC-15
+  reason: Ui interaction contract; realised by the reference client command surface (2.9+).
+- id: PIC-16
+  reason: Presentation state; realised by the reference client view state (2.8).
+- id: PIC-17
+  reason: Accessibility and alternate clients; owned by roadmap 11.4 (M11a).
+- id: REF-2
+  reason: Separation rules; asserted by the theme-free and dependency-cruiser guardrails (0.2).
+- id: REF-3
+  reason: Reference identity; asserted by the reference content tests (2.7).
+- id: REF-4
+  reason: Time and scale conventions; asserted by the reference content tests (2.7).
+- id: REF-6
+  reason: Package layout; realised by the reference package structure (2.7).
+- id: REF-9
+  reason: Minimalist aesthetic principles; realised by the client shell (2.8).
+- id: REF-10.1
+  reason: Design tokens; realised by the client shell (2.8).
+- id: REF-11
+  reason: Layout; realised by the client shell (2.8).
+- id: REF-12.5
+  reason: Debug overlay; realised and asserted by the client shell (2.8).
+- id: REF-14.1
+  reason: Client modules; owned by roadmap 13.5 (M13).
+- id: REF-14.5
+  reason: Client-local persistence; owned by a later client row.
+- id: REF-14.6
+  reason: Performance budgets; owned by roadmap 11.6 (M11b).
+- id: REF-15
+  reason: Accessibility; owned by roadmap 11.4 (M11a).
+- id: REF-16
+  reason: Testing hooks; owned by roadmap 11.4 (M11a).
+- id: TDS-3.1
+  reason: Functional core, imperative shell; realised by the purity guardrails (0.2).
+- id: TDS-3.2
+  reason: Framework and reference separation; asserted by the dependency-cruiser rules (0.2).
+- id: TDS-3.3
+  reason: Data at the boundaries; realised by the DTO codecs and canonical JSON (0.4, 2.1).
+- id: TDS-3.4
+  reason: Determinism as a design property; realised by fx, canonical encoding, and the purity lint (0.3/0.4).
+- id: TDS-4.4
+  reason: Package internal layout; realised by the workspace structure (0.1).
+- id: TDS-5.1
+  reason: Pure system definition; realised and asserted by the phase table (0.6).
+- id: TDS-5.4
+  reason: Effects as data; realised and asserted by the event writer and journals (0.6).
+- id: TDS-6.5
+  reason: No floating point; asserted by the fx property suite (0.3).
+- id: TDS-9.1
+  reason: Global commit order; realised and asserted by the phase table and store suites (0.5/0.6).
+- id: TDS-9.2
+  reason: Owners, exchanges, and trades; asserted by the sim/exchanges suite (9.1/9.2).
+- id: TDS-9.3
+  reason: Commands; asserted by the app/session suite (2.2).
+- id: TDS-18.5
+  reason: Planning metrics; asserted by the planning read-model suite (4.5).
+- id: TDS-19.2
+  reason: Replay document; owned by roadmap 12.2 (M12).
+- id: ARCH-15.4
+  reason: Save migration; owned by roadmap 12.1 (M12).

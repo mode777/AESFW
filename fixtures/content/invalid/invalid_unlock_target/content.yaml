@@ -1,0 +1,9 @@
+conditions:
+  - id: test.condition.a
+    expression: true
+unlocks:
+  - id: test.unlock.a
+    scope: global
+    targets:
+      - { type: transport_order_template, id: test.order.absent }
+    condition: test.condition.a

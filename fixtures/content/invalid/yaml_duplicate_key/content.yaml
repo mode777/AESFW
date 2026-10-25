@@ -1,0 +1,6 @@
+conditions:
+  - id: test.condition.a
+    expression: true
+conditions:
+  - id: test.condition.b
+    expression: true

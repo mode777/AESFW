@@ -1,0 +1,21 @@
+resources:
+  - id: test.resource.a
+    tags:
+      - storable
+    quantity:
+      precision: fixed
+      scale: 1000
+    storage:
+      policy: normal
+      scope: inventory
+    transportable: true
+entity_definitions:
+  - id: test.entity.m
+    components:
+      maintenance:
+        interval_ticks: 10
+        inputs:
+          - resource: test.resource.a
+            quantity: 1
+        charge_policy: while_processing
+        shortage_policy: ignore

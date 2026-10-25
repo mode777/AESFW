@@ -1,0 +1,3 @@
+expect:
+  - code: duplicate_deficit_policy
+    severity: error

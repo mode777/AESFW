@@ -1,0 +1,7 @@
+entity_definitions:
+  - id: test.entity.a
+    includes:
+      - test.entity.b
+  - id: test.entity.b
+    includes:
+      - test.entity.a

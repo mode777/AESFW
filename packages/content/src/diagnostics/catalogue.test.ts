@@ -12,12 +12,16 @@ import { describe, expect, it } from 'vitest';
 
 import { parse as parseYaml } from 'yaml';
 
-import { DIAGNOSTIC_CODES, GRAPH_VALIDATION_CODES } from './catalogue.js';
+import { DIAGNOSTIC_CODES } from './catalogue.js';
 import { composeDefinitions } from '../composition/compose.js';
 import { createMemorySource } from '../package/source.js';
 import { loadContent } from '../registry/load.js';
 import { validateCompositionCompatibility } from '../validation/composition.js';
 import { validatePresentationPackage } from '../presentation/validate.js';
+import { buildRegistry } from '../registry/build.js';
+import { defaultWorldPlan, worldPlan } from '../world/plan.js';
+import { resolveReferences } from '../registry/references.js';
+import { compileCurve, evaluateCurve } from '../conditions/curves.js';
 
 const fixtureRoot = fileURLToPath(
   new URL('../../../../fixtures/content/invalid/', import.meta.url),
@@ -32,6 +36,22 @@ interface Expectation {
 
 const fixtureDirectories = (): readonly string[] =>
   readdirSync(fixtureRoot).filter((entry) => statSync(join(fixtureRoot, entry)).isDirectory());
+
+/** Codes whose fixtures exercise `composeDefinitions` directly (design D8). */
+const COMPOSE_STAGE_CODES = new Set([
+  'include_cycle',
+  'unresolved_include',
+  'invalid_merge_directive',
+]);
+
+/** Codes whose fixtures exercise the world planner directly. */
+const WORLD_STAGE_CODES = new Set([
+  'unknown_world',
+  'unknown_world_location',
+  'unknown_world_connection',
+  'unknown_location_template',
+  'unsupported_spatial_parameter',
+]);
 
 const loadFixture = (
   dir: string,
@@ -54,7 +74,23 @@ const loadForCode = (code: string, dir: string): ReturnType<typeof loadContent> 
   const design = new Set(
     DIAGNOSTIC_CODES.filter((entry) => entry.stage === 'design_intent').map((entry) => entry.code),
   );
-  return design.has(code) ? loadFixture(dir, { design_intent: 'warning' }) : loadFixture(dir);
+  const options = design.has(code) ? { design_intent: 'warning' as const } : {};
+  const packagesDir = join(dir, 'packages');
+  if (statSync(packagesDir, { throwIfNoEntry: false })?.isDirectory() === true) {
+    const sources = readdirSync(packagesDir)
+      .sort()
+      .map((name) => {
+        const files: Record<string, string> = {};
+        for (const entry of readdirSync(join(packagesDir, name))) {
+          if (entry.endsWith('.yaml')) {
+            files[entry] = readFileSync(join(packagesDir, name, entry), 'utf8');
+          }
+        }
+        return createMemorySource(name, files);
+      });
+    return loadContent(sources, { strictness: 'strict', ...options });
+  }
+  return loadFixture(dir, options);
 };
 
 /** True when the code belongs to the design-intent stage. */
@@ -99,14 +135,14 @@ describe('[VER-10.2] diagnostic catalogue', () => {
     }
   });
 
-  it('[VER-10.2] every graph-stage code has exactly one invalid fixture', () => {
+  it('[VER-10.2] every catalogue code has exactly one invalid fixture', () => {
     const directories = new Set(fixtureDirectories());
-    for (const code of GRAPH_VALIDATION_CODES) {
-      expect(directories.has(code), `missing fixture for ${code}`).toBe(true);
+    for (const entry of DIAGNOSTIC_CODES) {
+      expect(directories.has(entry.code), `missing fixture for ${entry.code}`).toBe(true);
     }
-    const graphCodes = new Set(GRAPH_VALIDATION_CODES);
+    const allCodes = new Set(DIAGNOSTIC_CODES.map((entry) => entry.code));
     for (const directory of directories) {
-      expect(graphCodes.has(directory), `unexpected fixture ${directory}`).toBe(true);
+      expect(allCodes.has(directory), `unexpected fixture ${directory}`).toBe(true);
     }
   });
 
@@ -161,6 +197,76 @@ describe('[VER-10.2] diagnostic catalogue', () => {
         continue;
       }
 
+      if (
+        COMPOSE_STAGE_CODES.has(directory) ||
+        directory === 'invalid_unlock_target' ||
+        directory === 'curve_extrapolation_error' ||
+        WORLD_STAGE_CODES.has(directory)
+      ) {
+        const raw: unknown = parseYaml(readFileSync(join(dir, 'content.yaml'), 'utf8'));
+        let diagnostics: readonly { code: string; severity: string; definition: string | null }[];
+        if (COMPOSE_STAGE_CODES.has(directory)) {
+          diagnostics = composeDefinitions(raw as never).diagnostics;
+        } else if (directory === 'invalid_unlock_target') {
+          diagnostics = resolveReferences(raw as never);
+        } else if (directory === 'curve_extrapolation_error') {
+          const definitions = raw as {
+            curves?: {
+              id: string;
+              type: string;
+              points: [number, number][];
+              extrapolation?: string;
+            }[];
+          };
+          const compiled = compileCurve(definitions.curves?.[0] ?? null);
+          const curve = compiled.curve;
+          if (curve === null) {
+            diagnostics = compiled.diagnostics;
+          } else {
+            const sink: import('@aesfw/core').Diagnostic[] = [];
+            evaluateCurve(curve, 100, sink);
+            diagnostics = sink;
+          }
+        } else if (directory === 'unknown_location_template') {
+          // The check guards a corrupted registry (a location handle without a
+          // string id); simulated with a stub registry (design D8).
+          const registry = {
+            definitionsOf: () => [
+              {
+                handle: 7,
+                id: 'test.location.orphan',
+                data: {
+                  id: 'test.location.orphan',
+                  spatial_policy: 'framework.spatial.abstract_capacity',
+                  spatial_parameters: { total_capacity: 100 },
+                  inventories: [],
+                  activation: { initial: false },
+                },
+              },
+            ],
+            stringIdOf: () => null,
+            handleOf: () => null,
+          } as never;
+          diagnostics = defaultWorldPlan(registry).diagnostics;
+        } else {
+          const composed = composeDefinitions(raw as never).definitions;
+          const { registry } = buildRegistry(composed);
+          diagnostics =
+            directory === 'unknown_world'
+              ? worldPlan(registry, 'test.world.absent').diagnostics
+              : WORLD_STAGE_CODES.has(directory)
+                ? worldPlan(registry).diagnostics
+                : defaultWorldPlan(registry).diagnostics;
+        }
+        for (const finding of expected) {
+          expect(
+            matches(finding, diagnostics as never),
+            `${directory}: ${finding.code} not reported`,
+          ).toBe(true);
+        }
+        continue;
+      }
+
       const result = loadForCode(directory, dir);
       for (const finding of expected) {
         expect(
@@ -176,7 +282,16 @@ describe('[VER-10.2] diagnostic catalogue', () => {
       DIAGNOSTIC_CODES.filter((entry) => entry.stage === 'economic').map((entry) => entry.code),
     );
     for (const directory of fixtureDirectories()) {
-      if (directory === 'composition_schema_violation' || isPresentation(directory)) continue;
+      if (
+        directory === 'composition_schema_violation' ||
+        isPresentation(directory) ||
+        COMPOSE_STAGE_CODES.has(directory) ||
+        directory === 'invalid_unlock_target' ||
+        directory === 'curve_extrapolation_error' ||
+        WORLD_STAGE_CODES.has(directory)
+      ) {
+        continue;
+      }
       const result = loadForCode(directory, join(fixtureRoot, directory));
       const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
       expect(codes, `${directory} missing its own code`).toContain(directory);

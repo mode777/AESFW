@@ -1,0 +1,19 @@
+entity_definitions:
+  - id: test.entity.a
+    components:
+      producer:
+        recipes:
+          - test.recipe.a
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: test.entity.b
+    includes:
+      - test.entity.a
+    components:
+      producer:
+        recipes:
+          append:
+            - x
+          remove:
+            - y

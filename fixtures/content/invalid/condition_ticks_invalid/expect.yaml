@@ -1,0 +1,3 @@
+expect:
+  - code: condition_ticks_invalid
+    severity: error

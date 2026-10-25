@@ -1,0 +1,6 @@
+conditions:
+  - id: test.condition.a
+    expression:
+      sustained:
+        ticks: 0
+        condition: true

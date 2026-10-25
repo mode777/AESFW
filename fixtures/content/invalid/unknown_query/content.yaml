@@ -1,0 +1,12 @@
+conditions:
+  - id: test.condition.a
+    expression:
+      sum:
+        selector: residential
+        of:
+          oracle:
+            tier: test.tier.a
+population_tiers:
+  - id: test.tier.a
+    need_categories: []
+    outputs: []

@@ -1,0 +1,3 @@
+expect:
+  - code: curve_extrapolation_error
+    severity: error

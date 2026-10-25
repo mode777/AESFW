@@ -1,0 +1,6 @@
+package:
+    id: test.invalid.bad_manifest
+    schema_version: 1
+    type: simulation_content
+    files:
+      - content.yaml

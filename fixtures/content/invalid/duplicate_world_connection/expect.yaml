@@ -1,0 +1,3 @@
+expect:
+  - code: duplicate_world_connection
+    severity: error

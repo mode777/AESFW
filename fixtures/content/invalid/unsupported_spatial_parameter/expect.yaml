@@ -1,0 +1,3 @@
+expect:
+  - code: unsupported_spatial_parameter
+    severity: error

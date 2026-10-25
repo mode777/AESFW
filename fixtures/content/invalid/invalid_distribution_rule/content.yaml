@@ -1,0 +1,12 @@
+regions:
+  - id: test.region.a
+distribution_rules:
+  - id: test.rule.a
+    regions:
+      - test.region.a
+    disjoint:
+      properties:
+        - "test.property.*"
+      source_slot_types: false
+    generation:
+      mode: fixed

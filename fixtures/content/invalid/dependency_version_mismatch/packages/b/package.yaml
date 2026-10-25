@@ -1,0 +1,10 @@
+package:
+  id: test.invalid.dep_b
+  version: 1.0.0
+  schema_version: 1
+  type: simulation_content
+  files:
+    - content.yaml
+  dependencies:
+    - package: test.invalid.dep_a
+      version: ">=9.0.0"

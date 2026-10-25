@@ -1,0 +1,3 @@
+expect:
+  - code: distribution_not_disjoint
+    severity: error

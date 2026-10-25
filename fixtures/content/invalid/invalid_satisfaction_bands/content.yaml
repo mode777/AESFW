@@ -1,0 +1,6 @@
+satisfaction_bands:
+  - id: test.band.a
+    bands:
+      - min: 500
+        effects:
+          []

@@ -1,0 +1,3 @@
+expect:
+  - code: unknown_operator
+    severity: error

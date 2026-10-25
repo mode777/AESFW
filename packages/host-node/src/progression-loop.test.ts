@@ -105,7 +105,7 @@ const entitiesOf = (state: SessionState, definitionId: string): readonly number[
   return result;
 };
 
-describe('[SCN-03][SCN-07][SCN-09] progression loop golden', () => {
+describe('[SCN-03][SCN-07][SCN-09][GDD-23.3] progression loop golden', () => {
   it('[SCN-03] the scenario advances and declines with a stable golden', () => {
     const result = runCli(['run', scenarioPath], io);
     expect(result.exitCode).toBe(0);

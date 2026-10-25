@@ -19,7 +19,7 @@ interface Golden {
   readonly checkpoints: Readonly<Record<string, string>>;
 }
 
-describe('[VER-9.3][SCN-01] basic loop golden', () => {
+describe('[VER-9.3][SCN-01][GDD-23.1] basic loop golden', () => {
   it('[SCN-01] the basic loop matches its golden hashes', () => {
     const result = runCli(['run', scenarioPath], io);
     expect(result.exitCode).toBe(0);

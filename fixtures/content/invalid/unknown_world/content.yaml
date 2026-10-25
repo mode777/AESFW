@@ -1,0 +1,4 @@
+worlds:
+  - id: test.world.a
+    locations:
+      []

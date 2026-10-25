@@ -1,0 +1,22 @@
+resources:
+  - id: test.resource.credits
+    tags: [balance]
+    quantity: { precision: fixed, scale: 1000 }
+    storage: { policy: normal, scope: owner }
+    transportable: false
+    allow_negative: true
+deficit_policies:
+  - id: test.deficit.a
+    resource: test.resource.credits
+    trigger: { operator: less, value: 0 }
+    action: pause_entities
+    order: [entity_id_asc]
+    stop_when: net_rate_non_negative
+    resume: { policy: automatic_reverse_order, when: { operator: greater_equal, value: 0 } }
+  - id: test.deficit.b
+    resource: test.resource.credits
+    trigger: { operator: less, value: 0 }
+    action: pause_entities
+    order: [entity_id_asc]
+    stop_when: net_rate_non_negative
+    resume: { policy: automatic_reverse_order, when: { operator: greater_equal, value: 0 } }

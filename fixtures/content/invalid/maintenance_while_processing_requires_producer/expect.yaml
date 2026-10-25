@@ -1,0 +1,3 @@
+expect:
+  - code: maintenance_while_processing_requires_producer
+    severity: error

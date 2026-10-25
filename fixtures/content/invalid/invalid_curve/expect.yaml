@@ -1,0 +1,3 @@
+expect:
+  - code: invalid_curve
+    severity: error

@@ -1,0 +1,3 @@
+conditions:
+  - id: test.condition.a
+    <<: {expression: true}

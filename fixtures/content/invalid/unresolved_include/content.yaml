@@ -1,0 +1,4 @@
+entity_definitions:
+  - id: test.entity.a
+    includes:
+      - test.entity.absent

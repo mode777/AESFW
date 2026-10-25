@@ -1,0 +1,9 @@
+recipes:
+  - id: test.recipe.a
+    mode: batch
+    duration_ticks: 10
+    inputs:
+      - resource: test.resource.absent
+        quantity: 1000
+    outputs:
+      []

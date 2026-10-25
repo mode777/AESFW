@@ -1,0 +1,12 @@
+conditions:
+  - id: test.condition.a
+    expression:
+      greater:
+        left:
+          population_count:
+            tier: test.tier.a
+        right: true
+population_tiers:
+  - id: test.tier.a
+    need_categories: []
+    outputs: []

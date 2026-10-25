@@ -1,0 +1,3 @@
+expect:
+  - code: invalid_exchange
+    severity: error
