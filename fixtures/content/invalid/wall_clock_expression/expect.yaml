@@ -1,0 +1,4 @@
+expect:
+  - code: wall_clock_expression
+    severity: error
+    definition: test.condition.clock

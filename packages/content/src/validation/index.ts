@@ -22,6 +22,7 @@ import { validateUnlockGraph } from './unlock.js';
 export { GRAPH_VALIDATION_CODES } from '../diagnostics/catalogue.js';
 export { validateCompositionCompatibility } from './composition.js';
 export { validateDesignIntent } from './design-intent.js';
+export { validateDeterminism } from './determinism.js';
 export { validateEconomics } from './economic.js';
 export { validateExchangeGraph } from './exchange.js';
 export { validatePopulationGraph } from './population.js';

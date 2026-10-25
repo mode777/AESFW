@@ -1,0 +1,4 @@
+conditions:
+  - id: test.condition.dice
+    expression:
+      random:

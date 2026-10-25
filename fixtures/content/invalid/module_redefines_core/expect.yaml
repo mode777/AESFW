@@ -1,0 +1,4 @@
+expect:
+  - code: module_redefines_core
+    severity: error
+    definition: framework.resource.core

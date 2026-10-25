@@ -1,0 +1,3 @@
+expect:
+  - code: platform_numeric
+    severity: error

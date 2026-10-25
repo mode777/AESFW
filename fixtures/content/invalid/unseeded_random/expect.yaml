@@ -1,0 +1,4 @@
+expect:
+  - code: unseeded_random
+    severity: error
+    definition: test.condition.dice

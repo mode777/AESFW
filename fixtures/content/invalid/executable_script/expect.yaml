@@ -1,0 +1,4 @@
+expect:
+  - code: executable_script
+    severity: error
+    definition: test.condition.script

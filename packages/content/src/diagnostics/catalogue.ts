@@ -20,6 +20,7 @@ export interface DiagnosticCodeInfo {
     | 'graph'
     | 'economic'
     | 'design_intent'
+    | 'determinism'
     | 'world';
   readonly description: string;
 }
@@ -29,6 +30,13 @@ const entry = (
   code: string,
   description: string,
 ): DiagnosticCodeInfo => ({ code, severity: 'error', stage, description });
+
+const determinism = (code: string, description: string): DiagnosticCodeInfo => ({
+  code,
+  severity: 'error',
+  stage: 'determinism',
+  description,
+});
 
 /**
  * The catalogue in ascending code order. A code may only be removed by an
@@ -103,6 +111,7 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
     'A recipe sells above its exchange-purchased input cost.',
   ),
   entry('graph', 'exchange_unreachable', 'An exchange location is unreachable in its world.'),
+  determinism('executable_script', 'A condition expression embeds executable code.'),
   entry('design_intent', 'idle_cost_absent', 'No maintenance charges while idle.'),
   entry('design_intent', 'inactive_scarcities', 'One or more of the seven scarcities is inactive.'),
   entry(
@@ -144,8 +153,10 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
   entry('manifest', 'missing_dependency', 'A manifest dependency is not present.'),
   entry('parse', 'missing_file', 'A manifest-listed file is absent.'),
   entry('manifest', 'missing_manifest', 'A package has no manifest.'),
+  determinism('module_redefines_core', 'An optional module redefines core definitions.'),
   entry('economic', 'negative_maintenance_balance', 'A charged balance has no income source.'),
   entry('graph', 'no_initial_content', 'Every entity definition is gated behind an unlock.'),
+  determinism('platform_numeric', 'A definition number is not a safe integer.'),
   entry(
     'design_intent',
     'pyramid_bypass',
@@ -201,6 +212,7 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
   entry('graph', 'unlock_cycle', 'Unlocks form a dependency cycle.'),
   entry('composition', 'unresolved_include', 'An include names an absent definition.'),
   entry('reference', 'unresolved_reference', 'A reference names an absent definition.'),
+  determinism('unseeded_random', 'A condition expression uses unseeded randomness.'),
   entry('graph', 'unsourceable_resource', 'A consumed resource has no provider.'),
   entry(
     'reference',
@@ -208,6 +220,7 @@ export const DIAGNOSTIC_CODES: readonly DiagnosticCodeInfo[] = [
     'A maintenance shortage policy is not supported by the pipeline.',
   ),
   entry('world', 'unsupported_spatial_parameter', 'A spatial parameter is unknown for the policy.'),
+  determinism('wall_clock_expression', 'A condition expression reads the wall clock.'),
   entry('parse', 'yaml_duplicate_key', 'A YAML document contains a duplicate key.'),
   entry('parse', 'yaml_merge_key', 'A YAML merge key appears where strict parsing forbids it.'),
   entry('parse', 'yaml_parse_error', 'A YAML document does not parse.'),
@@ -220,5 +233,6 @@ export const GRAPH_VALIDATION_CODES: readonly string[] = DIAGNOSTIC_CODES.filter
   (candidate) =>
     candidate.stage === 'graph' ||
     candidate.stage === 'economic' ||
-    candidate.stage === 'design_intent',
+    candidate.stage === 'design_intent' ||
+    candidate.stage === 'determinism',
 ).map((candidate) => candidate.code);

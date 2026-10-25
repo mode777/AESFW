@@ -1,0 +1,4 @@
+conditions:
+  - id: test.condition.script
+    expression:
+      eval: 'world => world.tick'

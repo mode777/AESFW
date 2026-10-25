@@ -60,6 +60,10 @@ const loadForCode = (code: string, dir: string): ReturnType<typeof loadContent> 
 const isDesignIntent = (code: string): boolean =>
   DIAGNOSTIC_CODES.some((entry) => entry.stage === 'design_intent' && entry.code === code);
 
+/** True when the code belongs to the determinism stage. */
+const isDeterminism = (code: string): boolean =>
+  DIAGNOSTIC_CODES.some((entry) => entry.stage === 'determinism' && entry.code === code);
+
 const matches = (
   finding: Expectation,
   actual: readonly {
@@ -146,7 +150,10 @@ describe('[VER-10.2] diagnostic catalogue', () => {
       const result = loadForCode(directory, join(fixtureRoot, directory));
       const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
       expect(codes, `${directory} missing its own code`).toContain(directory);
-      if (economic.has(directory) || isDesignIntent(directory)) {
+      if (isDeterminism(directory)) {
+        const finding = result.diagnostics.find((diagnostic) => diagnostic.code === directory);
+        expect(finding?.severity, `${directory} should be an error`).toBe('error');
+      } else if (economic.has(directory) || isDesignIntent(directory)) {
         expect(result.content, `${directory} should still load`).not.toBeNull();
         const finding = result.diagnostics.find((diagnostic) => diagnostic.code === directory);
         expect(finding?.severity, `${directory} should be a warning`).toBe('warning');

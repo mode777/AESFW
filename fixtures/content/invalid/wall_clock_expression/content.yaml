@@ -1,0 +1,4 @@
+conditions:
+  - id: test.condition.clock
+    expression:
+      now:
