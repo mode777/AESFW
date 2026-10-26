@@ -579,7 +579,7 @@ Missing nonessential assets produce warnings and fallbacks, not simulation load 
 - Replacing all models, icons, names, and sounds does not alter state hashes.
 - A missed domain event is corrected by the next snapshot.
 - Every user mutation maps to a validated command.
-- Every displayed mechanic can be traced to snapshot/query data. A value absent from §9, §10, or §12 SHALL NOT be displayed; extending a view therefore extends the contract and its owning roadmap row first (08 §7.4). (Amended by A12, 05 §26.)
+- Every displayed mechanic can be traced to snapshot/query data. A value absent from §4, §9, §10, or §12 SHALL NOT be displayed; extending a view therefore extends the contract and its owning roadmap row first (08 §7.4). Definition metadata (§4) is displayable, but clients never infer behavior from it. (Amended by A12 and A14, 05 §26.)
 - Supported population per chain can be displayed for every consumed resource.
 - No projection exposes attributes of locations unknown to the requesting owner.
 - Missing mappings use generic fallbacks.

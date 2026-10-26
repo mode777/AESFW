@@ -46,7 +46,7 @@ Section 7 is the drafting guide for turning a row into a change.
 | R-05 | The content pipeline (03 is large) stalls progress | Medium | Medium | M1 schemas only for features in scope; each later change adds its own schemas |
 | R-06 | TypeScript simulation too slow for browser play | Medium | High | Bench harness in M1 (1.16), browser host in M2, budgets per milestone, optimization in M12 |
 | R-07 | Presentation contract unworkable in practice (projection size, deltas, worker messaging) | Medium | High | M2 thin client end to end |
-| R-08 | The game is not legible or fun; design ideas do not emerge | Medium | High | Playable client from M2, planning view in M4, progression in M7, balance runner in M11 |
+| R-08 | The game is not legible or fun; design ideas do not emerge | Medium | High | Playable client from M2, planning view in M4, progression in M7; balance runner, game HUD client, and human playtest gate in M11a |
 | R-09 | Spatial and placement complexity (grid, working areas, coverage, connectivity) | Medium | Medium | M3 dedicated milestone |
 | R-10 | Save compatibility breaks repeatedly during development | High | Medium | Versioned save format in M2; golden policy (06 §9.4); migrations in M12 |
 | R-11 | Fog leaks undiscovered information | Medium | Medium | M8 fog-filtered projections with property tests (INV-19, P-09) |
@@ -321,16 +321,22 @@ M5 and M6 may overlap. M8 and M9 may overlap. M12 changes that depend only on M2
 | 11.1 | `add-reference-content-prototype` | reference/content | R3 content per Appendix B.0, including regions, fog, exchanges, and unlocks | REF-5, REF-7, GDD-23.5 | 10.3, 5.4, 7.9, 8.6, 9.5 | L |
 | 11.2 | `add-balance-runner-strategies` | reference/content | scripted strategies, metrics CSV, balancing-target checks | REF-8 | 11.1 | M |
 | 11.3 | `add-golden-complete-game` | reference/content | SCN-14 and the reference half of SCN-18 | VER-9.3 | 11.2 | S |
-| 11.4 | `add-client-polish-and-accessibility` | reference/client | complete keyboard map, command palette, table-mode completeness, axe checks, reduced motion, dark theme | REF-13, REF-15 | 11.1 | M |
+| 11.4a | `add-client-game-shell` | reference/client | full-bleed HUD frame (resource bar for the viewed location, location banner, action bar, minimap and context-panel slots); presentation package loading (names, formatting); dashboard shell removed; table mode and debug overlay retained | REF-9, REF-11, REF-14.4, REF-15 | 9.5 | M |
+| 11.4b | `add-client-world-canvas` | reference/client | continuous world canvas: deterministic region-cluster layout, camera and semantic zoom, SVG levels of detail, fog clouds, lanes, interpolated transports, minimap; location level with shapes, state encoding, and overlays | REF-10, REF-12.1, REF-12.2, REF-13.5, REF-14.3 | 11.4a | L |
+| 11.4c | `add-client-construction-flow` | reference/client | tier-tabbed build menu with locked entries and unlock hints; authoritative ghost; drag-line connectors; radius previews; cost next to stock; demolish mode | REF-12.3, REF-13.3, REF-13.4 | 11.4b, 11.1 | M |
+| 11.4d | `add-client-context-panels` | reference/client | residence (need bars, Z band, advancement checklist, purpose locks), producer, hub (inventory, policies), transport unit, and location panels; floating status markers | REF-12.3, REF-10.3 | 11.4b | M |
+| 11.4e | `add-client-windows-routes-and-trade` | reference/client | statistics/planning, routes, exchange, and log windows; explore and establish from the world canvas | REF-12.4, REF-12.1 | 11.4d | M |
+| 11.4f | `add-client-news-and-milestones` | reference/client | news rail with jump-to-subject, contextual hints from block reasons, client milestone tracker | REF-12.6, REF-13.4 | 11.4d, 11.1 | S |
+| 11.4 | `add-client-polish-and-accessibility` | reference/client | complete keyboard map, command palette, table-mode completeness, axe checks, reduced motion, dark theme | REF-13, REF-15 | 11.4c, 11.4e, 11.4f | M |
 
-**Exit criteria:** strict validation with clean design-intent diagnostics; SCN-14 passes; balancing targets met or documented as deviations. **Demo:** first complete playtest of the prototype.
+**Exit criteria:** strict validation with clean design-intent diagnostics; SCN-14 passes; balancing targets met or documented as deviations. **Human playtest gate:** on the deployed build, a player who has not read the documents builds the first S1 chain, reaches the first S1→S2 advancement, explores and establishes a second location, runs a transport route, and completes one exchange trade; the findings are recorded as the M11a playtest note. A Playwright opening flow on the build/verification box covers the same script. **Demo:** first human playtest of the prototype game.
 
 ### M11b — Reference Full Game
 
 | # | Change ID | Capability | Scope | Sources | Depends on | Size |
 | --- | --- | --- | --- | --- | --- | --- |
 | 11.5 | `add-reference-content-full` | reference/content | R4 content (all of Appendix B) | REF-5, REF-7 | 11.3 | L |
-| 11.6 | `add-client-performance-pass` | reference/client | client budgets of REF-14.6 on R4 content | REF-14.6 | 11.5, 11.4 | M |
+| 11.6 | `add-client-performance-pass` | reference/client | client budgets of REF-14.6 (as revised for the world canvas) on R4 content; Canvas 2D fallback for the world level if SVG misses the budget | REF-14.6 | 11.5, 11.4 | M |
 
 ---
 
@@ -688,4 +694,4 @@ Rows 4.1–4.7 are archived. Exit criteria and their verification:
 
 **Risks.** R-14 (late specification gaps) is retired on the content side: graph, economic, design-intent, determinism, and presentation validation reject broken packages with actionable, localised messages. R-15's containment story gains `module_redefines_core` ahead of 13.1.
 
-**Next.** M11a (reference prototype game) is unblocked: 11.1 depends on 10.3, 5.4, 7.9, 8.6, and 9.5 (all archived). M13's module row also loses its 10.4 gate.
+**Next.** M11a (reference prototype game) is unblocked: 11.1 depends on 10.3, 5.4, 7.9, 8.6, and 9.5 (all archived). 11.4a may start in parallel with 11.1 (change `redesign-reference-game-client` re-targeted the reference client to a game HUD and split row 11.4). M13's module row also loses its 10.4 gate.

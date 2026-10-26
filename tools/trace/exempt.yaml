@@ -298,6 +298,10 @@
   reason: Layout; realised by the client shell (2.8).
 - id: REF-12.5
   reason: Debug overlay; realised and asserted by the client shell (2.8).
+- id: REF-12.6
+  reason: News rail, hints, and milestones; owned by roadmap 11.4f (M11a).
+- id: REF-13.5
+  reason: Camera; owned by roadmap 11.4b (M11a).
 - id: REF-14.1
   reason: Client modules; owned by roadmap 13.5 (M13).
 - id: REF-14.5

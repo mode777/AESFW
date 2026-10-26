@@ -1132,6 +1132,7 @@ Pure packages never throw for expected outcomes. `InvariantViolation` signals a 
 | A11 | 04 §10.2 | The location summary is delivered incrementally; grid topology and the property vector are read from the snapshot (§9.1); a field may not be depended on until a roadmap row owns it. | Prevents a client depending on an unowned field. |
 | A12 | 04 §20 | A value absent from §9, §10, or §12 SHALL NOT be displayed; extending a view therefore extends the contract and its owning row first (08 §7.4). | Makes the snapshot/query traceability criterion actionable. |
 | A13 | 03 §6.6 | A world location no owner lists in `established_locations` has no owner (unestablished, 01 §16.3) instead of defaulting to the first owner. | Establishment (`requires_unoccupied`, exclusive ownership) needs genuinely unowned locations; single-owner fixtures are unaffected. |
+| A14 | 04 §20 (A12) | Definition metadata (§4) is a displayable source alongside §9, §10, and §12; clients still never infer behavior from it. | §4 already exposes numeric parameters to clients; build menus, costs, and radius previews (07 §12.3, §13.3) display them. |
 
 When an amendment is accepted, the affected document is updated in the same change, with a note referencing this table.
 

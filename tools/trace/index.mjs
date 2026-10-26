@@ -122,7 +122,7 @@ export function scanTags(root = repoRoot) {
   walk(root, files);
   const tags = new Map();
   for (const file of files) {
-    const relativePath = relative(root, file);
+    const relativePath = relative(root, file).split('\\').join('/');
     for (const match of readFileSync(file, 'utf8').matchAll(TAG)) {
       const id = match[1];
       const set = tags.get(id) ?? new Set();
