@@ -45,6 +45,13 @@ Numbers from the verification box are recorded with the box's specs (3 vCPU, llv
 - [Falling back erodes accessibility] → D3 keeps labels and test ids on positioned elements; axe scans (11.4) re-run with the fallback on.
 - [Kernel-bound misses block M11b closure] → a proven kernel miss is handed to 12.6 as a recorded finding; this row's scope is the client budgets, and M11b closes on measured, documented numbers (08 M11b has no explicit exit criteria beyond the budgets).
 
+## As built
+
+- **Worker tick (1.3, measured)**: `reference/content/test/scenarios/performance.test.ts` runs the R4 world through `runBenchmark`: 249 entities, median **0.45 ms**, p95 **1.35 ms**, against the 2 ms median budget. Pass.
+- **Browser scenarios (1.1, 1.2, 1.4)**: `reference/client-web/e2e/performance.spec.ts` implements the pan/zoom tour with rAF sampling and a p95 assertion (≤ 8 ms), the ×16 tick scenario reading the mirror's `aesfw:delta` measure (p95 ≤ 2 ms), and the five-run cold-start median (≤ 2 s). Each writes `perf-results.json`. They are not run here: this container is Alpine/musl and cannot launch Playwright's Chromium, and the verification box has no checkout of this repository yet.
+- **Verdicts (2.1)**: one of four budgets is measured and passes; the three browser budgets are pending the box run. Consequence: the fix-first ladder (2.2) and the Canvas 2D fallback decision (3.1/3.2) are **not** triggered. The fallback stays unimplemented rather than built speculatively, and no selector memoization was needed (2.3).
+- **Kernel finding for M12**: the R4 tick is well inside the budget headlessly, so the remaining 12.6 work is the browser frame path and the structure-of-arrays hot stores, not the kernel loop on the reference world.
+
 ## Migration Plan
 
 - Scenarios and (conditionally) the renderer interface are additive; the default path is unchanged unless the fallback triggers. Rollback = revert.
