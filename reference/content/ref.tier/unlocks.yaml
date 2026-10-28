@@ -1,0 +1,15 @@
+# Population-threshold unlocks (01 Appendix B.3, B.7; GDD-19): the combiners,
+# the coverage service, and the S1 -> S2 advancement unlock for the owner at
+# 150 S1 population. Unlocks are not reversible.
+unlocks:
+  - id: ref.tier.unlock.s1_150
+    scope: owner
+    targets:
+      - { type: entity_definition, id: ref.tier.entity.combiner_c1 }
+      - { type: entity_definition, id: ref.tier.entity.combiner_c2 }
+      - { type: entity_definition, id: ref.tier.entity.combiner_c3 }
+      - { type: entity_definition, id: ref.tier.entity.combiner_c4 }
+      - { type: entity_definition, id: ref.tier.entity.combiner_ep }
+      - { type: entity_definition, id: ref.tier.entity.coverage_service }
+      - { type: transition, id: ref.tier.transition.s1_s2 }
+    condition: ref.tier.condition.s1_population_150

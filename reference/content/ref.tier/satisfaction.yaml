@@ -1,0 +1,31 @@
+# Satisfaction bands (01 Appendix B.6; 07 §7). Bands select growth,
+# advancement, and decline; the income multipliers live in the income curve.
+satisfaction_bands:
+  - id: ref.tier.bands.s1
+    bands:
+      - min: 0
+        effects:
+          - { type: growth, policy: ref.tier.growth.emigration }
+      - min: 250
+        effects: []
+      - min: 500
+        effects: []
+      - min: 800
+        effects:
+          - { type: growth, policy: ref.tier.growth.default }
+          - { type: enable_advancement }
+  # S2 declines one tier after 60 s of grace in the 0.25-0.49 band.
+  - id: ref.tier.bands.s2
+    bands:
+      - min: 0
+        effects:
+          - { type: growth, policy: ref.tier.growth.emigration }
+      - min: 250
+        effects:
+          - { type: trigger_decline, transition: ref.tier.transition.s2_s1, grace_ticks: 60 }
+      - min: 500
+        effects: []
+      - min: 800
+        effects:
+          - { type: growth, policy: ref.tier.growth.default }
+          - { type: enable_advancement }

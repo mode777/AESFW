@@ -72,10 +72,11 @@ const needsForTier = (registry: Registry, tierId: string): readonly NeedSpec[] =
   return needs;
 };
 
-/** Resolves a tier's category specifications (CONT-6.13). */
+/** Resolves a tier's category specifications (CONT-6.13, GDD-12.3). */
 const categoriesForTier = (
   registry: Registry,
   data: Record<string, unknown>,
+  tierId: string,
 ): readonly CategorySpec[] => {
   const categories: CategorySpec[] = [];
   for (const categoryId of asArray(data['need_categories'])) {
@@ -103,7 +104,10 @@ const categoriesForTier = (
         mode === 'minimum'
           ? mode
           : 'weighted_score',
-      requiredScore: asInt(evaluation['required_score']),
+      requiredScore: asInt(
+        asRecord(evaluation['required_score_by_tier'])?.[tierId],
+        asInt(evaluation['required_score']),
+      ),
       members,
     });
   }
@@ -156,7 +160,7 @@ export function residenceFromDefinition(
     consumptionFactor: asInt(tierData['consumption_factor'], 1000),
     outputs,
     needs: needsForTier(registry, tierId),
-    categories: categoriesForTier(registry, tierData),
+    categories: categoriesForTier(registry, tierData, tierId),
     satisfactionAggregation: satisfaction['aggregation'] === 'minimum' ? 'minimum' : 'average',
     ...(bands !== null ? { bands } : {}),
   };

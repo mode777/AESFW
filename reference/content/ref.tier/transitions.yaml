@@ -1,0 +1,32 @@
+# Tier transitions (01 Appendix B.7; 07 §7). Advancement starts automatically
+# when eligible (GDD-13.2); the player gates it with purpose locks on BM1/BM2
+# for `population_transition` (GDD-8.5). Decline refunds nothing and clamps the
+# population to the lower capacity.
+transitions:
+  - id: ref.tier.transition.s1_s2
+    source_tier: ref.tier.population.s1
+    target_tier: ref.tier.population.s2
+    trigger: automatic
+    condition: ref.tier.condition.advance_s1_s2
+    costs:
+      - { resource: ref.tier.resource.bm1, quantity: 60000 }
+      - { resource: ref.tier.resource.bm2, quantity: 36000 }
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 10
+    conversion:
+      population: retain_count_clamped
+      entity_definition: ref.tier.entity.residence_s2
+  - id: ref.tier.transition.s2_s1
+    source_tier: ref.tier.population.s2
+    target_tier: ref.tier.population.s1
+    trigger: manual_command
+    costs: []
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 10
+    conversion:
+      population: clamp_to_target_capacity
+      entity_definition: ref.tier.entity.residence_s1

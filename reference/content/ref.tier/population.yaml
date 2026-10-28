@@ -1,0 +1,44 @@
+# Population tiers and growth (01 Appendix B.4, B.6; 07 §4). Each inhabitant
+# provides one unit of its tier's capability (exact matching, no substitutes)
+# and earns income scaled by the satisfaction curve.
+population_tiers:
+  - id: ref.tier.population.s1
+    consumption_factor: 1000
+    need_categories: [ref.tier.need_category.b1]
+    satisfaction: { aggregation: average, bands: ref.tier.bands.s1 }
+    outputs:
+      - resource: ref.tier.capability.ak1
+        scope: location
+        rate_per_population_per_tick: 1
+      - resource: ref.tier.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 10
+        satisfaction_curve: ref.tier.curve.income
+  - id: ref.tier.population.s2
+    consumption_factor: 1500
+    need_categories:
+      [ref.tier.need_category.b1, ref.tier.need_category.b2, ref.tier.need_category.b3]
+    decline_transitions: [ref.tier.transition.s2_s1]
+    satisfaction: { aggregation: average, bands: ref.tier.bands.s2 }
+    outputs:
+      - resource: ref.tier.capability.ak2
+        scope: location
+        rate_per_population_per_tick: 1
+      - resource: ref.tier.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 25
+        satisfaction_curve: ref.tier.curve.income
+
+growth_policies:
+  # +1 inhabitant every 8 s while Z >= 0.80 and capacity remains (B.6).
+  - id: ref.tier.growth.default
+    interval_ticks: 8
+    increase:
+      quantity: 1
+      condition: ref.tier.condition.grow
+  # -1 inhabitant every 4 s while Z < 0.25 (B.6); applied by the lowest band.
+  - id: ref.tier.growth.emigration
+    interval_ticks: 4
+    decrease:
+      quantity: 1
+      condition: ref.tier.condition.emigrate

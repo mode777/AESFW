@@ -491,6 +491,14 @@ export function resolveReferences(definitions: RawDefinitions): readonly Diagnos
             'location',
             `/worlds/${id}/locations/${index}/template`,
           );
+          asArray(location?.['initial_inventory']).forEach((item, itemIndex) =>
+            check(
+              id,
+              asRecord(item)?.['resource'],
+              'resource',
+              `/worlds/${id}/locations/${index}/initial_inventory/${itemIndex}/resource`,
+            ),
+          );
         });
         const connectionIds = new Set<string>();
         asArray(definition['connections']).forEach((entry, index) => {

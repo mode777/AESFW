@@ -209,7 +209,11 @@ const producerFrom = (
   };
 };
 
-const categorySpec = (registry: ContentRegistry, id: unknown): CategorySpec | null => {
+const categorySpec = (
+  registry: ContentRegistry,
+  id: unknown,
+  tierId: string,
+): CategorySpec | null => {
   const data = dataOf(registry, 'needCategory', id);
   const resolved = handle(registry, 'needCategory', id);
   if (data === null || resolved === null) return null;
@@ -221,11 +225,18 @@ const categorySpec = (registry: ContentRegistry, id: unknown): CategorySpec | nu
       weight: typeof record['weight'] === 'number' ? record['weight'] : 0,
     };
   });
+  // `required_score_by_tier` overrides `required_score` for the listed tiers
+  // (GDD-12.3, CONT-6.13).
+  const byTier = asRecord(evaluation['required_score_by_tier'])?.[tierId];
   return {
     category: resolved,
     mode: evaluation['mode'] === 'weighted_score' ? 'weighted_score' : 'all',
     requiredScore:
-      typeof evaluation['required_score'] === 'number' ? evaluation['required_score'] : 0,
+      typeof byTier === 'number'
+        ? byTier
+        : typeof evaluation['required_score'] === 'number'
+          ? evaluation['required_score']
+          : 0,
     members: members as CategorySpec['members'],
   };
 };
@@ -291,7 +302,7 @@ const residenceFrom = (
     } as PopulationOutput;
   });
   const categories = asArray(tierData['need_categories'])
-    .map((id) => categorySpec(registry, id))
+    .map((id) => categorySpec(registry, id, tierId))
     .filter((category): category is CategorySpec => category !== null);
   const satisfaction = asRecord(tierData['satisfaction']) ?? {};
   const bands = handle(registry, 'band', satisfaction['bands']);

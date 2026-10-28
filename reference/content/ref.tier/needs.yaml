@@ -1,0 +1,88 @@
+# Need categories, needs, and the coverage service (01 Appendix B.5; 07 §4, §7).
+# Per-capita demand is 0.01 units/min = 1 base unit per inhabitant per tick,
+# multiplied by the tier's consumption factor f(t). Weights equal complexity
+# (x 1000); required scores are A(t) x 1000 per tier.
+need_categories:
+  - id: ref.tier.need_category.b1
+    evaluation:
+      mode: weighted_score
+      required_score: 1000
+      required_score_by_tier:
+        ref.tier.population.s1: 1000
+        ref.tier.population.s2: 2000
+    members:
+      - { need: ref.tier.need.c1, weight: 1000 }
+      - { need: ref.tier.need.c2, weight: 2000 }
+  - id: ref.tier.need_category.b2
+    evaluation:
+      mode: weighted_score
+      required_score: 1000
+      required_score_by_tier:
+        ref.tier.population.s2: 1000
+    members:
+      - { need: ref.tier.need.c3, weight: 2000 }
+      - { need: ref.tier.need.c4, weight: 3000 }
+  # B3 has one coverage service in R3; with a single member `all` is the
+  # weighted score with A(S2) = 1 (and avoids `breadth_depth_collapse`).
+  - id: ref.tier.need_category.b3
+    evaluation:
+      mode: all
+    members:
+      - { need: ref.tier.need.coverage, weight: 1000 }
+
+needs:
+  - id: ref.tier.need.c1
+    category: ref.tier.need_category.b1
+    applies_to: [ref.tier.population.s1, ref.tier.population.s2]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c1
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c2
+    category: ref.tier.need_category.b1
+    applies_to: [ref.tier.population.s1, ref.tier.population.s2]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c2
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c3
+    category: ref.tier.need_category.b2
+    applies_to: [ref.tier.population.s2]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c3
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c4
+    category: ref.tier.need_category.b2
+    applies_to: [ref.tier.population.s2]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c4
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.coverage
+    category: ref.tier.need_category.b3
+    applies_to: [ref.tier.population.s2]
+    demand:
+      type: spatial_coverage
+      service: ref.tier.service.b3
+      required_distinct_providers: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+
+services:
+  - id: ref.tier.service.b3
+    mode: coverage
+    default_relation: { type: radius, cells: 18 }

@@ -1,0 +1,66 @@
+# Archetype templates (01 §9.11, Appendix B.3; 07 §6). Templates are composed
+# into the concrete entities of entities.yaml through `includes` (03 §5), so
+# balancing an archetype's maintenance or construction cost changes every
+# instance. They carry no placement and no function, so they are not
+# placeable on their own. Maintenance per 07 §4: r credits/min = 6000 x r per
+# 60 ticks, charged while enabled (B.9).
+entity_definitions:
+  - id: ref.tier.template.networked
+    tags: [ref.tier.role.template]
+    components:
+      connectivity:
+        requires: ref.tier.connectivity.hub_network
+
+  - id: ref.tier.template.slot_extractor
+    tags: [ref.tier.role.template]
+    includes: [ref.tier.template.networked]
+    components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 48000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  - id: ref.tier.template.area_extractor
+    tags: [ref.tier.role.template]
+    includes: [ref.tier.template.networked]
+    components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 36000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  - id: ref.tier.template.refiner
+    tags: [ref.tier.role.template]
+    includes: [ref.tier.template.networked]
+    components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 90000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  - id: ref.tier.template.combiner
+    tags: [ref.tier.role.template]
+    includes: [ref.tier.template.networked]
+    components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 180000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  # New S1 residence: 6 BM1 (B.7).
+  - id: ref.tier.template.residence
+    tags: [ref.tier.role.template]
+    components:
+      construction:
+        duration_ticks: 10
+        costs:
+          - { resource: ref.tier.resource.bm1, quantity: 36000 }
+        commit_policy: start

@@ -1,0 +1,64 @@
+# The R3 prototype world (01 Appendix B.0, B.1; 07 §7, §8). The player owns the
+# start location alpha_1 with its hub placed, knows the adjacent alpha_2 and the
+# alpha exchange location alpha_3, and everything else is under fog. The start
+# stock builds the first S1 chain without trade: seven S1 residences (6 BM1
+# each) supply the AK1 the refiners need, and the C1 stock feeds the first S1
+# population until the combiner unlocks.
+worlds:
+  - id: ref.tier.world.prototype
+    locations:
+      - id: ref.tier.loc.alpha_1
+        template: ref.tier.location.alpha_1
+        initial_inventory:
+          - { resource: ref.tier.resource.bm1, quantity: 360000 }
+          - { resource: ref.tier.resource.c1, quantity: 720000 }
+      - id: ref.tier.loc.alpha_2
+        template: ref.tier.location.alpha_2
+      - id: ref.tier.loc.alpha_3
+        template: ref.tier.location.alpha_3
+      - id: ref.tier.loc.alpha_4
+        template: ref.tier.location.alpha_4
+      - id: ref.tier.loc.beta_1
+        template: ref.tier.location.beta_1
+      - id: ref.tier.loc.beta_2
+        template: ref.tier.location.beta_2
+    connections:
+      - id: ref.tier.conn.alpha_1_alpha_2
+        definition: ref.tier.connection.standard
+        origin: ref.tier.loc.alpha_1
+        destination: ref.tier.loc.alpha_2
+        base_duration_ticks: 60
+      - id: ref.tier.conn.alpha_1_alpha_3
+        definition: ref.tier.connection.standard
+        origin: ref.tier.loc.alpha_1
+        destination: ref.tier.loc.alpha_3
+        base_duration_ticks: 120
+      - id: ref.tier.conn.alpha_2_alpha_4
+        definition: ref.tier.connection.standard
+        origin: ref.tier.loc.alpha_2
+        destination: ref.tier.loc.alpha_4
+        base_duration_ticks: 180
+      - id: ref.tier.conn.alpha_3_alpha_4
+        definition: ref.tier.connection.standard
+        origin: ref.tier.loc.alpha_3
+        destination: ref.tier.loc.alpha_4
+        base_duration_ticks: 240
+      - id: ref.tier.conn.alpha_4_beta_1
+        definition: ref.tier.connection.standard
+        origin: ref.tier.loc.alpha_4
+        destination: ref.tier.loc.beta_1
+        base_duration_ticks: 600
+      - id: ref.tier.conn.beta_1_beta_2
+        definition: ref.tier.connection.standard
+        origin: ref.tier.loc.beta_1
+        destination: ref.tier.loc.beta_2
+        base_duration_ticks: 120
+    owners:
+      - id: owner.0
+        initial_resources:
+          - { resource: ref.tier.resource.credits, quantity: 30000000 }
+        established_locations: [ref.tier.loc.alpha_1]
+        known_locations: [ref.tier.loc.alpha_2, ref.tier.loc.alpha_3]
+        initial_entities:
+          - { definition: ref.tier.entity.hub, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.transport_t1, location: ref.tier.loc.alpha_1 }

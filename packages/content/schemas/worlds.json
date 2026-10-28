@@ -34,6 +34,24 @@
                 "type": "integer"
               }
             }
+          },
+          "initial_inventory": {
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["resource", "quantity"],
+              "properties": {
+                "resource": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "quantity": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            }
           }
         }
       }

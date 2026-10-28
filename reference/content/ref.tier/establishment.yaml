@@ -1,0 +1,12 @@
+# Establishment (01 Appendix B.3 hub row, GDD-16.3): a transport unit carrying
+# 1 EP to a discovered, unoccupied location founds it with a hub.
+location_establishments:
+  - id: ref.tier.establishment.hub
+    requires_knowledge: discovered
+    requires_unoccupied: true
+    cost_source: transport_cargo
+    costs:
+      - { resource: ref.tier.resource.ep, quantity: 6000 }
+    creates_hub: ref.tier.entity.hub
+    activation: on_completion
+    ownership: exclusive

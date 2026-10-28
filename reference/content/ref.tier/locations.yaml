@@ -1,0 +1,131 @@
+# Six grid locations, four in alpha and two in beta (01 Appendix B.0, B.1;
+# 07 §7). Grid 40x40 with a seeded 40-70 % buildable mask; hub storage of 500
+# units per resource and 60 units/min throughput (07 §4). Suitability is 0, 500,
+# or 1000 permille; source slots are 0-4 of type V-A (alpha) or V-B (beta).
+# Only the start location is active; the others are founded by establishment.
+location_templates:
+  - id: ref.tier.location.alpha_1
+    spatial_policy: framework.spatial.grid
+    spatial_parameters:
+      width: 40
+      height: 40
+      buildable_ratio: { min: 400, max: 700 }
+    region: ref.tier.region.alpha
+    establishment: ref.tier.establishment.hub
+    properties:
+      ref.tier.property.suitability_p1: 1000
+    source_slots:
+      - { type: ref.tier.slot.v_a, count: 2 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 6000
+    inventories:
+      - id: shared
+        capacity: { mode: per_resource, quantity: 3000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: true }
+
+  - id: ref.tier.location.alpha_2
+    spatial_policy: framework.spatial.grid
+    spatial_parameters:
+      width: 40
+      height: 40
+      buildable_ratio: { min: 400, max: 700 }
+    region: ref.tier.region.alpha
+    establishment: ref.tier.establishment.hub
+    properties:
+      ref.tier.property.suitability_p1: 500
+    source_slots:
+      - { type: ref.tier.slot.v_a, count: 1 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 6000
+    inventories:
+      - id: shared
+        capacity: { mode: per_resource, quantity: 3000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: false }
+
+  - id: ref.tier.location.alpha_3
+    spatial_policy: framework.spatial.grid
+    spatial_parameters:
+      width: 40
+      height: 40
+      buildable_ratio: { min: 400, max: 700 }
+    region: ref.tier.region.alpha
+    establishment: ref.tier.establishment.hub
+    properties:
+      ref.tier.property.suitability_p1: 0
+    source_slots:
+      - { type: ref.tier.slot.v_a, count: 3 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 6000
+    inventories:
+      - id: shared
+        capacity: { mode: per_resource, quantity: 3000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: false }
+
+  - id: ref.tier.location.alpha_4
+    spatial_policy: framework.spatial.grid
+    spatial_parameters:
+      width: 40
+      height: 40
+      buildable_ratio: { min: 400, max: 700 }
+    region: ref.tier.region.alpha
+    establishment: ref.tier.establishment.hub
+    properties:
+      ref.tier.property.suitability_p1: 1000
+    source_slots:
+      - { type: ref.tier.slot.v_a, count: 4 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 6000
+    inventories:
+      - id: shared
+        capacity: { mode: per_resource, quantity: 3000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: false }
+
+  - id: ref.tier.location.beta_1
+    spatial_policy: framework.spatial.grid
+    spatial_parameters:
+      width: 40
+      height: 40
+      buildable_ratio: { min: 400, max: 700 }
+    region: ref.tier.region.beta
+    establishment: ref.tier.establishment.hub
+    properties:
+      ref.tier.property.suitability_p3: 1000
+    source_slots:
+      - { type: ref.tier.slot.v_b, count: 2 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 6000
+    inventories:
+      - id: shared
+        capacity: { mode: per_resource, quantity: 3000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: false }
+
+  - id: ref.tier.location.beta_2
+    spatial_policy: framework.spatial.grid
+    spatial_parameters:
+      width: 40
+      height: 40
+      buildable_ratio: { min: 400, max: 700 }
+    region: ref.tier.region.beta
+    establishment: ref.tier.establishment.hub
+    properties:
+      ref.tier.property.suitability_p3: 500
+    source_slots:
+      - { type: ref.tier.slot.v_b, count: 4 }
+    internal_logistics:
+      policy: framework.inventory.throughput_limited
+      base_throughput: 6000
+    inventories:
+      - id: shared
+        capacity: { mode: per_resource, quantity: 3000000 }
+        access_policy: framework.inventory.shared_location
+    activation: { initial: false }

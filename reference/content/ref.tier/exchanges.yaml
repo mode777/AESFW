@@ -1,0 +1,81 @@
+# One exchange per region (01 Appendix B.9, GDD-17; 07 §4). Prices are credits
+# per unit (credits and goods share the 6000 base scale). An exchange sells the
+# raw and construction goods of its own region and buys every listed good.
+# Elasticity: -2 % sale / +2 % purchase price per 100 units within 10 min,
+# recovering 5 % per min toward the base price. Consumer goods and EP are not
+# traded: they come from the region's chains (and the start stock).
+exchanges:
+  - id: ref.tier.exchange.alpha
+    location: ref.tier.location.alpha_3
+    currency: ref.tier.resource.credits
+    goods:
+      - resource: ref.tier.resource.p1
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p2
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p3
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p4
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.h1
+        buy_from_exchange: { base_price: 150, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h2
+        buy_from_exchange: { base_price: 150, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm1
+        buy_from_exchange: { base_price: 150, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm2
+        buy_from_exchange: { base_price: 360, enabled: true }
+        sell_to_exchange: { base_price: 100, enabled: true }
+    elasticity:
+      window_ticks: 600
+      step_quantity: 600000
+      step_change_permille: 20
+      recovery_permille_per_interval: 50
+      recovery_interval_ticks: 60
+      min_price_permille: 250
+      max_price_permille: 4000
+    shared_between_owners: true
+  - id: ref.tier.exchange.beta
+    location: ref.tier.location.beta_1
+    currency: ref.tier.resource.credits
+    goods:
+      - resource: ref.tier.resource.p1
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p2
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p3
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p4
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.h1
+        buy_from_exchange: { base_price: 150, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h2
+        buy_from_exchange: { base_price: 150, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm1
+        buy_from_exchange: { base_price: 150, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm2
+        buy_from_exchange: { base_price: 360, enabled: false }
+        sell_to_exchange: { base_price: 100, enabled: true }
+    elasticity:
+      window_ticks: 600
+      step_quantity: 600000
+      step_change_permille: 20
+      recovery_permille_per_interval: 50
+      recovery_interval_ticks: 60
+      min_price_permille: 250
+      max_price_permille: 4000
+    shared_between_owners: true

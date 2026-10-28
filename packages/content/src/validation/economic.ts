@@ -364,6 +364,11 @@ const throughputFindings = (
   severity: 'warning' | 'error',
 ): readonly Diagnostic[] => {
   const diagnostics: Diagnostic[] = [];
+  const accountScoped = new Set<string>();
+  for (const resource of collection(definitions, 'resources')) {
+    const scope = asString(asRecord(resource['storage'])?.['scope']);
+    if (scope === 'owner' || scope === 'global') accountScoped.add(resource.id);
+  }
   const tierNeeds = new Map<string, string[]>();
   for (const need of collection(definitions, 'needs')) {
     const demand = asRecord(need['demand']);
@@ -485,6 +490,8 @@ const throughputFindings = (
       for (const [resource, demandRate] of demanded) {
         if (producers.get(location)?.has(resource)) continue;
         if (units.length === 0) continue;
+        // Owner- and global-scoped balances are never carried (GDD-7.5, 10.1 D2).
+        if (accountScoped.has(resource)) continue;
         const distances = distance(location);
         let capacity = 0;
         for (const unit of units) {

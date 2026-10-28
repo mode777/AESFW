@@ -9,7 +9,12 @@ import type { Int } from '../fx/index.js';
 import { createStream, nextInt } from '../det/index.js';
 import { ownerHandle } from '../ids/index.js';
 import type { DefinitionHandle, EntityId, OwnerHandle, StringId } from '../ids/index.js';
-import type { Inventory, InventoryAcceptance, InventoryCapacity } from '../tx/inventory.js';
+import type {
+  Inventory,
+  InventoryAcceptance,
+  InventoryCapacity,
+  InventoryEntry,
+} from '../tx/inventory.js';
 import type { KnowledgeLevel, OwnerState, World } from '../world/types.js';
 import type { ThroughputPool } from './internal-logistics/types.js';
 import { allocateEntity } from '../world/create.js';
@@ -117,6 +122,8 @@ export type LocationPlan = {
   readonly establishment?: DefinitionHandle;
   /** The location's owner; `null` is unowned, otherwise defaults to the plan default. */
   readonly owner?: OwnerHandle | null;
+  /** Initial stock of the location's first inventory (CONT-6.6, A15). */
+  readonly initialInventory?: readonly InventoryEntry[];
 };
 
 /** A world plan: a default owner, optional additional owners, locations, and connections. */
@@ -252,6 +259,39 @@ const applyGeneratedAttributes = (
 };
 
 /**
+ * The initial stock of a location's first inventory (CONT-6.6, A15): entries
+ * in ascending resource handle, duplicate lines summed, non-positive lines
+ * dropped, and each quantity clamped to the inventory's per-resource and
+ * remaining total capacity in that order.
+ *
+ * Source: CONT-6.6
+ */
+const initialEntries = (
+  stock: readonly InventoryEntry[] | undefined,
+  inventory: InventoryPlan,
+): readonly InventoryEntry[] => {
+  if (stock === undefined || stock.length === 0) return [];
+  const summed = new Map<DefinitionHandle, Int>();
+  for (const entry of stock) {
+    if (entry.quantity <= 0) continue;
+    summed.set(entry.resource, (summed.get(entry.resource) ?? 0) + entry.quantity);
+  }
+  let remaining = inventory.capacity.total;
+  const entries: InventoryEntry[] = [];
+  for (const resource of [...summed.keys()].sort((a, b) => a - b)) {
+    let quantity = summed.get(resource) ?? 0;
+    const perResource = inventory.capacity.perResource;
+    if (perResource !== null && quantity > perResource) quantity = perResource;
+    if (remaining !== null) {
+      if (quantity > remaining) quantity = remaining;
+      remaining -= quantity;
+    }
+    if (quantity > 0) entries.push({ resource, quantity });
+  }
+  return entries;
+};
+
+/**
  * Instantiates the locations and inventories of `plan` on `world`.
  *
  * Source: CONT-6.4, CONT-6.6, ARCH-3.1
@@ -303,18 +343,18 @@ export function instantiateWorld(world: World, plan: WorldPlan): void {
     }
     locationStore.set(locationEntity, component);
     const inventories: EntityId[] = [];
-    for (const inventoryPlan of locationPlan.inventories) {
+    locationPlan.inventories.forEach((inventoryPlan, index) => {
       const inventoryEntity = allocateEntity(world);
       inventoryStore.set(inventoryEntity, {
         owner: locationPlan.owner ?? plan.owner,
         policy: inventoryPlan.policy,
         revision: 0,
-        entries: [],
+        entries: index === 0 ? initialEntries(locationPlan.initialInventory, inventoryPlan) : [],
         capacity: inventoryPlan.capacity,
         acceptance: inventoryPlan.acceptance,
       });
       inventories.push(inventoryEntity);
-    }
+    });
     hubStore.set(locationEntity, { inventories });
     if (locationPlan.internalLogistics !== undefined) {
       const logistics = locationPlan.internalLogistics;

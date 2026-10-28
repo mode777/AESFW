@@ -1,0 +1,232 @@
+# Concrete entities (01 Appendix B.3; 07 §6). Footprints, functions, and
+# per-instance parameters; maintenance and construction come from templates.
+entity_definitions:
+  # Hub (depot): 4x4, 20 credits/min; storage and throughput are the location's
+  # (500 units per resource, 60 units/min). Created by establishment.
+  - id: ref.tier.entity.hub
+    components:
+      placement:
+        footprint: [4, 4]
+      connectivity:
+        provides: ref.tier.connectivity.hub_network
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 120000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  # Connector (road): 1 cell, 0.1 credits/min.
+  - id: ref.tier.entity.connector
+    components:
+      placement:
+        footprint: [1, 1]
+      connectivity:
+        provides: ref.tier.connectivity.hub_network
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 600 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  # Slot extractors: 3x3, 4 P/min from a source slot.
+  - id: ref.tier.entity.slot_extractor_p2
+    includes: [ref.tier.template.slot_extractor]
+    components:
+      placement:
+        footprint: [3, 3]
+        requires_slot: ref.tier.slot.v_a
+      resource_source:
+        policy: slot_dependent
+        depletion: none
+        outputs:
+          - { resource: ref.tier.resource.p2, quantity_per_tick: 400 }
+  - id: ref.tier.entity.slot_extractor_p4
+    includes: [ref.tier.template.slot_extractor]
+    components:
+      placement:
+        footprint: [3, 3]
+        requires_slot: ref.tier.slot.v_b
+      resource_source:
+        policy: slot_dependent
+        depletion: none
+        outputs:
+          - { resource: ref.tier.resource.p4, quantity_per_tick: 400 }
+
+  # Area extractors: 3x3 + 12 exclusive working cells, 4 P/min x suitability.
+  - id: ref.tier.entity.area_extractor_p1
+    includes: [ref.tier.template.area_extractor]
+    components:
+      placement:
+        footprint: [3, 3]
+        working_area: { cells: 12, exclusive: true }
+      resource_source:
+        policy: area_dependent
+        outputs:
+          - { resource: ref.tier.resource.p1, quantity_per_tick: 400 }
+        scale_by_property: ref.tier.property.suitability_p1
+  - id: ref.tier.entity.area_extractor_p3
+    includes: [ref.tier.template.area_extractor]
+    components:
+      placement:
+        footprint: [3, 3]
+        working_area: { cells: 12, exclusive: true }
+      resource_source:
+        policy: area_dependent
+        outputs:
+          - { resource: ref.tier.resource.p3, quantity_per_tick: 400 }
+        scale_by_property: ref.tier.property.suitability_p3
+
+  # Refiners: 3x3, 4 P -> 2 H/min, 20 AK1.
+  - id: ref.tier.entity.refiner_h1
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_h1]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_h2
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_h2]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_bm1
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_bm1]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_bm2
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_bm2]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+
+  # Combiners: 4x4, 2-3 inputs -> 2 C/min, 25 AK2; unlocked at 150 S1.
+  - id: ref.tier.entity.combiner_c1
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c1]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_c2
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c2]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_c3
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c3]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_c4
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c4]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_ep
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_ep]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+
+  # Storage module: 2x2, +300 units per resource and +20 units/min throughput,
+  # 10 credits/min.
+  - id: ref.tier.entity.storage_module
+    includes: [ref.tier.template.networked]
+    components:
+      placement:
+        footprint: [2, 2]
+      storage_provider:
+        inventory: location.shared
+        capacity:
+          per_resource: 1800000
+        throughput: 2000
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 60000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  # Coverage service: 4x4, radius 18, 45 credits/min; supplies B3.
+  - id: ref.tier.entity.coverage_service
+    includes: [ref.tier.template.networked]
+    components:
+      placement:
+        footprint: [4, 4]
+      service_provider:
+        mode: coverage
+        service: ref.tier.service.b3
+        relation: { type: radius, cells: 18 }
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 270000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  # Residences: 3x3, no maintenance. S1 capacity 10; S2 capacity 20. An S2
+  # residence only arises from advancement, so it has no placement of its own.
+  # Both decay at zero population (B.6).
+  - id: ref.tier.entity.residence_s1
+    includes: [ref.tier.template.residence]
+    components:
+      placement:
+        footprint: [3, 3]
+      residence:
+        population_tier: ref.tier.population.s1
+        capacity: 10
+        initial_population: 1
+        growth_policy: ref.tier.growth.default
+        empty_residence: { policy: decay, delay_ticks: 0 }
+  - id: ref.tier.entity.residence_s2
+    components:
+      residence:
+        population_tier: ref.tier.population.s2
+        capacity: 20
+        initial_population: 0
+        growth_policy: ref.tier.growth.default
+        empty_residence: { policy: decay, delay_ticks: 0 }

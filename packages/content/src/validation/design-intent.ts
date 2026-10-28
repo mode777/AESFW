@@ -11,7 +11,7 @@ import { det } from '@aesfw/core';
 import type { Diagnostic } from '@aesfw/core';
 
 import { diag } from '../diagnostics/diagnostics.js';
-import type { RawDefinitions } from '../schemas/validate.js';
+import type { RawDefinition, RawDefinitions } from '../schemas/validate.js';
 import type { LoadOptions } from '../types.js';
 import { asArray, asRecord, asString, collection, entityIndex, recipeIndex } from './common.js';
 
@@ -390,28 +390,41 @@ export function validateDesignIntent(
     }
   }
   const threshold = options?.ratio_legibility_threshold ?? 10;
-  const consumedRate = new Map<string, number>();
-  for (const recipe of collection(definitions, 'recipes')) {
-    const info = recipes.get(recipe.id);
-    if (info === undefined) continue;
-    const duration = recipe['duration_ticks'];
-    if (typeof duration !== 'number' || duration <= 0) continue;
-    for (const resource of info.inputs) {
-      consumedRate.set(resource, (consumedRate.get(resource) ?? 0) + 1);
+  // Ratio legibility (CONT-11.7, A16): for every producer/consumer recipe pair
+  // over one resource, the integer entity ratio n : m solves
+  // n x supply = m x demand with per-entity rates quantity / duration
+  // (continuous recipes use duration 1); the stage needs max(n, m) entities.
+  const lines = (recipe: RawDefinition, key: 'inputs' | 'outputs') => {
+    const duration = recipe['mode'] === 'continuous' ? 1 : recipe['duration_ticks'];
+    if (typeof duration !== 'number' || !Number.isInteger(duration) || duration <= 0) return [];
+    return asArray(recipe[key])
+      .map((entry) => {
+        const record = asRecord(entry);
+        const resource = asString(record?.['resource']);
+        const quantity = record?.['quantity'];
+        if (resource === null || typeof quantity !== 'number' || !Number.isInteger(quantity)) {
+          return null;
+        }
+        return quantity > 0 ? { resource, quantity, duration } : null;
+      })
+      .filter(
+        (line): line is { resource: string; quantity: number; duration: number } => line !== null,
+      );
+  };
+  const allRecipes = collection(definitions, 'recipes');
+  for (const recipe of allRecipes) {
+    let required = 0;
+    for (const output of lines(recipe, 'outputs')) {
+      for (const consumer of allRecipes) {
+        for (const input of lines(consumer, 'inputs')) {
+          if (input.resource !== output.resource) continue;
+          const producers = input.quantity * output.duration;
+          const consumers = output.quantity * input.duration;
+          const divisor = greatestCommonDivisor(producers, consumers);
+          required = Math.max(required, producers / divisor, consumers / divisor);
+        }
+      }
     }
-  }
-  for (const recipe of collection(definitions, 'recipes')) {
-    const info = recipes.get(recipe.id);
-    if (info === undefined || info.outputs.length === 0) continue;
-    const duration = recipe['duration_ticks'];
-    if (typeof duration !== 'number' || duration <= 0) continue;
-    const demanded = info.outputs.reduce(
-      (sum, resource) => sum + (consumedRate.get(resource) ?? 0),
-      0,
-    );
-    if (demanded === 0) continue;
-    const suppliedPerTick = info.outputs.length / duration;
-    const required = Math.ceil(demanded / Math.max(suppliedPerTick, 1 / 1_000_000));
     if (required <= threshold) continue;
     diagnostics.push(
       diag('ratio_illegible', {
@@ -425,6 +438,18 @@ export function validateDesignIntent(
 
   return diagnostics;
 }
+
+/** The greatest common divisor of two positive integers. */
+const greatestCommonDivisor = (left: number, right: number): number => {
+  let a = left;
+  let b = right;
+  while (b !== 0) {
+    const next = a % b;
+    a = b;
+    b = next;
+  }
+  return a === 0 ? 1 : a;
+};
 
 /** True when `resource` originates in the region or a recipe can make it from region-origin resources (cycle-safe). */
 const regionCanProduce = (

@@ -1,0 +1,101 @@
+# R3 resources (01 Appendix B.0, B.2; 07 §4). Every storable and balance
+# resource uses the reference base scale: 6000 base units = 1 display unit.
+resources:
+  # Primary (B.2): P1 and P2 originate in region alpha, P3 and P4 in beta.
+  - id: ref.tier.resource.p1
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.p2
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.p3
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.p4
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  # Intermediate (B.2): one input, refined.
+  - id: ref.tier.resource.h1
+    tags: [storable, ref.tier.role.intermediate]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.h2
+    tags: [storable, ref.tier.role.intermediate]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  # Consumer (B.2, B.5): complexity equals the need weight.
+  - id: ref.tier.resource.c1
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 1
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c2
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 2
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c3
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 2
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c4
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 3
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  # Construction (B.2, B.7): building and advancement.
+  - id: ref.tier.resource.bm1
+    tags: [storable, ref.tier.role.construction]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.bm2
+    tags: [storable, ref.tier.role.construction]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  # Establishment (B.2): founding a location by transport.
+  - id: ref.tier.resource.ep
+    tags: [storable, ref.tier.role.establishment]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+
+  # Balance (B.2, B.9).
+  - id: ref.tier.resource.credits
+    tags: [balance]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: owner }
+    transportable: false
+    allow_negative: true
+
+  # Capabilities (B.2, B.4): one per tier, exact matching, no substitutes.
+  - id: ref.tier.capability.ak1
+    tags: [virtual, capability]
+    quantity: { precision: integer, scale: 1 }
+    storage: { policy: recomputed, scope: location }
+    transportable: false
+  - id: ref.tier.capability.ak2
+    tags: [virtual, capability]
+    quantity: { precision: integer, scale: 1 }
+    storage: { policy: recomputed, scope: location }
+    transportable: false

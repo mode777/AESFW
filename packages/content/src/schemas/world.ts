@@ -1,7 +1,7 @@
 /**
  * The world-definition schema (CONT-6.6). A world turns location templates
  * and connection definitions into a concrete sector graph with initial
- * owners, resources, knowledge, and entities.
+ * owners, resources, knowledge, entities, and location stock (A15).
  *
  * Source: CONT-6.6
  */
@@ -15,6 +15,7 @@ const WorldLocationSchema = Type.Object(
     template: IdSchema,
     region: Type.Optional(IdSchema),
     properties: Type.Optional(Type.Record(Type.String(), Type.Integer())),
+    initial_inventory: Type.Optional(Type.Array(ItemRefSchema)),
   },
   { additionalProperties: false },
 );

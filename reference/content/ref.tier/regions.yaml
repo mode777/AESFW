@@ -1,0 +1,6 @@
+# Regions alpha and beta (01 Appendix B.1).
+regions:
+  - id: ref.tier.region.alpha
+    tags: [ref.tier.region.start]
+  - id: ref.tier.region.beta
+    tags: [ref.tier.region.remote]

@@ -1,0 +1,44 @@
+# Transport unit class T1 (01 Appendix B.8; 07 §4): 2 typed slots of 50 units,
+# speed 1.0, construction 40 BM1 + 20 BM2, 25 credits/min.
+entity_definitions:
+  - id: ref.tier.entity.transport_t1
+    components:
+      construction:
+        duration_ticks: 60
+        costs:
+          - { resource: ref.tier.resource.bm1, quantity: 240000 }
+          - { resource: ref.tier.resource.bm2, quantity: 120000 }
+        commit_policy: start
+
+transport_units:
+  - id: ref.tier.transport.t1
+    tags: [ref.tier.transport.standard]
+    entity_definition: ref.tier.entity.transport_t1
+    cargo:
+      compartment_policy: typed_slots
+      slots: 2
+      slot_capacity: 300000
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 1000
+      allowed_connection_tags: [ref.tier.transport.standard]
+    handling:
+      loading_rate_per_tick: 10000
+      unloading_rate_per_tick: 10000
+    order_modes: [route, explore, establish, trade]
+    maintenance:
+      interval_ticks: 60
+      inputs:
+        - { resource: ref.tier.resource.credits, quantity: 150000 }
+      charge_policy: while_enabled
+      shortage_policy: owner_deficit_policy
+
+transport_order_templates:
+  - id: ref.tier.order.route
+    mode: route
+    failure_policies:
+      path_unavailable: retry
+      cargo_cannot_unload: retain
+    scheduling:
+      repeat: true
+      retry_interval_ticks: 20

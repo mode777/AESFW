@@ -1,0 +1,12 @@
+# Income satisfaction curve (01 Appendix B.4, B.6): x 0.4 below Z 0.50, x 0.7
+# from 0.50, x 1.0 from 0.80. A step curve returns the left point's value on the
+# closed segment [left, right], so the steps sit at 499 and 799 to switch at
+# exactly 500 and 800. The lowest band keeps the lowest stated multiplier.
+curves:
+  - id: ref.tier.curve.income
+    type: step
+    points:
+      - [0, 400]
+      - [499, 700]
+      - [799, 1000]
+    extrapolation: clamp

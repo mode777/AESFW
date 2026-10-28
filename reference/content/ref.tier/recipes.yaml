@@ -1,0 +1,94 @@
+# Recipes (01 Appendix B.3; 07 §4 conversions: r units/min = 100 x r base
+# units/tick). Refiner: 4 P -> 2 H per min (30 ticks, 12000 -> 6000), 20 AK1.
+# Combiner: 2-3 inputs -> 2 C per min (30 ticks -> 6000), 25 AK2. The
+# construction branches (BM1, BM2) use the refiner archetype; EP uses the
+# combiner archetype at a quarter of the rate ("expensive", B.2).
+recipes:
+  - id: ref.tier.recipe.refine_h1
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.p1, quantity: 12000 }
+    outputs:
+      - { resource: ref.tier.resource.h1, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak1, quantity: 20 }
+  - id: ref.tier.recipe.refine_h2
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.p3, quantity: 12000 }
+    outputs:
+      - { resource: ref.tier.resource.h2, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak1, quantity: 20 }
+  - id: ref.tier.recipe.refine_bm1
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.p2, quantity: 12000 }
+    outputs:
+      - { resource: ref.tier.resource.bm1, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak1, quantity: 20 }
+  - id: ref.tier.recipe.refine_bm2
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.h1, quantity: 12000 }
+    outputs:
+      - { resource: ref.tier.resource.bm2, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak1, quantity: 20 }
+
+  - id: ref.tier.recipe.combine_c1
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.h1, quantity: 12000 }
+      - { resource: ref.tier.resource.p2, quantity: 12000 }
+    outputs:
+      - { resource: ref.tier.resource.c1, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak2, quantity: 25 }
+  - id: ref.tier.recipe.combine_c2
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.h2, quantity: 12000 }
+      - { resource: ref.tier.resource.p4, quantity: 12000 }
+    outputs:
+      - { resource: ref.tier.resource.c2, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak2, quantity: 25 }
+  - id: ref.tier.recipe.combine_c3
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.h1, quantity: 6000 }
+      - { resource: ref.tier.resource.h2, quantity: 6000 }
+    outputs:
+      - { resource: ref.tier.resource.c3, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak2, quantity: 25 }
+  - id: ref.tier.recipe.combine_c4
+    mode: batch
+    duration_ticks: 30
+    inputs:
+      - { resource: ref.tier.resource.h1, quantity: 6000 }
+      - { resource: ref.tier.resource.h2, quantity: 6000 }
+      - { resource: ref.tier.resource.p4, quantity: 6000 }
+    outputs:
+      - { resource: ref.tier.resource.c4, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak2, quantity: 25 }
+  - id: ref.tier.recipe.combine_ep
+    mode: batch
+    duration_ticks: 120
+    inputs:
+      - { resource: ref.tier.resource.bm1, quantity: 12000 }
+      - { resource: ref.tier.resource.c1, quantity: 12000 }
+    outputs:
+      - { resource: ref.tier.resource.ep, quantity: 6000 }
+    capability_requirements:
+      - { resource: ref.tier.capability.ak2, quantity: 25 }

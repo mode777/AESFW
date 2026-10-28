@@ -431,7 +431,26 @@ export function worldPlan(
     if (plan === null) continue;
     const establishedOwner = locationOwnerByIndex.get(locationIndex);
     const owner = establishedOwner === undefined ? null : ids.ownerHandle(establishedOwner);
-    locations.push({ ...plan, owner });
+    const initialInventory = asArray(entry['initial_inventory'])
+      .map((item) => {
+        const record = asRecord(item);
+        const resourceId = asString(record?.['resource']);
+        const quantity = record?.['quantity'];
+        const resource =
+          resourceId === null ? null : registry.handleOf('resource', ids.stringId(resourceId));
+        if (resource === null || typeof quantity !== 'number' || !Number.isInteger(quantity)) {
+          return null;
+        }
+        return { resource, quantity };
+      })
+      .filter(
+        (item): item is { resource: DefinitionHandle; quantity: number } => item !== null,
+      );
+    locations.push({
+      ...plan,
+      owner,
+      ...(initialInventory.length === 0 ? {} : { initialInventory }),
+    });
   }
 
   const connections: ConnectionPlan[] = [];

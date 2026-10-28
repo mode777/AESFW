@@ -1,7 +1,26 @@
 package:
   id: ref.tier
-  version: 0.1.0
+  version: 0.3.0
   schema_version: 1
   type: simulation_content
   files:
-    - content.yaml
+    - resources.yaml
+    - regions.yaml
+    - distribution.yaml
+    - locations.yaml
+    - connections.yaml
+    - establishment.yaml
+    - world.yaml
+    - conditions.yaml
+    - curves.yaml
+    - needs.yaml
+    - population.yaml
+    - satisfaction.yaml
+    - transitions.yaml
+    - recipes.yaml
+    - templates.yaml
+    - entities.yaml
+    - transport.yaml
+    - exchanges.yaml
+    - economy.yaml
+    - unlocks.yaml

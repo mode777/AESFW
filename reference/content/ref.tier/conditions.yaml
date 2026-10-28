@@ -1,0 +1,41 @@
+# Conditions (01 Appendix B.6, B.7; 07 §7).
+conditions:
+  # Growth policies (B.6): the framework applies the v1 growth thresholds
+  # (increase at Z >= 800, decrease at Z < 250); these conditions name them.
+  - id: ref.tier.condition.grow
+    expression:
+      greater_equal:
+        left: { aggregate_need_fulfillment: current_entity }
+        right: 800
+  - id: ref.tier.condition.emigrate
+    expression:
+      less:
+        left: { aggregate_need_fulfillment: current_entity }
+        right: 250
+
+  # S1 -> S2 advancement (B.7): full occupancy, Z >= 0.80 sustained for 60 s,
+  # and the 150 S1 population threshold. Costs are paid from the location
+  # inventory under purpose `population_transition`.
+  - id: ref.tier.condition.advance_s1_s2
+    expression:
+      all:
+        - greater_equal:
+            left: { residence_population: current_entity }
+            right: 10
+        - sustained:
+            ticks: 60
+            condition:
+              greater_equal:
+                left: { aggregate_need_fulfillment: current_entity }
+                right: 800
+        - greater_equal:
+            left: { population_count: { tier: ref.tier.population.s1 } }
+            right: 150
+
+  # Population-threshold unlock (B.3): combiners, the coverage service, and the
+  # S1 -> S2 advancement at 150 S1 population.
+  - id: ref.tier.condition.s1_population_150
+    expression:
+      greater_equal:
+        left: { population_count: { tier: ref.tier.population.s1 } }
+        right: 150

@@ -1,0 +1,13 @@
+# Disjoint distribution (01 Appendix B.1, 07 §7): no suitability property and
+# no source slot type is supplied in both regions. Every name is authored on a
+# location template, so the seeded `world_generation` stream only fills the
+# zero values of the other region (CONT-6.18).
+distribution_rules:
+  - id: ref.tier.distribution.primary
+    regions: [ref.tier.region.alpha, ref.tier.region.beta]
+    disjoint:
+      properties: [ref.tier.property.suitability_*]
+      source_slot_types: true
+    generation:
+      mode: seeded
+      seed_stream: world_generation

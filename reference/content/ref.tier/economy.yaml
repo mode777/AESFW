@@ -1,0 +1,13 @@
+# Owner deficit policy (01 Appendix B.9, GDD-20.3): when credits fall below
+# zero, pause entities with the highest maintenance first until the net rate
+# is non-negative; resume them in reverse order once the balance recovers.
+deficit_policies:
+  - id: ref.tier.deficit.default
+    resource: ref.tier.resource.credits
+    trigger: { operator: less, value: 0 }
+    action: pause_entities
+    order: [maintenance_desc, entity_id_asc]
+    stop_when: net_rate_non_negative
+    resume:
+      policy: automatic_reverse_order
+      when: { operator: greater_equal, value: 0 }
