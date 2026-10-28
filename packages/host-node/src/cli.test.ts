@@ -171,6 +171,49 @@ describe('[TDS-21.2] aesfw CLI', () => {
     expect(result.exitCode).toBe(0);
   });
 
+  it('[REF-8][TDS-21.2] run exports metrics CSV and fails on a failed expectation', () => {
+    const scenarioWithExpectation = [
+      'scenario:',
+      '  id: test.scenario.metrics',
+      '  requirements: [REF-8]',
+      '  content:',
+      '    packages: [pkg]',
+      '  setup:',
+      '    seed: [1, 2]',
+      '    tick_duration_ms: 1000',
+      '    world: null',
+      '  run:',
+      '    ticks: 2',
+      '    hash_interval: 0',
+      '    invariants: true',
+      '    metrics_interval: 1',
+      '  expect:',
+      '    - at: 2',
+      '      event_count: { type: CommandApplied }',
+      '      greater: 100',
+      '',
+    ].join('\n');
+    const written: Record<string, string> = {};
+    const cliIo: CliIo = {
+      readPackage: () =>
+        createMemorySource('pkg', { 'package.yaml': manifest, 'content.yaml': validContent }),
+      readFile: (path) => (path === 'scenario.yaml' ? scenarioWithExpectation : null),
+      writeFile: (path, text) => {
+        written[path] = text;
+      },
+    };
+    const ok = runCli(
+      ['run', 'scenario.yaml', '--ticks', '2', '--metrics-out', 'metrics.csv'],
+      cliIo,
+    );
+    expect(written['metrics.csv']).toBeDefined();
+    const lines = (written['metrics.csv'] ?? '').trim().split('\n');
+    expect(lines[0]?.split(',').slice(0, 2)).toEqual(['tick', 'net_rate']);
+    expect(lines).toHaveLength(4);
+    expect(ok.exitCode).toBe(1);
+    expect(ok.output).toContain('"ok": false');
+  });
+
   it('[CONT-15][TDS-21.2] design-intent findings appear on demand', () => {
     const result = runCli(['validate', 'pkg', '--design-intent', 'warning'], io(validContent));
     expect(result.exitCode).toBe(0);

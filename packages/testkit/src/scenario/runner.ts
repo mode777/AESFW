@@ -2,9 +2,9 @@
  * The pure scenario runner (VER-9.2). Creates a session from compiled content,
  * instantiates the selected world, applies scheduled scenario commands through
  * the real command gateway, runs the configured ticks, records hash
- * checkpoints, and checks invariants.
+ * checkpoints, evaluates expectations, samples metrics, and checks invariants.
  *
- * Source: VER-9.2, VER-6, TDS-16.1, TDS-18.1
+ * Source: VER-9.2, VER-9.1, VER-6, TDS-16.1, TDS-18.1
  */
 import { cloneWorld, ids } from '@aesfw/core';
 import type { DomainEvent, TickOutput } from '@aesfw/core';
@@ -12,18 +12,31 @@ import { advance, createSession, instantiateWorldContent, submitCommand } from '
 import type { SessionState } from '@aesfw/app';
 import { checkInvariants } from '../harness/invariants.js';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
-import type { Scenario, ScenarioCheckpoint, ScenarioFinding, ScenarioReport } from './types.js';
+import { evaluateExpectation } from './expectations.js';
+import { metricsRow } from './metrics.js';
+import type {
+  Scenario,
+  ScenarioCheckpoint,
+  ScenarioExpectationResult,
+  ScenarioFinding,
+  ScenarioMetrics,
+  ScenarioReport,
+} from './types.js';
 
 /**
- * Runs a scenario against compiled content (VER-9.2).
+ * Runs a scenario against compiled content (VER-9.2). Expectation failures do
+ * not abort the run: later ticks still execute and every entry is reported
+ * (VER-9.1, design D1).
  *
- * Source: VER-9.2, TDS-16.1
+ * Source: VER-9.2, VER-9.1, TDS-16.1
  */
 export function runScenario(scenario: Scenario, content: CompiledContent): ScenarioReport {
   const registry = content.registry;
   const checkpoints: ScenarioCheckpoint[] = [];
   const events: DomainEvent[] = [];
   const findings: ScenarioFinding[] = [];
+  const expectations: ScenarioExpectationResult[] = [];
+  const metrics: ScenarioMetrics[] = [];
   const actorId = scenario.commands[0]?.actor ?? 'owner.0';
   const created = createSession(content, {
     sessionId: scenario.id,
@@ -35,12 +48,17 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
     journal: false,
     actor: ids.ownerHandle(0),
     actorId,
+    // Scenarios are whole-world observation and control runs: metrics and
+    // expectations must resolve for every location, so fog filtering is off
+    // (design D2). Fog is a projection concern, not a simulation one, so this
+    // does not affect hashes.
+    fog: false,
   });
   if (!created.ok) {
     for (const diagnostic of created.error) {
       findings.push({ tick: 0, id: 'load_error', message: diagnostic.code });
     }
-    return { id: scenario.id, checkpoints, events, findings };
+    return { id: scenario.id, checkpoints, events, findings, expectations, metrics };
   }
   let session: SessionState = created.value;
   for (const diagnostic of instantiateWorldContent(
@@ -50,6 +68,25 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
   )) {
     findings.push({ tick: 0, id: 'content_diagnostic', message: diagnostic.code });
   }
+
+  const evaluateAt = (tick: number): void => {
+    for (const expectation of scenario.expect.filter((entry) => entry.at === tick)) {
+      expectations.push(evaluateExpectation(session, events, expectation));
+    }
+  };
+
+  const interval = scenario.run.metricsInterval;
+  let lastMetricsTick = 0;
+  const sampleMetrics = (): void => {
+    if (interval <= 0) return;
+    if (session.world.tick % interval !== 0) return;
+    metrics.push(metricsRow(session, events, lastMetricsTick));
+    lastMetricsTick = session.world.tick;
+  };
+
+  // Tick 0 is the instantiated start state, before any phase runs.
+  evaluateAt(0);
+  sampleMetrics();
 
   const hashing = scenario.run.hashInterval > 0;
   for (let tick = 1; tick <= scenario.run.ticks; tick += 1) {
@@ -83,6 +120,8 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
     if (hashing && tick % scenario.run.hashInterval === 0 && output.hash !== null) {
       checkpoints.push({ tick, hash: output.hash });
     }
+    evaluateAt(tick);
+    sampleMetrics();
   }
-  return { id: scenario.id, checkpoints, events, findings };
+  return { id: scenario.id, checkpoints, events, findings, expectations, metrics };
 }

@@ -58,6 +58,7 @@ export function needBreakdown(
       fulfillment,
       category: idOf(registry, 'needCategory', spec.category, `need_category.${spec.category}`),
       category_result: categoryResult,
+      ...(satisfaction === undefined ? {} : { satisfaction: satisfaction.z }),
     };
   });
 }

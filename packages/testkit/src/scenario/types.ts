@@ -27,9 +27,11 @@ export interface ScenarioRun {
   readonly ticks: number;
   readonly hashInterval: number;
   readonly invariants: boolean;
+  /** Ticks between metrics rows (REF-8); `0` disables rows. */
+  readonly metricsInterval: number;
 }
 
-/** A scenario expectation (parsed but not evaluated until metrics exist). */
+/** A scenario expectation (VER-9.1). */
 export interface ScenarioExpectation {
   readonly at: number;
   readonly raw: JsonValue;
@@ -60,10 +62,34 @@ export interface ScenarioFinding {
   readonly message: string;
 }
 
+/** The outcome of one expectation (VER-9.1). */
+export interface ScenarioExpectationResult {
+  readonly tick: number;
+  readonly kind: 'metric' | 'event_count' | 'unknown';
+  /** The resolved metric (`population:<tier>`, `satisfaction:<ref>`) or event filter. */
+  readonly target: string;
+  readonly comparator: string;
+  readonly expected: number;
+  readonly actual: number | null;
+  readonly ok: boolean;
+}
+
 /** The outcome of running a scenario. */
 export interface ScenarioReport {
   readonly id: string;
   readonly checkpoints: readonly ScenarioCheckpoint[];
   readonly events: readonly DomainEvent[];
   readonly findings: readonly ScenarioFinding[];
+  readonly expectations: readonly ScenarioExpectationResult[];
+  readonly metrics: readonly ScenarioMetrics[];
+}
+
+/** A metrics checkpoint row (REF-8). */
+export interface ScenarioMetrics {
+  readonly tick: number;
+  readonly balance: Readonly<Record<string, number>>;
+  readonly netRate: number;
+  readonly population: Readonly<Record<string, number>>;
+  readonly satisfaction: Readonly<Record<string, number>>;
+  readonly trade: Readonly<Record<string, number>>;
 }

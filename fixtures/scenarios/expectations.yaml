@@ -1,0 +1,27 @@
+scenario:
+  id: test.scenario.expectations
+  requirements: [VER-9.1]
+  content:
+    packages: [fixtures/content/demo-basic-loop]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 120
+    hash_interval: 0
+    invariants: true
+    metrics_interval: 60
+  expect:
+    - at: 0
+      metric: { population: {} }
+      equal: 1
+    - at: 60
+      metric: { population: { tier: demo.population.tier_1 } }
+      greater: 1
+    - at: 120
+      metric: { satisfaction: { entity: '@demo.entity.residence#1' } }
+      greater_equal: 800
+    - at: 120
+      event_count: { type: PopulationChanged }
+      greater: 0

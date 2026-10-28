@@ -62,10 +62,16 @@ const parseRun = (value: unknown, errors: string[]): ScenarioRun | null => {
   }
   const hashInterval = value['hash_interval'];
   const invariants = value['invariants'];
+  const metricsInterval = value['metrics_interval'];
+  const interval =
+    typeof metricsInterval === 'number' && Number.isInteger(metricsInterval) && metricsInterval >= 0
+      ? metricsInterval
+      : 60;
   return {
     ticks,
     hashInterval: typeof hashInterval === 'number' ? hashInterval : 0,
     invariants: invariants !== false,
+    metricsInterval: interval,
   };
 };
 

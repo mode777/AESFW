@@ -5,7 +5,7 @@
  *
  * Source: TDS-21.2, VER-9.2
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import {
@@ -18,13 +18,16 @@ import {
 } from '@aesfw/content';
 import type { ContentRegistry, Diagnostic, PackageSource } from '@aesfw/content';
 import { runBenchmark } from '@aesfw/testkit/bench';
-import { parseScenario, runScenario } from '@aesfw/testkit/scenario';
+import { metricsCells, metricsHeader, parseScenario, runScenario } from '@aesfw/testkit/scenario';
+import type { ScenarioMetricsRow } from '@aesfw/testkit/scenario';
 import { parse as parseYaml } from 'yaml';
 
 /** The I/O boundary of the CLI. */
 export interface CliIo {
   readonly readPackage: (dir: string) => PackageSource;
   readonly readFile: (path: string) => string | null;
+  /** Writes a file; omitted by in-memory test I/O that does not export. */
+  readonly writeFile?: (path: string, text: string) => void;
 }
 
 /** The outcome of a CLI command. */
@@ -177,10 +180,38 @@ const runRun = (args: readonly string[], io: CliIo): CliResult => {
     },
   };
   const report = runScenario(scenario, content.content);
+  const metricsOut = optionValue(args, '--metrics-out');
+  let metricsError: string | null = null;
+  if (metricsOut !== null && report.metrics.length > 0) {
+    if (io.writeFile === undefined) {
+      metricsError = 'metrics export is unavailable in this shell';
+    } else {
+      io.writeFile(metricsOut, renderMetricsCsv(report.metrics));
+    }
+  }
+  const failedExpectations = report.expectations.filter((entry) => !entry.ok).length;
+  const exitCode =
+    report.findings.length > 0 || failedExpectations > 0 || metricsError !== null ? 1 : 0;
   return {
-    exitCode: report.findings.length > 0 ? 1 : 0,
-    output: JSON.stringify(report, null, 2),
+    exitCode,
+    output:
+      metricsError === null
+        ? JSON.stringify(report, null, 2)
+        : JSON.stringify({ ...report, metrics_error: metricsError }, null, 2),
   };
+};
+
+/**
+ * Renders metrics rows as CSV with a stable header (REF-8 D3). The header
+ * comes from the first row, so column order is deterministic for a given run.
+ *
+ * Source: REF-8, TDS-21.2
+ */
+const renderMetricsCsv = (rows: readonly ScenarioMetricsRow[]): string => {
+  const header = metricsHeader(rows);
+  const lines = [header.join(',')];
+  for (const row of rows) lines.push(metricsCells(row, header).join(','));
+  return `${lines.join('\n')}\n`;
 };
 
 const runBench = (args: readonly string[], io: CliIo): CliResult => {
@@ -254,6 +285,9 @@ export function fileSystemIo(): CliIo {
       } catch {
         return null;
       }
+    },
+    writeFile: (path, text) => {
+      writeFileSync(path, text);
     },
   };
 }

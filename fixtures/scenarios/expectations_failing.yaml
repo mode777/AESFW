@@ -1,0 +1,18 @@
+scenario:
+  id: test.scenario.expectations_failing
+  requirements: [VER-9.1]
+  content:
+    packages: [fixtures/content/demo-basic-loop]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: null
+  run:
+    ticks: 30
+    hash_interval: 0
+    invariants: true
+    metrics_interval: 0
+  expect:
+    - at: 30
+      metric: { population: { tier: demo.population.tier_1 } }
+      less: 1
