@@ -41,6 +41,16 @@ import {
   pushTrend,
 } from './selectors/index.js';
 import type { Footprint, PaletteEntry, ShapeArchetype } from './selectors/index.js';
+import {
+  DETAIL_ZOOM,
+  LOCATION_ZOOM,
+  clampCamera,
+  homeCamera,
+  panBy,
+  zoomAround,
+} from './selectors/camera.js';
+import { zoomLevel } from './selectors/camera.js';
+import { worldLayout } from './selectors/layout.js';
 import { tradeDraft, exchangeEntities, exchangeView } from './selectors/exchange.js';
 import { createWorkerClient } from './session/client.js';
 import { createMirror } from './store/mirror.js';
@@ -68,11 +78,11 @@ import { createActionBar } from './views/hud/action-bar.js';
 import type { WindowKind } from './views/hud/action-bar.js';
 import { createHudFrame } from './views/hud/frame.js';
 import { createLocationBannerView } from './views/hud/location-banner.js';
-import { mountMinimapPlaceholder, mountNewsPlaceholder } from './views/hud/placeholders.js';
+import { mountNewsPlaceholder } from './views/hud/placeholders.js';
 import { createResourceBarView } from './views/hud/resource-bar.js';
 import { createWindowHost } from './views/hud/window-host.js';
-import { createWorldMap } from './views/world-map.js';
-import type { WorldMapSelection } from './views/world-map.js';
+import { createWorldCanvas } from './views/world/canvas.js';
+import { createMinimap } from './views/world/minimap.js';
 
 const ACTOR_ID = 'owner.0';
 const SUITABILITY_PROPERTY = 'ref.tier.property.suitability_p1';
@@ -379,80 +389,97 @@ export function mount(root: HTMLElement): void {
     },
     onConfirm: () => submitPlacement(),
   });
-  let mapSelection: WorldMapSelection | null = null;
-  const mapActions = h('div', { class: 'map-actions', 'data-testid': 'map-actions', hidden: true });
-  const renderMapActions = (): void => {
-    mapActions.replaceChildren();
-    if (mapSelection === null) {
-      mapActions.hidden = true;
+  const selectedLocation = (): number | null => view.location();
+  const layoutNow = (): ReturnType<typeof worldLayout> => {
+    const projection = mirror.projection();
+    const locations = projection?.locations ?? [];
+    const connections = locations.flatMap((location) => location.connection_details ?? []);
+    return worldLayout(locations, connections);
+  };
+  const canvas = createWorldCanvas({
+    layout: layoutNow,
+    camera: () => view.camera(),
+    selected: selectedLocation,
+    onSelectIsland: (locationId) => {
+      view.location.set(locationId);
+      const projection = mirror.projection();
+      const location = projection?.locations.find((entry) => entry.entity_id === locationId);
+      if (location !== undefined && location.knowledge !== 'unknown') {
+        select(locationId);
+      }
+      refreshHud();
+      canvas.invalidate();
+      minimapView.update();
+    },
+  });
+  const gridOverlay = h('div', {
+    class: 'canvas-grid-overlay',
+    'data-testid': 'canvas-grid-overlay',
+  });
+  const islandActions = h('div', { class: 'island-actions', 'data-testid': 'island-actions' });
+  const renderIslandActions = (): void => {
+    const projection = mirror.projection();
+    const locationId = selectedLocation();
+    const location =
+      locationId === null
+        ? undefined
+        : projection?.locations.find((entry) => entry.entity_id === locationId);
+    if (location === undefined) {
+      islandActions.replaceChildren();
+      islandActions.hidden = true;
       return;
     }
-    mapActions.hidden = false;
-    const { locationId, knowledge, active } = mapSelection;
+    islandActions.hidden = false;
     const button = (testId: string, text: string, onclick: () => void): HTMLElement =>
       h('button', { 'data-testid': testId, text, onclick });
-    if (knowledge !== 'unknown') {
-      mapActions.append(
-        button('map-activate', active ? 'Deactivate' : 'Activate', () => {
+    islandActions.replaceChildren();
+    if (location.knowledge !== 'unknown') {
+      islandActions.append(
+        button('map-activate', location.active ? 'Deactivate' : 'Activate', () => {
           client.command({
             command_id: `client-location-${Date.now()}`,
             actor_id: ACTOR_ID,
-            type: active ? 'DeactivateLocation' : 'ActivateLocation',
-            payload: { location_id: locationId },
+            type: location.active ? 'DeactivateLocation' : 'ActivateLocation',
+            payload: { location_id: location.entity_id },
           });
-          mapSelection = null;
-          renderMapActions();
         }),
-      );
-    }
-    if (knowledge !== 'unknown') {
-      mapActions.append(
         button('map-explore', 'Explore', () => {
-          view.windows.set(['logistics']);
           windowHost.open('logistics');
+          view.windows.set(windowHost.openKinds());
+          logistics.prefill(exploreDraft(location.entity_id));
           refreshWindows();
-          logistics.prefill(exploreDraft(locationId));
-          mapSelection = null;
-          renderMapActions();
         }),
         button('map-establish', 'Establish', () => {
-          view.windows.set(['logistics']);
           windowHost.open('logistics');
+          view.windows.set(windowHost.openKinds());
+          logistics.prefill(establishDraft(location.entity_id));
           refreshWindows();
-          logistics.prefill(establishDraft(locationId));
-          mapSelection = null;
-          renderMapActions();
         }),
       );
     }
   };
-  const worldMapView = createWorldMap(mirror, {
-    onSelect: (selection) => {
-      mapSelection = mapSelection?.locationId === selection.locationId ? null : selection;
-      renderMapActions();
+  const minimapView = createMinimap({
+    layout: layoutNow,
+    camera: () => view.camera(),
+    viewport: () => canvas.viewport(),
+    population: () => {
+      const locationId = selectedLocation();
+      const summary = locationId === null ? undefined : summaries.get(locationId);
+      if (summary?.population_by_tier !== undefined) return summary.population_by_tier;
+      const totals: Record<string, number> = {};
+      for (const entry of summaries.values()) {
+        for (const [tier, count] of Object.entries(entry.population_by_tier ?? {})) {
+          totals[tier] = (totals[tier] ?? 0) + count;
+        }
+      }
+      return totals;
+    },
+    onMove: (camera) => {
+      view.camera.set(clampCamera(camera, layoutNow().bounds, canvas.viewport()));
+      canvas.invalidate();
+      minimapView.update();
     },
   });
-  const mapButton = h('button', {
-    class: 'map-toggle',
-    'data-testid': 'map-toggle',
-    text: 'Map',
-    onclick: () => toggleMap(),
-  });
-  const refreshView = (): void => {
-    const showMap = view.worldMap();
-    grid.el.hidden = showMap;
-    worldMapView.el.hidden = !showMap;
-    mapButton.textContent = showMap ? 'Grid' : 'Map';
-    if (showMap) worldMapView.update();
-    renderMapActions();
-  };
-  const toggleMap = (): void => {
-    view.worldMap.set(!view.worldMap());
-    refreshView();
-  };
-  const entityList = h('div', { class: 'entity-list', 'data-testid': 'entity-list' });
-  const locationList = h('div', { class: 'location-list', 'data-testid': 'location-list' });
-
   let currentDetail: EntityDetailDto | null = null;
   let currentBreakdown: readonly NeedBreakdownDto[] = [];
   const summaries = new Map<number, LocationSummaryDto>();
@@ -461,6 +488,73 @@ export function mount(root: HTMLElement): void {
     view.selection.set(entity);
     client.query(ACTOR_ID, { kind: 'entity_detail', entity_id: entity });
     client.query(ACTOR_ID, { kind: 'need_breakdown', entity_id: entity });
+  };
+
+  const entityList = h('div', { class: 'entity-list', 'data-testid': 'entity-list' });
+  const locationList = h('div', { class: 'location-list', 'data-testid': 'location-list' });
+
+  /**
+   * Positions the HTML grid renderer over the viewed island: the existing grid
+   * view is reused unchanged instead of re-implemented in SVG, and hidden at
+   * world zoom (REF-12.1).
+   */
+  const placeGridOverlay = (): void => {
+    const level = zoomLevel(view.camera().zoom);
+    const locationId = view.location();
+    const screen = locationId === null ? null : canvas.islandScreen(locationId);
+    if (level === 'world' || screen === null) {
+      gridOverlay.hidden = true;
+      return;
+    }
+    gridOverlay.hidden = false;
+    gridOverlay.setAttribute(
+      'style',
+      `left:${screen.x}px;top:${screen.y}px;width:${screen.size}px;height:${screen.size}px;`,
+    );
+  };
+
+  const refreshView = (): void => {
+    placeGridOverlay();
+    canvas.invalidate();
+    minimapView.update();
+  };
+
+  /** Camera gestures (REF-13.5): wheel zoom on the cursor, drag to pan. */
+  const bindCamera = (): void => {
+    canvas.el.addEventListener(
+      'wheel',
+      (event) => {
+        event.preventDefault();
+        const bounds = canvas.el.getBoundingClientRect();
+        const anchor = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+        view.camera.set(
+          clampCamera(
+            zoomAround(view.camera(), event.deltaY < 0 ? 1.2 : 1 / 1.2, anchor, canvas.viewport()),
+            layoutNow().bounds,
+            canvas.viewport(),
+          ),
+        );
+        refreshHud();
+      },
+      { passive: false },
+    );
+    let dragging: { readonly x: number; readonly y: number } | null = null;
+    canvas.el.addEventListener('pointerdown', (event) => {
+      dragging = { x: event.clientX, y: event.clientY };
+      canvas.el.setPointerCapture?.(event.pointerId);
+    });
+    canvas.el.addEventListener('pointermove', (event) => {
+      if (dragging === null) return;
+      const delta = { x: event.clientX - dragging.x, y: event.clientY - dragging.y };
+      dragging = { x: event.clientX, y: event.clientY };
+      view.camera.set(
+        clampCamera(panBy(view.camera(), delta), layoutNow().bounds, canvas.viewport()),
+      );
+      refreshHud();
+    });
+    canvas.el.addEventListener('pointerup', () => {
+      dragging = null;
+    });
   };
 
   const refreshLists = (): void => {
@@ -493,7 +587,7 @@ export function mount(root: HTMLElement): void {
       view.location.set(locations[0].entity_id);
     }
     inventory.show(projection);
-    worldMapView.update();
+    renderIslandActions();
     refreshLogistics();
     for (const location of locations) {
       client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
@@ -620,7 +714,7 @@ export function mount(root: HTMLElement): void {
   });
   const bannerView = createLocationBannerView();
   const actionBar = createActionBar(client, mirror, view, toggleWindow);
-  mountMinimapPlaceholder(frame.regions.minimap);
+  frame.regions.minimap.append(minimapView.el);
   mountNewsPlaceholder(frame.regions.news);
   frame.regions.resourceBar.append(resourceBarView.el);
   frame.regions.banner.append(bannerView.el);
@@ -629,11 +723,21 @@ export function mount(root: HTMLElement): void {
   // The context panel hosts the build palette and the map actions until 11.4c
   // and 11.4d fill it (design D2).
   frame.regions.contextPanel.append(
-    mapButton,
+    islandActions,
     paletteView.el,
     h('div', { class: 'hud-lists' }, entityList, locationList),
   );
-  frame.world.append(grid.el, worldMapView.el, mapActions, windowHost.el);
+  gridOverlay.append(grid.el);
+  frame.world.append(canvas.el, gridOverlay, windowHost.el);
+  view.camera.set(
+    homeCamera(
+      layoutNow(),
+      (mirror.projection()?.locations ?? [])
+        .filter((location) => location.knowledge === 'established')
+        .map((location) => location.entity_id),
+      view.camera().zoom,
+    ),
+  );
 
   for (const window of [
     { kind: 'economy', title: i18n.t('economy.title'), el: economy.el },
@@ -660,6 +764,9 @@ export function mount(root: HTMLElement): void {
     resourceBarView.show(resourceBar(owner, summary, definitions, view.pins(), formatter));
     bannerView.show(locationBanner(location));
     actionBar.update();
+    placeGridOverlay();
+    canvas.invalidate();
+    minimapView.update();
   };
   mirror.projection.subscribe(refreshHud);
   view.location.subscribe(() => {
@@ -668,14 +775,49 @@ export function mount(root: HTMLElement): void {
   });
   view.pins.subscribe(refreshHud);
   refreshHud();
+  refreshView();
+  bindCamera();
   refreshWindows();
 
   root.append(frame.el, debug.el);
 
   document.addEventListener('keydown', (event) => {
     if (event.key === '`') view.debug.set(!view.debug());
-    if (event.key === 'm' || event.key === 'M') {
-      toggleMap();
+    if (event.key === 'Home') {
+      view.camera.set(
+        homeCamera(
+          layoutNow(),
+          (mirror.projection()?.locations ?? [])
+            .filter((location) => location.knowledge === 'established')
+            .map((location) => location.entity_id),
+          LOCATION_ZOOM,
+        ),
+      );
+      refreshHud();
+      return;
+    }
+    if (event.key === '+' || event.key === '=') {
+      view.camera.set(
+        zoomAround(
+          view.camera(),
+          DETAIL_ZOOM > view.camera().zoom ? 1.25 : 1,
+          { x: canvas.viewport().width / 2, y: canvas.viewport().height / 2 },
+          canvas.viewport(),
+        ),
+      );
+      refreshHud();
+      return;
+    }
+    if (event.key === '-' || event.key === '_') {
+      view.camera.set(
+        zoomAround(
+          view.camera(),
+          1 / 1.25,
+          { x: canvas.viewport().width / 2, y: canvas.viewport().height / 2 },
+          canvas.viewport(),
+        ),
+      );
+      refreshHud();
       return;
     }
     if (view.mode() === 'place') {

@@ -166,3 +166,97 @@ body {
     grid-template-columns: 150px 1fr 240px;
   }
 }
+
+/* --- World canvas (REF-12.1) --------------------------------------------- */
+
+.world-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--sea);
+  cursor: grab;
+}
+.canvas-sea {
+  fill: var(--sea);
+}
+.canvas-islands .island {
+  fill: var(--land);
+  stroke: var(--ink-2);
+  stroke-width: 2;
+  cursor: pointer;
+}
+.canvas-islands .island[data-region='ref.tier.region.alpha'] {
+  stroke-dasharray: none;
+}
+.canvas-islands .island[data-region='ref.tier.region.beta'] {
+  stroke-dasharray: 6 3;
+}
+.canvas-islands .island-fog {
+  fill: var(--rule);
+  stroke: var(--ink-3);
+  stroke-dasharray: 4 4;
+  opacity: 0.75;
+  cursor: pointer;
+}
+.canvas-lanes .lane {
+  stroke: var(--ink-2);
+  stroke-width: 1.5;
+}
+.canvas-lanes .lane-disabled {
+  stroke-dasharray: 4 4;
+  opacity: 0.5;
+}
+.canvas-lanes .lane-label {
+  font-family: var(--font-num);
+  font-size: 10px;
+  fill: var(--ink-2);
+}
+.canvas-selection .island-selected {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 2;
+  pointer-events: none;
+}
+.canvas-grid-overlay {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.canvas-grid-overlay > * {
+  pointer-events: auto;
+  width: 100%;
+  height: 100%;
+}
+
+.hud-minimap-svg {
+  display: block;
+  background: var(--paper);
+}
+.minimap-island {
+  fill: var(--land);
+  stroke: var(--ink-2);
+}
+.minimap-fog {
+  fill: var(--rule);
+}
+.minimap-lane {
+  stroke: var(--ink-3);
+}
+.minimap-viewport {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 1;
+}
+.hud-population-strip {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  font-family: var(--font-num);
+}
+.island-actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
