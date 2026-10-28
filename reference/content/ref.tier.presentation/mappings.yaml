@@ -1,12 +1,176 @@
+# Presentation mappings (04 §6, 07 §14.4). One entry per placeable definition:
+# build-menu tab (`display.category_key`), ordering within the tab
+# (`display.sort_order`), and the shape-grammar archetype of 07 §10.2
+# (`visual.fallback_shape`). Definitions without an entry fall back to a plain
+# square labelled with the ID's last segment (04 §6).
 presentation_mapping:
-  target_definition: ref.tier.entity.refiner
-  localization:
-    name_key: ref.tier.entity.refiner
-    description_key: ref.tier.entity.refiner
-  visual:
-    model_key: ref.tier.model.refiner
-    icon_key: ref.tier.icon.refiner
-    fallback_shape: box
-  display:
-    category_key: ref.tier.category.production
-    sort_order: 100
+  # S1 tab
+  - target_definition: ref.tier.entity.hub
+    localization:
+      name_key: ref.tier.entity.hub
+      description_key: ref.tier.entity.hub.description
+    visual:
+      fallback_shape: hub
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 10
+  - target_definition: ref.tier.entity.connector
+    localization:
+      name_key: ref.tier.entity.connector
+      description_key: ref.tier.entity.connector.description
+    visual:
+      fallback_shape: connector
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 20
+  - target_definition: ref.tier.entity.area_extractor_p1
+    localization:
+      name_key: ref.tier.entity.area_extractor_p1
+      description_key: ref.tier.entity.area_extractor_p1.description
+    visual:
+      fallback_shape: area_extractor
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 30
+  - target_definition: ref.tier.entity.slot_extractor_p2
+    localization:
+      name_key: ref.tier.entity.slot_extractor_p2
+      description_key: ref.tier.entity.slot_extractor_p2.description
+    visual:
+      fallback_shape: slot_extractor
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 40
+  - target_definition: ref.tier.entity.refiner_h1
+    localization:
+      name_key: ref.tier.entity.refiner_h1
+      description_key: ref.tier.entity.refiner_h1.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 50
+  - target_definition: ref.tier.entity.refiner_bm1
+    localization:
+      name_key: ref.tier.entity.refiner_bm1
+      description_key: ref.tier.entity.refiner_bm1.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 60
+  - target_definition: ref.tier.entity.residence_s1
+    localization:
+      name_key: ref.tier.entity.residence_s1
+      description_key: ref.tier.entity.residence_s1.description
+    visual:
+      fallback_shape: residence
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 70
+  - target_definition: ref.tier.entity.storage_module
+    localization:
+      name_key: ref.tier.entity.storage_module
+      description_key: ref.tier.entity.storage_module.description
+    visual:
+      fallback_shape: storage_module
+    display:
+      category_key: ref.tier.category.s1
+      sort_order: 80
+
+  # S2 tab (unlock-gated entries carry a static unlock hint)
+  - target_definition: ref.tier.entity.area_extractor_p3
+    localization:
+      name_key: ref.tier.entity.area_extractor_p3
+      description_key: ref.tier.entity.area_extractor_p3.description
+    visual:
+      fallback_shape: area_extractor
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 10
+  - target_definition: ref.tier.entity.slot_extractor_p4
+    localization:
+      name_key: ref.tier.entity.slot_extractor_p4
+      description_key: ref.tier.entity.slot_extractor_p4.description
+    visual:
+      fallback_shape: slot_extractor
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 20
+  - target_definition: ref.tier.entity.refiner_h2
+    localization:
+      name_key: ref.tier.entity.refiner_h2
+      description_key: ref.tier.entity.refiner_h2.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 30
+  - target_definition: ref.tier.entity.refiner_bm2
+    localization:
+      name_key: ref.tier.entity.refiner_bm2
+      description_key: ref.tier.entity.refiner_bm2.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 40
+  - target_definition: ref.tier.entity.combiner_c1
+    localization:
+      name_key: ref.tier.entity.combiner_c1
+      description_key: ref.tier.entity.combiner_c1.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 50
+  - target_definition: ref.tier.entity.combiner_c2
+    localization:
+      name_key: ref.tier.entity.combiner_c2
+      description_key: ref.tier.entity.combiner_c2.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 60
+  - target_definition: ref.tier.entity.combiner_c3
+    localization:
+      name_key: ref.tier.entity.combiner_c3
+      description_key: ref.tier.entity.combiner_c3.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 70
+  - target_definition: ref.tier.entity.combiner_c4
+    localization:
+      name_key: ref.tier.entity.combiner_c4
+      description_key: ref.tier.entity.combiner_c4.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 80
+  - target_definition: ref.tier.entity.combiner_ep
+    localization:
+      name_key: ref.tier.entity.combiner_ep
+      description_key: ref.tier.entity.combiner_ep.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 90
+  - target_definition: ref.tier.entity.coverage_service
+    localization:
+      name_key: ref.tier.entity.coverage_service
+      description_key: ref.tier.entity.coverage_service.description
+    visual:
+      fallback_shape: coverage_service
+    display:
+      category_key: ref.tier.category.s2
+      sort_order: 100
+
+fallback:
+  shape: box
+  locale: en
+  color: '#888888'

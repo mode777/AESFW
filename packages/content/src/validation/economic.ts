@@ -485,6 +485,17 @@ const throughputFindings = (
         }
       }
     }
+    // Authored start stock is local supply, so no import leg is required for
+    // those resources (CONT-6.6, 07 §8 "start state ... without trade").
+    for (const entry of asArray(world['locations'])) {
+      const record = asRecord(entry);
+      const location = asString(record?.['id']);
+      if (location === null) continue;
+      for (const item of asArray(record?.['initial_inventory'])) {
+        const resource = asString(asRecord(item)?.['resource']);
+        if (resource !== null) noteProducer(location, resource);
+      }
+    }
 
     for (const [location, demanded] of consumers) {
       for (const [resource, demandRate] of demanded) {

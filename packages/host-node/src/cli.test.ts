@@ -118,6 +118,59 @@ describe('[TDS-21.2] aesfw CLI', () => {
     expect(result.output).toContain('presentation_target_missing');
   });
 
+  it('[PIC-19][TDS-21.2] a presentation mapping resolves against the simulation package', () => {
+    const presentationManifest = [
+      'package:',
+      '  id: test.presentation',
+      '  version: 1.0.0',
+      '  schema_version: 1',
+      '  type: presentation',
+      '  files:',
+      '    - presentation.yaml',
+      '',
+    ].join('\n');
+    const presentation = [
+      'presentation_mapping:',
+      '  - target_definition: test.entity.builder',
+      '    localization: { name_key: test.entity.builder }',
+      '    display: { category_key: test.category.s1, sort_order: 10 }',
+      'localization:',
+      '  locale: en',
+      '  entries: { test.entity.builder: Builder }',
+      'fallback: { shape: box }',
+      '',
+    ].join('\n');
+    const simContent = [
+      validContent,
+      'entity_definitions:',
+      '  - id: test.entity.builder',
+      '    components:',
+      '      placement: { footprint: [1, 1] }',
+      '',
+    ].join('\n');
+    const files: Record<string, string> = {
+      'pkg/package.yaml': presentationManifest,
+      'pkg/presentation.yaml': presentation,
+      'sim/package.yaml': manifest,
+      'sim/content.yaml': simContent,
+    };
+    const io: CliIo = {
+      readPackage: (dir) =>
+        createMemorySource(
+          dir,
+          Object.fromEntries(
+            Object.entries(files)
+              .filter(([path]) => path.startsWith(`${dir}/`))
+              .map(([path, text]) => [path.slice(dir.length + 1), text]),
+          ),
+        ),
+      readFile: (path) => files[path] ?? null,
+    };
+    const result = runCli(['validate', 'pkg', '--against', 'sim'], io);
+    expect(result.output).not.toContain('presentation_target_missing');
+    expect(result.exitCode).toBe(0);
+  });
+
   it('[CONT-15][TDS-21.2] design-intent findings appear on demand', () => {
     const result = runCli(['validate', 'pkg', '--design-intent', 'warning'], io(validContent));
     expect(result.exitCode).toBe(0);

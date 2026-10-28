@@ -6,7 +6,3 @@ formatting:
   rates:
     per_minute: true
     tick_duration_ms: 1000
-fallback:
-  shape: box
-  locale: en
-  color: '#888888'

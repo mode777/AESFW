@@ -10,8 +10,12 @@ worlds:
       - id: ref.tier.loc.alpha_1
         template: ref.tier.location.alpha_1
         initial_inventory:
-          - { resource: ref.tier.resource.bm1, quantity: 360000 }
-          - { resource: ref.tier.resource.c1, quantity: 720000 }
+          - { resource: ref.tier.resource.bm1, quantity: 240000 }
+          - { resource: ref.tier.resource.p1, quantity: 120000 }
+          - { resource: ref.tier.resource.p2, quantity: 120000 }
+          - { resource: ref.tier.resource.h1, quantity: 60000 }
+          - { resource: ref.tier.resource.c1, quantity: 60000 }
+          - { resource: ref.tier.resource.c2, quantity: 60000 }
       - id: ref.tier.loc.alpha_2
         template: ref.tier.location.alpha_2
       - id: ref.tier.loc.alpha_3
@@ -61,4 +65,11 @@ worlds:
         known_locations: [ref.tier.loc.alpha_2, ref.tier.loc.alpha_3]
         initial_entities:
           - { definition: ref.tier.entity.hub, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.residence_s1, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.residence_s1, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.area_extractor_p1, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.area_extractor_p1, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.refiner_h1, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.refiner_h1, location: ref.tier.loc.alpha_1 }
+          - { definition: ref.tier.entity.slot_extractor_p2, location: ref.tier.loc.alpha_1 }
           - { definition: ref.tier.entity.transport_t1, location: ref.tier.loc.alpha_1 }

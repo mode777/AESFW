@@ -443,9 +443,7 @@ export function worldPlan(
         }
         return { resource, quantity };
       })
-      .filter(
-        (item): item is { resource: DefinitionHandle; quantity: number } => item !== null,
-      );
+      .filter((item): item is { resource: DefinitionHandle; quantity: number } => item !== null);
     locations.push({
       ...plan,
       owner,

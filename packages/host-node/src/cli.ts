@@ -10,6 +10,7 @@ import { join, relative } from 'node:path';
 
 import {
   COLLECTION_ORDER,
+  DEFINITION_COLLECTIONS,
   createMemorySource,
   formatReport,
   loadContent,
@@ -54,13 +55,17 @@ const optionValue = (args: readonly string[], name: string): string | null => {
   return index < 0 ? null : (args[index + 1] ?? null);
 };
 
-/** The definition-type to string-ID sets the presentation validator consumes. */
+/**
+ * The definition-type to string-ID sets the presentation validator consumes.
+ * Collection keys are mapped to definition types first: the registry indexes
+ * by `DefinitionType` (`entity`, not `entity_definitions`).
+ */
 const simulationIdSets = (registry: ContentRegistry): ReadonlyMap<string, ReadonlySet<string>> => {
   const sets = new Map<string, ReadonlySet<string>>();
-  for (const type of COLLECTION_ORDER) {
-    const definitionType = type as never;
+  for (const collection of COLLECTION_ORDER) {
+    const definitionType = DEFINITION_COLLECTIONS[collection];
     sets.set(
-      type,
+      collection,
       new Set(registry.definitionsOf(definitionType).map((definition) => definition.id)),
     );
   }

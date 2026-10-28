@@ -204,6 +204,18 @@ export function validateSpatialGraph(definitions: RawDefinitions): readonly Diag
         for (const resource of needsByTier.get(tier) ?? []) noteConsumer(location, resource);
       }
     }
+    // Authored start stock is local supply: a location that ships a resource in
+    // its `initial_inventory` can consume it without an import leg (CONT-6.6,
+    // 07 §8 "start state ... without any trade command").
+    for (const entry of asArray(world['locations'])) {
+      const record = asRecord(entry);
+      const id = asString(record?.['id']);
+      if (id === null) continue;
+      for (const item of asArray(record?.['initial_inventory'])) {
+        const resource = asString(asRecord(item)?.['resource']);
+        if (resource !== null) noteProducer(id, resource);
+      }
+    }
 
     for (const [location, consumedSet] of localConsumers) {
       for (const resource of consumedSet) {
