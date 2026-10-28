@@ -43,6 +43,8 @@ export type LocationGridPlan = {
   readonly blocked: readonly Int[] | null;
   /** Seeded buildable ratio in permille, or `null` for a fixed mask. */
   readonly buildableRatio: { readonly min: Int; readonly max: Int } | null;
+  /** Cells kept buildable for authored initial entities (CONT-6.4, CONT-6.6). */
+  readonly reservedCells?: readonly Int[];
 };
 
 /** A planned internal-logistics configuration. */
@@ -76,6 +78,10 @@ export type InitialEntityPlan = {
   readonly definition: DefinitionHandle;
   readonly locationIndex: Int;
   readonly owner: OwnerHandle;
+  /** Authored top-left cell of the footprint, or `null` when unplaced (CONT-6.6). */
+  readonly position?: { readonly x: Int; readonly y: Int } | null;
+  /** Authored orientation, defaulting to 0 (CONT-6.6). */
+  readonly orientation?: Int;
 };
 
 /** A planned connection instance, indexing the world plan's location list. */
@@ -169,6 +175,7 @@ const resolveGrid = (world: World, entity: EntityId, plan: LocationGridPlan): Lo
       ratio,
       world.rng.seed,
       `spatial.buildable.${entity}`,
+      plan.reservedCells ?? [],
     );
   } else {
     blocked = [];

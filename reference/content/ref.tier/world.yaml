@@ -63,13 +63,32 @@ worlds:
           - { resource: ref.tier.resource.credits, quantity: 30000000 }
         established_locations: [ref.tier.loc.alpha_1]
         known_locations: [ref.tier.loc.alpha_2, ref.tier.loc.alpha_3]
+        # Authored start layout (CONT-6.6): the engine reserves these cells in
+        # the seeded mask, so the opening is identical for every seed.
         initial_entities:
-          - { definition: ref.tier.entity.hub, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.residence_s1, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.residence_s1, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.area_extractor_p1, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.area_extractor_p1, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.refiner_h1, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.refiner_h1, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.slot_extractor_p2, location: ref.tier.loc.alpha_1 }
-          - { definition: ref.tier.entity.transport_t1, location: ref.tier.loc.alpha_1 }
+          - definition: ref.tier.entity.hub
+            location: ref.tier.loc.alpha_1
+            position: { x: 2, y: 2 }
+          - definition: ref.tier.entity.residence_s1
+            location: ref.tier.loc.alpha_1
+            position: { x: 8, y: 2 }
+          - definition: ref.tier.entity.residence_s1
+            location: ref.tier.loc.alpha_1
+            position: { x: 12, y: 2 }
+          - definition: ref.tier.entity.area_extractor_p1
+            location: ref.tier.loc.alpha_1
+            position: { x: 8, y: 6 }
+          - definition: ref.tier.entity.area_extractor_p1
+            location: ref.tier.loc.alpha_1
+            position: { x: 12, y: 6 }
+          - definition: ref.tier.entity.refiner_h1
+            location: ref.tier.loc.alpha_1
+            position: { x: 8, y: 10 }
+          - definition: ref.tier.entity.refiner_h1
+            location: ref.tier.loc.alpha_1
+            position: { x: 12, y: 10 }
+          - definition: ref.tier.entity.slot_extractor_p2
+            location: ref.tier.loc.alpha_1
+            position: { x: 16, y: 2 }
+          - definition: ref.tier.entity.transport_t1
+            location: ref.tier.loc.alpha_1

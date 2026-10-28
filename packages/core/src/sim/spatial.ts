@@ -242,6 +242,7 @@ export function buildableMask(
   ratioPermille: Int,
   seed: Seed,
   name: string,
+  reserved: readonly Int[] = [],
 ): Int[] {
   const cellCount = width * height;
   const buildable = Math.floor((cellCount * ratioPermille) / 1000);
@@ -310,7 +311,15 @@ export function buildableMask(
     const difference = cellValue(b) - cellValue(a);
     return difference === 0 ? (rank[a] ?? 0) - (rank[b] ?? 0) : difference;
   });
-  return order.slice(0, blockedCount).sort((a, b) => a - b);
+  // Authored cells stay buildable: they are skipped in the ranking, so the
+  // blocked count is filled from the next cells instead (CONT-6.4, CONT-6.6).
+  const keep = new Set(reserved);
+  const blocked: Int[] = [];
+  for (const cell of order) {
+    if (blocked.length >= blockedCount) break;
+    if (!keep.has(cell)) blocked.push(cell);
+  }
+  return blocked.sort((a, b) => a - b);
 }
 
 /**

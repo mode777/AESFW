@@ -9,6 +9,7 @@ import {
 } from '@aesfw/content';
 import type { ContentRegistry, JsonValue } from '@aesfw/content';
 import { advance, createSession, instantiateWorldContent } from '@aesfw/app';
+import { isConnected, locationGridOf, transformOf } from '@aesfw/core';
 import type { Satisfaction } from '@aesfw/core';
 import { describe, expect, it } from 'vitest';
 
@@ -227,6 +228,60 @@ describe('[REF-7] R3 start state', () => {
     expect(definitionData('exchange', 'ref.tier.exchange.alpha')?.['location']).toBe(
       'ref.tier.location.alpha_3',
     );
+  });
+
+  it('[CONT-6.6][A15] the authored start layout is placed and connected', () => {
+    const created = startSession();
+    if (!created.ok) throw new Error('session creation failed');
+    const session = created.value;
+    expect(instantiateWorldContent(session.world, registry(), 'ref.tier.world.prototype')).toEqual(
+      [],
+    );
+    const world = session.world;
+    const definitions = world.stores.get<{ definition: number }>('definition');
+    const location = world.stores.get('location').ids()[0];
+    if (location === undefined) throw new Error('missing location');
+    const grid = locationGridOf(world, location);
+    expect(grid).toBeDefined();
+    const definitionId = (entity: number): string | null =>
+      registry().stringIdOf('entity', definitions.get(entity)?.definition as never);
+
+    // Every authored position is a transform with the declared footprint.
+    const expected: Record<string, { x: number; y: number }> = {
+      'ref.tier.entity.hub': { x: 2, y: 2 },
+      'ref.tier.entity.slot_extractor_p2': { x: 16, y: 2 },
+    };
+    let placed = 0;
+    for (const entity of definitions.ids()) {
+      const transform = transformOf(world, entity);
+      if (transform === undefined || transform.location !== location) continue;
+      placed += 1;
+      const id = definitionId(entity);
+      if (id !== null && expected[id] !== undefined) {
+        expect(transform.position).toEqual(expected[id]);
+      }
+    }
+    // 8 of the 9 initial entities declare a position; the transport does not.
+    expect(placed).toBe(8);
+
+    // Reserved cells are buildable even though the mask is seeded.
+    if (grid !== undefined) {
+      for (const cell of [2 * grid.width + 2, 2 * grid.width + 8, 2 * grid.width + 16]) {
+        expect(grid.blocked).not.toContain(cell);
+      }
+    }
+
+    // Networked entities carry a connectivity node and are connected, so their
+    // source is not blocked with `missing_inventory_access`.
+    const sources = world.stores.get<{ blockReasons: readonly string[] }>('resourceSource');
+    expect(sources.ids().length).toBeGreaterThanOrEqual(3);
+    for (const entity of sources.ids()) {
+      expect(isConnected(world, entity)).toBe(true);
+      expect(sources.get(entity)?.blockReasons ?? []).not.toContain('missing_inventory_access');
+    }
+    for (const entity of world.stores.get('producer').ids()) {
+      expect(isConnected(world, entity)).toBe(true);
+    }
   });
 
   it('[REF-7][GDD-23.5] the start state can build the first chain and stays satisfied', () => {

@@ -55,6 +55,21 @@ interface RunnerState {
   readonly entityMaterializer: EntityMaterializer | null;
 }
 
+/** Projects the phase-05 capability pools into a JSON metric record. */
+const capabilitySupplyMetrics = (scratch: TickScratch): TickMetrics => {
+  const pools: unknown = scratch.values.get('capabilitySupply');
+  if (!(pools instanceof Map)) return {};
+  const entries = [...(pools as ReadonlyMap<string, unknown>).entries()].sort(([a], [b]) =>
+    a < b ? -1 : a > b ? 1 : 0,
+  );
+  const supply: Record<string, number> = {};
+  for (const [key, pool] of entries) {
+    const value = (pool as { readonly supply?: unknown } | null)?.supply;
+    if (typeof value === 'number') supply[key] = value;
+  }
+  return { capability_supply: supply };
+};
+
 const mergeScheduledCommands = (world: World, commands: readonly ScheduledCommand[]): void => {
   if (commands.length === 0) return;
   const known = new Set(world.commandQueue.map((scheduled) => scheduled.commandId));
@@ -119,7 +134,10 @@ const execute = (
 
   world.tick = computed;
   const hash = input.options.hash ? hashWorld(world, registry) : null;
-  const metrics: TickMetrics = {};
+  // The capability pools are built in phase 05 and consumed by phase 06; the
+  // provider rates they were built from change later in the tick (phase 26),
+  // so the pools are published as tick metrics for the INV-05 check.
+  const metrics: TickMetrics = capabilitySupplyMetrics(state.scratch);
   return {
     world,
     tick: computed,

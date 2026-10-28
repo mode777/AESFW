@@ -5,7 +5,7 @@
  *
  * Source: CONT-6.4, CONT-6.6
  */
-import { GRID_POLICY_ID, det, ids } from '@aesfw/core';
+import { GRID_POLICY_ID, det, footprintCells, ids } from '@aesfw/core';
 import type {
   ConnectionPlan,
   DefinitionHandle,
@@ -508,10 +508,21 @@ export function worldPlan(
       const definition = registry.handleOf('entity', ids.stringId(definitionId));
       const locationIndex = locationIndexById.get(locationId);
       if (definition === null || locationIndex === undefined) continue;
+      const position = asRecord(record?.['position']);
+      const x = position?.['x'];
+      const y = position?.['y'];
+      const orientation = record?.['orientation'];
+      const placed =
+        typeof x === 'number' &&
+        typeof y === 'number' &&
+        Number.isInteger(x) &&
+        Number.isInteger(y);
       initialEntities.push({
         definition,
         locationIndex,
         owner: ids.ownerHandle(ownerIndex),
+        ...(placed ? { position: { x, y } } : {}),
+        ...(typeof orientation === 'number' ? { orientation } : {}),
       });
     }
   });
@@ -548,10 +559,53 @@ export function worldPlan(
     };
   });
 
+  // Authored start positions reserve their footprint cells, so the seeded mask
+  // can never block a cell an initial entity occupies (CONT-6.4, CONT-6.6).
+  const reservedByLocation = new Map<number, number[]>();
+  for (const initial of initialEntities) {
+    if (initial.position === null || initial.position === undefined) continue;
+    const definition = registry.definitionOf('entity', initial.definition);
+    const components = asRecord(asRecord(definition?.data)?.['components']);
+    const placement = asRecord(components?.['placement']);
+    const rawFootprint = placement?.['footprint'];
+    const footprintRecord = asRecord(rawFootprint);
+    const arrayFootprint: readonly unknown[] | null = Array.isArray(rawFootprint)
+      ? (rawFootprint as readonly unknown[])
+      : null;
+    const arrayWidth = arrayFootprint?.[0];
+    const arrayHeight = arrayFootprint?.[1];
+    const width = arrayWidth ?? footprintRecord?.['width'];
+    const height = arrayHeight ?? footprintRecord?.['height'];
+    if (typeof width !== 'number' || typeof height !== 'number') continue;
+    const location = locations[initial.locationIndex];
+    const grid = location?.grid;
+    if (grid === null || grid === undefined) continue;
+    const cells = footprintCells(
+      { width, height },
+      {
+        location: null,
+        position: initial.position,
+        orientation: (initial.orientation ?? 0) as never,
+      },
+    ).map((cell) => cell.y * grid.width + cell.x);
+    const existing = reservedByLocation.get(initial.locationIndex) ?? [];
+    reservedByLocation.set(initial.locationIndex, [...existing, ...cells]);
+  }
+  const reservedLocations = locations.map((location, index) => {
+    const cells = reservedByLocation.get(index);
+    if (cells === undefined || location.grid === null || location.grid === undefined) {
+      return location;
+    }
+    return {
+      ...location,
+      grid: { ...location.grid, reservedCells: [...new Set(cells)].sort((a, b) => a - b) },
+    };
+  });
+
   const plan: WorldPlan = {
     owner: ids.ownerHandle(0),
     ...(owners.length === 0 ? {} : { owners }),
-    locations,
+    locations: reservedLocations,
     ...(connections.length === 0 ? {} : { connections }),
     ...(initialEntities.length === 0 ? {} : { initialEntities }),
   };

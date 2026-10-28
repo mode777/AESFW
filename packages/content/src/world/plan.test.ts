@@ -245,6 +245,74 @@ describe('[CONT-6.6] world definition plan', () => {
     ]);
   });
 
+  it('[CONT-6.6] an authored entity position reserves its footprint cells', () => {
+    const withPosition: RawDefinition = {
+      ...world,
+      owners: [
+        {
+          id: 'owner.a',
+          initial_resources: [{ resource: 'test.resource.credits', quantity: 1000 }],
+          established_locations: ['test.loc.a'],
+          known_locations: ['test.loc.b'],
+          initial_entities: [
+            {
+              definition: 'test.entity.building',
+              location: 'test.loc.a',
+              position: { x: 1, y: 2 },
+            },
+          ],
+        },
+        { id: 'owner.b', established_locations: ['test.loc.b'] },
+      ],
+    };
+    const gridA = {
+      id: 'test.location.a',
+      spatial_policy: 'framework.spatial.grid',
+      spatial_parameters: { width: 40, height: 40, buildable_ratio: { min: 400, max: 700 } },
+      inventories: [
+        {
+          id: 'shared',
+          capacity: { mode: 'total', quantity: 1000 },
+          access_policy: 'framework.inventory.shared_location',
+        },
+      ],
+      activation: { initial: false },
+    };
+    const build = () =>
+      buildRegistry({
+        location_templates: [gridA, templateB],
+        resources: [
+          {
+            id: 'test.resource.credits',
+            quantity: { precision: 'fixed', scale: 1000 },
+            storage: { policy: 'normal', scope: 'owner' },
+            transportable: false,
+          },
+        ],
+        entity_definitions: [
+          {
+            id: 'test.entity.building',
+            components: { placement: { footprint: [3, 3] } },
+          },
+        ],
+        connections: [connection],
+        worlds: [withPosition],
+      }).registry;
+    const result = worldPlan(build(), 'test.world.prototype');
+    expect(result.plan.initialEntities).toEqual([
+      {
+        definition: ids.definitionHandle(0),
+        locationIndex: 0,
+        owner: ids.ownerHandle(0),
+        position: { x: 1, y: 2 },
+      },
+    ]);
+    // 40x40 grid at index 0; rows 2..4, columns 1..3 are reserved.
+    expect(result.plan.locations[0]?.grid?.reservedCells).toEqual([
+      81, 82, 83, 121, 122, 123, 161, 162, 163,
+    ]);
+  });
+
   it('[CONT-6.6] an unknown world id is reported', () => {
     const result = worldPlan(registry(), 'test.world.missing');
     expect(codes(result.diagnostics)).toContain('unknown_world');

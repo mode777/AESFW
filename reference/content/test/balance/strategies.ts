@@ -47,6 +47,8 @@ export interface GridSpec {
   readonly width: number;
   readonly height: number;
   readonly blocked: readonly number[];
+  /** Cells already occupied by authored entities, kept free by the packer. */
+  readonly occupied?: readonly number[];
 }
 
 /**
@@ -62,7 +64,7 @@ export function packPlacements(
   grid: GridSpec,
   steps: readonly BuildStep[],
 ): readonly Placement[] | null {
-  const used = new Set<number>(grid.blocked);
+  const used = new Set<number>([...grid.blocked, ...(grid.occupied ?? [])]);
   const placed = new Map<number, { x: number; y: number }>();
   // Largest footprint first: fragmentation makes the order matter, and a few
   // 4x4 fits are what fail first when the small blocks are packed greedily.

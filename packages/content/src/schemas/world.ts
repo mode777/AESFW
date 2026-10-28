@@ -36,6 +36,13 @@ const WorldInitialEntitySchema = Type.Object(
   {
     definition: IdSchema,
     location: IdSchema,
+    position: Type.Optional(
+      Type.Object(
+        { x: Type.Integer({ minimum: 0 }), y: Type.Integer({ minimum: 0 }) },
+        { additionalProperties: false },
+      ),
+    ),
+    orientation: Type.Optional(Type.Integer({ minimum: 0, maximum: 3 })),
   },
   { additionalProperties: false },
 );

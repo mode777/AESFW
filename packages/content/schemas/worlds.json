@@ -146,6 +146,26 @@
                 "location": {
                   "minLength": 1,
                   "type": "string"
+                },
+                "position": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["x", "y"],
+                  "properties": {
+                    "x": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "y": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  }
+                },
+                "orientation": {
+                  "minimum": 0,
+                  "maximum": 3,
+                  "type": "integer"
                 }
               }
             }

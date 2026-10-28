@@ -10,8 +10,10 @@ import {
   allocateEntity,
   applyServiceProvider,
   applyStorageProvider,
+  gridPolicy,
   ids,
   instantiateWorld,
+  placementSpecOf,
 } from '@aesfw/core';
 import type {
   CapabilityConsumer,
@@ -612,7 +614,21 @@ export function instantiateWorldContent(
     const definition = registry.definitionOf('entity', entry.definition);
     const location = locationEntities[entry.locationIndex];
     if (definition === null || location === undefined) continue;
-    instantiateDefinition(world, registry, definition, location, entry.owner);
+    const entity = instantiateDefinition(world, registry, definition, location, entry.owner);
+    // An authored position is placed through the grid policy, so connectivity,
+    // occupancy, and coverage see the entity exactly as a command-placed one
+    // (CONT-6.6, amendment A15).
+    if (entry.position !== null && entry.position !== undefined) {
+      const footprint = placementSpecOf(registry, definition.handle)?.footprint ?? null;
+      if (footprint !== null) {
+        gridPolicy.place(world, ids.entityId(entity), footprint, {
+          location: ids.entityId(location),
+          position: entry.position,
+          orientation: (entry.orientation ?? 0) as 0 | 1 | 2 | 3,
+        });
+        world.caches.dirty = true;
+      }
+    }
   }
   return [...plan.diagnostics, ...instantiateExchanges(world, registry)];
 }

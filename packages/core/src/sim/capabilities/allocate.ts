@@ -22,6 +22,17 @@ const candidateCapabilities = (consumer: CapabilityConsumer): readonly Definitio
 const poolMatches = (pool: CapabilityPool, consumer: CapabilityConsumer): boolean =>
   pool.scope === consumer.scope && pool.location === consumer.location;
 
+/**
+ * True when the consumer's entity is not operating: disabled by the player or
+ * paused by the deficit policy. Such an entity makes no requests, so it must
+ * not dilute the pool for the entities that do (GDD-9.1, GDD-20.3).
+ */
+const notOperating = (world: World, entity: EntityId): boolean => {
+  const enabled = world.stores.get<{ readonly enabled?: boolean }>('enabled').get(entity);
+  if (enabled !== undefined && enabled.enabled === false) return true;
+  return world.owners.owners.some((owner) => owner.deficitPaused.includes(entity));
+};
+
 const inactiveLocation = (world: World, consumer: CapabilityConsumer): boolean => {
   if (consumer.scope !== 'location' || consumer.location === null) return false;
   const location = locationOf(world, consumer.location);
@@ -47,7 +58,8 @@ export function allocateCapabilities(
   for (const entity of consumers) {
     const consumer = consumerStore.get(entity);
     if (consumer === undefined) continue;
-    const active = consumer.request > 0 && !inactiveLocation(world, consumer);
+    const active =
+      consumer.request > 0 && !inactiveLocation(world, consumer) && !notOperating(world, entity);
     eligible.set(entity, active ? consumer.request : 0);
     remaining.set(entity, active ? consumer.request : 0);
   }

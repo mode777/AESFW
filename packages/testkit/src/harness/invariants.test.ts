@@ -430,6 +430,25 @@ describe('[VER-6] capability invariants', () => {
     );
   });
 
+  it('[INV-05] the allocation-time pool is authoritative after a decline', () => {
+    // Population fell after phase 06: the provider rate published in phase 26
+    // is below the grant, but the grant matched the phase-05 pool.
+    const working = buildWorld(50, 50);
+    const before = cloneWorld(working);
+    const output: TickOutput = {
+      world: working,
+      tick: ids.tick(before.tick + 1),
+      events: [],
+      outcomes: [],
+      journal: null,
+      hash: null,
+      metrics: { capability_supply: { 'location:9:0': 50 } },
+    };
+    expect(checkInvariants(before, output, registry).map((finding) => finding.id)).not.toContain(
+      'INV-05',
+    );
+  });
+
   it('[INV-05] a matching capability allocation passes', () => {
     const working = buildWorld(100, 100);
     const before = cloneWorld(working);

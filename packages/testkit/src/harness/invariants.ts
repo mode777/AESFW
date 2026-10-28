@@ -310,14 +310,34 @@ const checkCapacity = (world: World, findings: InvariantFinding[]): void => {
   }
 };
 
-const checkCapabilityAllocation = (world: World, findings: InvariantFinding[]): void => {
-  const providerStore = world.stores.get<CapabilityProvider>('capabilityProvider');
+/**
+ * INV-05: no capability allocation exceeds the pool it was made from.
+ *
+ * The provider rates are published in phase 26, after phase 23 has changed the
+ * population, so at the end of a decline tick the current rates are *below* the
+ * pool the allocation used. The tick therefore publishes the phase-05 pools as
+ * `metrics.capability_supply`; when present it is authoritative for this check,
+ * and the end-of-tick provider rates are the fallback for hand-built outputs.
+ */
+const checkCapabilityAllocation = (
+  world: World,
+  findings: InvariantFinding[],
+  metrics?: Readonly<Record<string, unknown>>,
+): void => {
+  const published = metrics?.['capability_supply'];
   const supply = new Map<string, number>();
-  for (const id of providerStore.ids()) {
-    const provider = providerStore.get(id) as CapabilityProvider | null | undefined;
-    if (provider == null) continue;
-    const key = `${provider.scope}:${provider.location ?? 0}:${provider.capability}`;
-    supply.set(key, (supply.get(key) ?? 0) + provider.rate);
+  if (published !== null && typeof published === 'object' && !Array.isArray(published)) {
+    for (const [key, value] of Object.entries(published)) {
+      if (typeof value === 'number') supply.set(key, value);
+    }
+  } else {
+    const providerStore = world.stores.get<CapabilityProvider>('capabilityProvider');
+    for (const id of providerStore.ids()) {
+      const provider = providerStore.get(id) as CapabilityProvider | null | undefined;
+      if (provider == null) continue;
+      const key = `${provider.scope}:${provider.location ?? 0}:${provider.capability}`;
+      supply.set(key, (supply.get(key) ?? 0) + provider.rate);
+    }
   }
   const consumerStore = world.stores.get<CapabilityConsumer>('capabilityConsumer');
   const allocationStore = world.stores.get('capabilityAllocation');
@@ -667,7 +687,7 @@ export function checkInvariants(
   checkOwnerAccounts(output.world, registry, findings);
   checkReservationsWithinStored(output.world, findings);
   checkCapacity(output.world, findings);
-  checkCapabilityAllocation(output.world, findings);
+  checkCapabilityAllocation(output.world, findings, output.metrics);
   checkThroughputAllocation(output.world, findings);
   checkProducerConsistency(output.world, findings);
   checkSourceConsistency(output.world, findings);

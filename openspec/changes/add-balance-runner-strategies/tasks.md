@@ -12,7 +12,7 @@
 
 ## 3. Balance corpus (reference/content/test/balance)
 
-- [ ] 3.1 Author the opening strategy (first S1 chain, second-tier economy) as a player-command scenario; verify it runs to its horizon with no findings [REF-8]. **Blocked by open defect 4** (authored initial entities have no transform, so the start chain cannot connect) and **defect 5** (INV-05 fires on decline). The packer, the strategy harness, and a full opening build plan exist (`strategies.ts`); the plan cannot be validated until the start state runs.
+- [ ] 3.1 Author the opening strategy (first S1 chain, second-tier economy) as a player-command scenario; verify it runs to its horizon with no findings [REF-8]. The packer, the harness, and a full opening build plan exist (`strategies.ts`); with defects 1–6 fixed the plan runs with no findings and no rejected commands, but does not yet reach the first advancement, so the strategy and the content still need the work described in the design's balance findings.
 - [ ] 3.2 Author the overexpansion strategy (deficit entry, then expansion stop) and the pyramid variant (> 60 % advancement); verify their metrics rows via [REF-8] tests. Blocked by 3.1.
 - [ ] 3.3 Implement the balancing-target checks as reference tests (advancement window 900–1500, pyramid starvation, trade share < 20 % over the last 600 ticks, recovery ≤ 1800 ticks, start-state no-deadlock); verify each [REF-8] scenario. Blocked by 3.1.
 - [ ] 3.4 Retune `ref.tier` start stock or rates where a target fails, or record the deviation in this change's design; verify the full corpus re-runs green. Blocked by 3.1; the measured direction (income ×10, higher C1 stock) is recorded in the design as provisional and not committed.
