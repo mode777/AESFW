@@ -10,9 +10,21 @@ import { h } from '../../dom/h.js';
 import type { Mirror } from '../../store/mirror.js';
 import type { ViewState } from '../../store/view-state.js';
 
-/** The windows the action bar toggles (REF-12.4, provisional in 11.4a). */
-export type WindowKind =
-  'economy' | 'planning' | 'logistics' | 'exchange' | 'population' | 'inspector' | 'tables';
+/** The windows the action bar toggles (REF-12.4). */
+export type WindowKind = 'statistics' | 'planning' | 'routes' | 'exchange' | 'log' | 'tables';
+
+/**
+ * The window keys (REF-12.4, design D5). `X` is demolish per REF-13.2, so the
+ * exchange window uses `Y` until 11.4 normalizes the full key map.
+ */
+export const WINDOW_KEYS: Readonly<Record<WindowKind, string>> = {
+  statistics: 'e',
+  planning: 'p',
+  routes: 'l',
+  exchange: 'y',
+  log: 'g',
+  tables: 't',
+};
 
 /** A mounted action bar. */
 export interface ActionBar {
@@ -104,12 +116,11 @@ export function createActionBar(
     h(
       'span',
       { class: 'hud-windows' },
-      windowButton('economy', 'E'),
+      windowButton('statistics', 'E'),
       windowButton('planning', 'P'),
-      windowButton('logistics', 'L'),
-      windowButton('exchange', 'X'),
-      windowButton('population', 'V'),
-      windowButton('inspector', 'I'),
+      windowButton('routes', 'L'),
+      windowButton('exchange', 'Y'),
+      windowButton('log', 'G'),
       tables,
     ),
     h('span', { class: 'hud-system' }, save, load, debug),

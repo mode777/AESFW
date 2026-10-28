@@ -148,11 +148,11 @@ describe('[REF-11][REF-13.2] action bar', () => {
     const bar = createActionBar(client() as never, mirror(0, 0) as never, view(), (kind) =>
       kinds.push(kind),
     );
-    for (const kind of ['economy', 'planning', 'logistics', 'exchange', 'population']) {
+    for (const kind of ['statistics', 'planning', 'routes', 'exchange', 'log']) {
       (bar.el.querySelector(`[data-testid="action-window-${kind}"]`) as HTMLElement).click();
     }
     (bar.el.querySelector('[data-testid="action-tables"]') as HTMLElement).click();
-    expect(kinds).toEqual(['economy', 'planning', 'logistics', 'exchange', 'population', 'tables']);
+    expect(kinds).toEqual(['statistics', 'planning', 'routes', 'exchange', 'log', 'tables']);
   });
 });
 
@@ -161,14 +161,14 @@ describe('[REF-12.4] provisional window host', () => {
     const host = createWindowHost();
     const economy = document.createElement('div');
     const planning = document.createElement('div');
-    host.register({ kind: 'economy', title: 'Economy', el: economy });
+    host.register({ kind: 'statistics', title: 'Statistics', el: economy });
     host.register({ kind: 'planning', title: 'Planning', el: planning });
-    host.toggle('economy');
+    host.toggle('statistics');
     host.toggle('planning');
-    expect(host.openKinds()).toEqual(['economy', 'planning']);
-    host.toggle('economy');
+    expect(host.openKinds()).toEqual(['statistics', 'planning']);
+    host.toggle('statistics');
     expect(host.openKinds()).toEqual(['planning']);
-    host.open('economy');
+    host.open('statistics');
     host.closeTop();
     expect(host.openKinds()).toEqual(['planning']);
     host.close('planning');
@@ -177,10 +177,10 @@ describe('[REF-12.4] provisional window host', () => {
 
   it('[REF-12.4] the pane is hidden until its window opens', () => {
     const host = createWindowHost();
-    host.register({ kind: 'economy', title: 'Economy', el: document.createElement('div') });
-    const pane = host.el.querySelector('[data-testid="window-economy"]') as HTMLElement;
+    host.register({ kind: 'statistics', title: 'Statistics', el: document.createElement('div') });
+    const pane = host.el.querySelector('[data-testid="window-statistics"]') as HTMLElement;
     expect(pane.hidden).toBe(true);
-    host.open('economy');
+    host.open('statistics');
     expect(pane.hidden).toBe(false);
   });
 });

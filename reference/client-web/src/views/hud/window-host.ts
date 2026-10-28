@@ -27,9 +27,20 @@ export interface WindowHost {
   openKinds(): readonly string[];
 }
 
-/** Creates the window host (design D3). */
-export function createWindowHost(): WindowHost {
-  const el = h('div', { class: 'hud-windows-host', 'data-testid': 'window-host' });
+/**
+ * Creates the window host (design D3, REF-12.4). At most `cap` windows are open
+ * at once; opening beyond the cap closes the oldest, and Escape closes the most
+ * recent.
+ *
+ * Source: REF-12.4, REF-16
+ */
+export function createWindowHost(cap = 2): WindowHost {
+  const el = h('div', {
+    class: 'hud-windows-host',
+    'data-testid': 'window-host',
+    role: 'region',
+    'aria-label': 'Windows',
+  });
   const windows = new Map<string, HostedWindow>();
   const panels = new Map<string, HTMLElement>();
   let open: string[] = [];
@@ -41,6 +52,7 @@ export function createWindowHost(): WindowHost {
   const openWindow = (kind: string): void => {
     if (!windows.has(kind)) return;
     if (!open.includes(kind)) open = [...open, kind];
+    while (open.length > Math.max(1, cap)) open = open.slice(1);
     render();
   };
 

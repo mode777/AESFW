@@ -44,6 +44,19 @@ Entry points: island selection at world level (canvas) and the location panel's 
 - [Event ring memory on long sessions] → bounded ring; the log is lossy view state by design.
 - [Drawer-key muscle memory breaks (`V` gone)] → freed key is re-owned by 11.4's complete map if at all.
 
+## As built
+
+- **Window host** (1.1): a registry with an ordered open stack capped at two; opening a third closes the oldest, Escape closes the topmost, and the action bar plus `E/P/L/Y/G/T` toggle the six windows. Persistence stores the open stack under `aesfw-ref.client.v2`.
+- **Window key map (D5, as built)**: `E` statistics, `P` planning, `L` routes, `Y` exchange, `G` log, `T` tables. `X` is demolish (REF-13.2), so the exchange window takes `Y` until 11.4 normalizes the complete map.
+- **Log** (1.2, 2.5): `logLines` is a bounded ring (`LOG_LIMIT` 200) over the mirror's events, newest first, with type/entity/location filters and click-to-select of the first subject. `logTypes` feeds the filter options.
+- **Statistics** (2.1): the economy view (balance, net rate, revenue and expense by source, idle-but-paying, deficit-paused) plus the tier pyramid per location and for the owner and capability supply per location, both from location summaries.
+- **Planning** (2.2): the unchanged planning view is re-hosted and still queried when its window opens.
+- **Routes** (2.3): the logistics view with unit/order lists and detail is re-hosted as the routes window; the exchange trade shortcut prefills it.
+- **Exchange** (2.4): the exchange view is re-hosted; its trade shortcut opens the routes window prefilled.
+- **Explore and establish** (3.1): the location panel's actions hand off to the routes window through `expansionDraft`/`establishDraft`, and the establish action shows the EP cost derived from the establishment definition metadata when it is present.
+- **Removals** (3.2): the inspector view and the population window are gone; entity details live in the context panels, and the tables window still renders the inventory and population tables. The notice strip was removed in 11.4a.
+- **Tests**: `selectors/log.test.ts` and `selectors/statistics.test.ts`; the window-host and key tests were updated to the new kinds, and the smoke flows use the context panel instead of the removed inspector.
+
 ## Migration Plan
 
 - Provisional window contents are replaced in place; selectors and their tests carry over. Rollback = revert.

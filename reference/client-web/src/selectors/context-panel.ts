@@ -74,6 +74,8 @@ export interface ContextPanelInput {
   readonly formatter: Formatter;
   readonly archetypeOf: (definitionId: string) => string | null;
   readonly ownerId: string;
+  /** The EP cost of establishing a location, when the metadata declares it. */
+  readonly establishmentCost?: number | null;
 }
 
 const percent = (permille: number): string => `${Math.round(permille / 10)}%`;
@@ -319,6 +321,7 @@ const transportPanel = (input: ContextPanelInput, detail: EntityDetailDto): Cont
 export const locationPanel = (
   location: LocationDto | null,
   summary: LocationSummaryDto | null,
+  establishmentCost: number | null = null,
 ): ContextPanel | null => {
   if (location === null) return null;
   const known = location.knowledge !== 'unknown';
@@ -356,6 +359,25 @@ export const locationPanel = (
             command: location.active === true ? 'DeactivateLocation' : 'ActivateLocation',
             payload: { location_id: location.entity_id },
           },
+          {
+            id: 'explore',
+            label: 'Explore',
+            command: 'UI:explore',
+            payload: { location_id: location.entity_id },
+          },
+          ...(location.owner_id === undefined
+            ? [
+                {
+                  id: 'establish',
+                  label:
+                    establishmentCost === null
+                      ? 'Establish'
+                      : `Establish (${Math.round(establishmentCost / 6000)} EP)`,
+                  command: 'UI:establish',
+                  payload: { location_id: location.entity_id },
+                },
+              ]
+            : []),
         ]
       : [],
   };
@@ -379,7 +401,9 @@ export function contextPanel(input: ContextPanelInput): ContextPanel | null {
       return producerPanel(input, detail);
     }
   }
-  if (input.location !== null) return locationPanel(input.location, input.summary);
+  if (input.location !== null) {
+    return locationPanel(input.location, input.summary, input.establishmentCost ?? null);
+  }
   return null;
 }
 

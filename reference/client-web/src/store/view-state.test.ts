@@ -56,27 +56,28 @@ describe('[REF-13.1][REF-13.2] placement mode view state', () => {
   });
 });
 
-describe('[REF-13.4] drawerAction', () => {
-  it('[REF-13.4] the economy key toggles the drawer', () => {
-    expect(drawerAction(null, 'e')).toBe('economy');
-    expect(drawerAction('economy', 'E')).toBeNull();
+describe('[REF-13.4] window keys', () => {
+  it('[REF-13.4] the statistics key toggles the window', () => {
+    expect(drawerAction(null, 'e')).toBe('statistics');
+    expect(drawerAction('statistics', 'E')).toBeNull();
   });
 
-  it('[REF-13.4] the planning key toggles the drawer', () => {
+  it('[REF-13.4] the planning key toggles the window', () => {
     expect(drawerAction(null, 'p')).toBe('planning');
     expect(drawerAction('planning', 'P')).toBeNull();
-    expect(drawerAction('economy', 'p')).toBe('planning');
+    expect(drawerAction('statistics', 'p')).toBe('planning');
   });
 
-  it('[REF-13.4] other keys leave the drawer unchanged', () => {
-    expect(drawerAction('economy', 'b')).toBe('economy');
+  it('[REF-13.4] other keys leave the window unchanged', () => {
+    expect(drawerAction('statistics', 'b')).toBe('statistics');
   });
 });
 
-describe('[REF-13.2] progression keys', () => {
-  it('[REF-13.2] V toggles the population drawer', () => {
-    expect(drawerAction(null, 'v')).toBe('population');
-    expect(drawerAction('population', 'v')).toBeNull();
+describe('[REF-12.4] window keys', () => {
+  it('[REF-12.4] G toggles the log window and Y the exchange window', () => {
+    expect(drawerAction(null, 'g')).toBe('log');
+    expect(drawerAction('log', 'g')).toBeNull();
+    expect(drawerAction(null, 'y')).toBe('exchange');
   });
 
   it('[REF-12.2] O toggles the coverage overlay', () => {

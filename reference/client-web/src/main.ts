@@ -51,6 +51,8 @@ import {
 } from './selectors/camera.js';
 import { zoomLevel } from './selectors/camera.js';
 import { worldLayout } from './selectors/layout.js';
+import { logLines, logTypes } from './selectors/log.js';
+import { statisticsView } from './selectors/statistics.js';
 import { buildMenu } from './selectors/build-menu.js';
 import { contextPanel } from './selectors/context-panel.js';
 import type { PanelAction } from './selectors/context-panel.js';
@@ -69,15 +71,15 @@ import type { PlacementCursor } from './store/view-state.js';
 import { coverageOverlay } from './selectors/progression.js';
 import { createBuildMenuView } from './views/hud/build-menu.js';
 import { createContextPanelView } from './views/hud/context-panel.js';
+import { createLogView } from './views/hud/log-window.js';
+import { createStatisticsView } from './views/hud/statistics.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
 import { createEconomyView } from './views/economy.js';
 import { createExchangeView } from './views/exchange.js';
-import { createInspector } from './views/inspector.js';
 import { createInventoryTable } from './views/inventory-table.js';
 import { createLocationGrid } from './views/location-grid.js';
 import { createPlanningView } from './views/planning.js';
 import { createLogisticsView } from './views/logistics.js';
-import { createProgressionView } from './views/progression.js';
 import { createPopulationTable } from './views/population-table.js';
 import { createActionBar } from './views/hud/action-bar.js';
 import type { WindowKind } from './views/hud/action-bar.js';
@@ -179,7 +181,6 @@ export function mount(root: HTMLElement): void {
   });
   const metadata = { protocolVersion: PROTOCOL_VERSION, checksum: '', lastHash: '' };
   const mirror = createMirror({ requestSnapshot: () => client.subscribe(ACTOR_ID) });
-  const inspector = createInspector(client, ACTOR_ID, i18n);
   const inventory = createInventoryTable(i18n);
   const population = createPopulationTable(i18n);
   const economy = createEconomyView(client, ACTOR_ID, i18n);
@@ -191,7 +192,6 @@ export function mount(root: HTMLElement): void {
       logisticsView(mirror.projection(), transportOrderList, transportDetailModel, null),
     );
   };
-  const progression = createProgressionView(client, ACTOR_ID, i18n);
   const logistics = createLogisticsView({
     onCreate: (draft) => {
       client.command({
@@ -255,13 +255,17 @@ export function mount(root: HTMLElement): void {
 
   const refreshWindows = (): void => {
     const open = view.windows();
-    if (open.includes('economy')) {
+    if (open.includes('statistics')) {
+      statisticsView_.show(statisticsView(mirror.projection(), ACTOR_ID, [...summaries.values()]));
       economy.show(economyView(mirror.projection(), ACTOR_ID, trend));
+    }
+    if (open.includes('log')) {
+      logView_.show(logLines(mirror.events()), logTypes(mirror.events()));
     }
     if (open.includes('planning')) {
       client.query(ACTOR_ID, { kind: 'planning' });
     }
-    if (open.includes('logistics')) {
+    if (open.includes('routes')) {
       refreshLogistics();
       client.query(ACTOR_ID, { kind: 'transport_orders' });
     }
@@ -272,14 +276,6 @@ export function mount(root: HTMLElement): void {
         client.query(ACTOR_ID, { kind: 'exchange_quotes', entity_id: id });
       }
       exchange.show(exchangeView([...exchangeQuotesById.values()]));
-    }
-    if (open.includes('population')) {
-      progression.show(
-        mirror.projection()?.locations ?? [],
-        [...summaries.values()],
-        currentDetail,
-        view.location(),
-      );
     }
   };
 
@@ -386,6 +382,18 @@ export function mount(root: HTMLElement): void {
   let panelTarget: 'build' | 'entity' | 'location' = 'location';
   let transportDetail: TransportDetailDto | null = null;
   const contextView = createContextPanelView((action: PanelAction) => {
+    if (action.command === 'UI:explore' || action.command === 'UI:establish') {
+      // Expansion hand-off (REF-12.1, GDD-16): opening the routes window
+      // prefilled; the order itself is a command the routes view issues.
+      const locationId = Number(action.payload['location_id']);
+      windowHost.open('routes');
+      view.windows.set(windowHost.openKinds());
+      logistics.prefill(
+        action.command === 'UI:explore' ? exploreDraft(locationId) : establishDraft(locationId),
+      );
+      refreshWindows();
+      return;
+    }
     client.command({
       command_id: `client-panel-${action.id}-${Date.now()}`,
       actor_id: ACTOR_ID,
@@ -594,6 +602,26 @@ export function mount(root: HTMLElement): void {
     buildMenuView.show(buildMenu(definitions, i18n, summary?.inventory_totals ?? {}), selectedId);
   };
 
+  /** The EP cost of establishing a location, from definition metadata (GDD-16.3). */
+  const establishmentCost = (): number | null => {
+    for (const definition of definitions) {
+      const parameters = definition.parameters['parameters'];
+      if (parameters === null || typeof parameters !== 'object' || Array.isArray(parameters)) {
+        continue;
+      }
+      const costs = (parameters as Record<string, unknown>)['costs'];
+      if (!Array.isArray(costs)) continue;
+      for (const cost of costs) {
+        if (cost === null || typeof cost !== 'object' || Array.isArray(cost)) continue;
+        const record = cost as Record<string, unknown>;
+        if (record['resource'] !== 'ref.tier.resource.ep') continue;
+        const quantity = record['quantity'];
+        if (typeof quantity === 'number') return quantity;
+      }
+    }
+    return null;
+  };
+
   /** Chooses and renders the context panel (REF-12.3). */
   const refreshContext = (): void => {
     const locationId = view.location();
@@ -613,6 +641,7 @@ export function mount(root: HTMLElement): void {
             needs: currentBreakdown,
             summary,
             location: panelTarget === 'location' ? location : null,
+            establishmentCost: establishmentCost(),
             transport: transportDetail,
             projection: mirror.projection(),
             formatter,
@@ -744,34 +773,16 @@ export function mount(root: HTMLElement): void {
         const result = response.result as QueryResult;
         if (result.entity_detail !== undefined) {
           currentDetail = result.entity_detail;
-          inspector.show(currentDetail, currentBreakdown);
           refreshContext();
-          if (view.windows().includes('population')) {
-            progression.show(
-              mirror.projection()?.locations ?? [],
-              [...summaries.values()],
-              currentDetail,
-              view.location(),
-            );
-          }
         }
         if (result.need_breakdown !== undefined) {
           currentBreakdown = result.need_breakdown;
-          inspector.show(currentDetail, currentBreakdown);
           refreshContext();
         }
         if (result.location_summary !== undefined && result.location_summary !== null) {
           summaries.set(result.location_summary.entity_id, result.location_summary);
           population.show([...summaries.values()]);
           refreshContext();
-          if (view.windows().includes('population')) {
-            progression.show(
-              mirror.projection()?.locations ?? [],
-              [...summaries.values()],
-              currentDetail,
-              view.location(),
-            );
-          }
         }
         if (result.definition_metadata !== undefined) {
           if (metadataRequest === 'exchange') {
@@ -867,13 +878,14 @@ export function mount(root: HTMLElement): void {
     ),
   );
 
+  const statisticsView_ = createStatisticsView(economy.el);
+  const logView_ = createLogView((entity) => select(entity));
   for (const window of [
-    { kind: 'economy', title: i18n.t('economy.title'), el: economy.el },
+    { kind: 'statistics', title: 'Statistics', el: statisticsView_.el },
     { kind: 'planning', title: i18n.t('planning.title'), el: planning.el },
-    { kind: 'logistics', title: 'Logistics', el: logistics.el },
+    { kind: 'routes', title: 'Routes', el: logistics.el },
     { kind: 'exchange', title: i18n.t('exchange.title'), el: exchange.el },
-    { kind: 'population', title: i18n.t('progression.title'), el: progression.el },
-    { kind: 'inspector', title: 'Inspector', el: inspector.el },
+    { kind: 'log', title: 'Log', el: logView_.el },
     {
       kind: 'tables',
       title: 'Tables',
@@ -988,14 +1000,6 @@ export function mount(root: HTMLElement): void {
     if (event.key === 'c' || event.key === 'C' || event.key === 's' || event.key === 'S') {
       view.overlay.set(toggleOverlay(view.overlay(), event.key));
     }
-    if (event.key === 'i' || event.key === 'I') {
-      toggleWindow('inspector');
-      return;
-    }
-    if (event.key === 't' || event.key === 'T') {
-      toggleWindow('tables');
-      return;
-    }
     if (
       event.key === 'e' ||
       event.key === 'E' ||
@@ -1003,8 +1007,12 @@ export function mount(root: HTMLElement): void {
       event.key === 'P' ||
       event.key === 'l' ||
       event.key === 'L' ||
-      event.key === 'v' ||
-      event.key === 'V'
+      event.key === 'y' ||
+      event.key === 'Y' ||
+      event.key === 'g' ||
+      event.key === 'G' ||
+      event.key === 't' ||
+      event.key === 'T'
     ) {
       const next = drawerAction(null, event.key);
       if (next !== null) toggleWindow(next as WindowKind);

@@ -103,11 +103,12 @@ export function nextMode(current: ClientMode, key: string): ClientMode {
  */
 export function drawerAction(current: string | null, key: string): string | null {
   const normalized = key.toLowerCase();
-  if (normalized === 'e') return current === 'economy' ? null : 'economy';
+  if (normalized === 'e') return current === 'statistics' ? null : 'statistics';
   if (normalized === 'p') return current === 'planning' ? null : 'planning';
-  if (normalized === 'l') return current === 'logistics' ? null : 'logistics';
-  if (normalized === 'v') return current === 'population' ? null : 'population';
-  if (normalized === 'x') return current === 'exchange' ? null : 'exchange';
+  if (normalized === 'l') return current === 'routes' ? null : 'routes';
+  if (normalized === 'y') return current === 'exchange' ? null : 'exchange';
+  if (normalized === 'g') return current === 'log' ? null : 'log';
+  if (normalized === 't') return current === 'tables' ? null : 'tables';
   return current;
 }
 

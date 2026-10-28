@@ -9,16 +9,14 @@ test('[VER-13.2] smoke flow 1: load and the tick advances', async ({ page }) => 
 
 test('[VER-13.2] smoke flow 2: inspect an entity', async ({ page }) => {
   await page.goto('/');
-  await page.getByTestId('action-window-inspector').click();
   await page.locator('[data-testid^="entity-item-"]').first().click();
-  await expect(page.getByTestId('inspector')).toContainText('ref.tier.');
+  await expect(page.getByTestId('context-panel-body')).toContainText('Definition');
 });
 
 test('[VER-13.2] smoke flow 4: toggle an entity', async ({ page }) => {
   await page.goto('/');
-  await page.getByTestId('action-window-inspector').click();
   await page.locator('[data-testid^="entity-item-"]').first().click();
-  const toggle = page.getByTestId('inspector-toggle-enabled');
+  const toggle = page.getByTestId('context-action-toggle');
   await expect(toggle).toContainText('disable');
   await toggle.click();
   await page.getByTestId('action-step').click();
