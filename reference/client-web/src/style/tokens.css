@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-theme='light'] {
   --paper: #f7f7f4;
   --sea: #dfe7ec;
   --land: #f4f1e8;
@@ -32,4 +33,16 @@
   --stroke-2: 1.5px;
   --stroke-3: 2px;
   --motion: 120ms ease-out;
+}
+
+[data-theme='dark'] {
+  --paper: #121212;
+  --sea: #0f1a20;
+  --land: #1d1c18;
+  --ink: #ececec;
+  --ink-2: #a6a6a6;
+  --ink-3: #5e5e5e;
+  --rule: #2a2a2a;
+  --accent: #ff7a3d;
+  --focus: #6aa8ff;
 }

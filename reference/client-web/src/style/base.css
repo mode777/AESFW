@@ -446,3 +446,55 @@ body {
   font-family: var(--font-num);
   font-size: var(--size-1);
 }
+
+/* --- Reduced motion (REF-15) ---------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+/* --- Command palette (REF-13.4) ------------------------------------------- */
+
+.palette {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 90vw);
+  background: var(--paper);
+  border: var(--stroke-1) solid var(--rule);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+  z-index: 20;
+}
+.palette-input {
+  width: 100%;
+  padding: var(--space-2);
+  border: none;
+  border-bottom: var(--stroke-1) solid var(--rule);
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--size-3);
+}
+.palette-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+  max-height: 320px;
+  overflow: auto;
+}
+.palette-entry {
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+.palette-entry-active {
+  background: var(--rule);
+}

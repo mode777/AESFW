@@ -54,6 +54,8 @@ import { worldLayout } from './selectors/layout.js';
 import { logLines, logTypes } from './selectors/log.js';
 import { focusSubject, newsCarry, newsEntries } from './selectors/news.js';
 import { hintsForEntity } from './selectors/hints.js';
+import { PALETTE_COMMANDS } from './selectors/palette.js';
+import { keyAction } from './input/keymap.js';
 import {
   milestones,
   newlyComplete,
@@ -81,6 +83,7 @@ import { createBuildMenuView } from './views/hud/build-menu.js';
 import { createContextPanelView } from './views/hud/context-panel.js';
 import { createLogView } from './views/hud/log-window.js';
 import { createMilestoneTracker } from './views/hud/milestones.js';
+import { createCommandPalette } from './views/hud/command-palette.js';
 import { createNewsRail } from './views/hud/news-rail.js';
 import { createStatisticsView } from './views/hud/statistics.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
@@ -181,6 +184,7 @@ export function mount(root: HTMLElement): void {
   view.theme.set(settings.theme);
   view.camera.set(settings.camera);
   const i18n = createI18n({ ...presentationEntries(), ...CLIENT_STRINGS });
+  document.documentElement.dataset['theme'] = settings.theme;
   const formatter = createFormatter({
     baseScale: PRESENTATION.formatting.base_scale,
     grouping: PRESENTATION.formatting.number.grouping,
@@ -875,6 +879,21 @@ export function mount(root: HTMLElement): void {
     persist();
   });
   const bannerView = createLocationBannerView();
+  const commandPalette = createCommandPalette((command) => {
+    const [kind, value] = command.id.split('.');
+    if (kind === 'window' && value !== undefined) toggleWindow(value as WindowKind);
+    else if (kind === 'mode') {
+      view.mode.set(value === 'build' ? 'place' : value === 'demolish' ? 'demolish' : 'inspect');
+      if (value === 'build' && paletteEntries.length > 0) panelTarget = 'build';
+    } else if (kind === 'overlay' && value !== undefined) {
+      view.overlay.set(value as never);
+    } else if (kind === 'control' && value !== undefined) {
+      if (value === 'step') client.control('step', { ticks: 1 });
+      else client.control(value as never);
+    } else if (kind === 'save') client.save('auto');
+    else if (kind === 'load') client.load('auto');
+    else if (kind === 'debug') view.debug.set(!view.debug());
+  });
   const actionBar = createActionBar(client, mirror, view, toggleWindow);
   const newsRail = createNewsRail((entry) => {
     const focus = focusSubject(entry, mirror.projection());
@@ -974,9 +993,89 @@ export function mount(root: HTMLElement): void {
   bindCamera();
   refreshWindows();
 
-  root.append(frame.el, debug.el);
+  root.append(frame.el, commandPalette.el, debug.el);
 
   document.addEventListener('keydown', (event) => {
+    const action = keyAction(event, view.mode());
+    if (action.kind === 'palette') {
+      event.preventDefault();
+      commandPalette.open(PALETTE_COMMANDS);
+      return;
+    }
+    if (commandPalette.visible()) return;
+    if (action.kind === 'speed') {
+      // The action bar owns the speed control; the key only nudges it.
+      client.control('speed', { speed: 2 ** (action.speed - 1) });
+      return;
+    }
+    if (action.kind === 'step') {
+      client.control('step', { ticks: 1 });
+      return;
+    }
+    if (action.kind === 'window') {
+      toggleWindow(action.id as WindowKind);
+      return;
+    }
+    if (action.kind === 'toggle-entity') {
+      const selected = view.selection();
+      if (selected !== null) {
+        const entity = mirror.projection()?.entities.find((entry) => entry.entity_id === selected);
+        if (entity !== undefined) {
+          client.command({
+            command_id: `client-toggle-${Date.now()}`,
+            actor_id: ACTOR_ID,
+            type: 'SetEntityEnabled',
+            payload: { entity_id: selected, enabled: entity.lifecycle === 'disabled' },
+          });
+        }
+      }
+      return;
+    }
+    if (action.kind === 'pan') {
+      const step = 60;
+      view.camera.set(
+        clampCamera(
+          {
+            ...view.camera(),
+            x: view.camera().x + action.dx * step,
+            y: view.camera().y + action.dy * step,
+          },
+          layoutNow().bounds,
+          canvas.viewport(),
+        ),
+      );
+      refreshHud();
+      return;
+    }
+    if (action.kind === 'zoom') {
+      view.camera.set(
+        clampCamera(
+          zoomAround(
+            view.camera(),
+            action.factor,
+            { x: canvas.viewport().width / 2, y: canvas.viewport().height / 2 },
+            canvas.viewport(),
+          ),
+          layoutNow().bounds,
+          canvas.viewport(),
+        ),
+      );
+      refreshHud();
+      return;
+    }
+    if (action.kind === 'home') {
+      view.camera.set(
+        homeCamera(
+          layoutNow(),
+          (mirror.projection()?.locations ?? [])
+            .filter((location) => location.knowledge === 'established')
+            .map((location) => location.entity_id),
+          LOCATION_ZOOM,
+        ),
+      );
+      refreshHud();
+      return;
+    }
     if (event.key === '`') view.debug.set(!view.debug());
     if (event.key === 'Home') {
       view.camera.set(

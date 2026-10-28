@@ -106,6 +106,26 @@ export function createActionBar(
     text: 'debug',
     onclick: () => view.debug.set(!view.debug()),
   });
+  const theme = h('button', {
+    'data-testid': 'action-theme',
+    title: 'theme',
+    text: 'theme',
+    onclick: () => {
+      const next = view.theme() === 'dark' ? 'light' : 'dark';
+      view.theme.set(next);
+      document.documentElement.dataset['theme'] = next;
+    },
+  });
+  const palette = h('button', {
+    'data-testid': 'action-palette',
+    title: 'command palette (Ctrl+K)',
+    text: 'commands',
+    onclick: () => {
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }),
+      );
+    },
+  });
 
   const el = h(
     'div',
@@ -123,7 +143,7 @@ export function createActionBar(
       windowButton('log', 'G'),
       tables,
     ),
-    h('span', { class: 'hud-system' }, save, load, debug),
+    h('span', { class: 'hud-system' }, save, load, palette, theme, debug),
   );
 
   const update = (): void => {
