@@ -46,7 +46,7 @@ export default defineConfig({
       packageProject('testkit', 'packages/testkit', { testTimeout: 30000 }),
       packageProject('host-web', 'packages/host-web'),
       packageProject('host-node', 'packages/host-node'),
-      packageProject('client-web', 'reference/client-web'),
+      packageProject('client-web', 'reference/client-web', { environment: 'jsdom' }),
       {
         resolve: {
           alias: {
@@ -56,6 +56,7 @@ export default defineConfig({
             '@aesfw/protocol': pkgDir('packages/protocol/src/index.ts'),
             '@aesfw/app': pkgDir('packages/app/src/index.ts'),
             '@aesfw/testkit/scenario': pkgDir('packages/testkit/src/scenario/index.ts'),
+            '@aesfw/testkit/bench': pkgDir('packages/testkit/src/bench/index.ts'),
             '@aesfw/testkit': pkgDir('packages/testkit/src/index.ts'),
           },
         },
