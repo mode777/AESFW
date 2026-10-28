@@ -1,0 +1,18 @@
+{
+  "algorithm": "fnv1a64-canonical-json-v1",
+  "scenario": "ref.tier.scenario.complete_game",
+  "checkpoints": {
+    "600": "e086dc2fcd2651af",
+    "1200": "06999085fef308d5",
+    "1800": "e63c987ed32606b0",
+    "2400": "6bbe2f13b96db278",
+    "3000": "4981d4269970e979",
+    "3600": "96ccfac574802779",
+    "4200": "e2cb67f30d8c4790",
+    "4800": "3888c586c4029f4c",
+    "5400": "0bb8babdabe5e250",
+    "6000": "92299ffdfb9729e7",
+    "6600": "b47e532216ea86c8",
+    "7200": "7d9c597cb797a1f1"
+  }
+}

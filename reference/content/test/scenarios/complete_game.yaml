@@ -1,0 +1,263 @@
+# SCN-14: the reference prototype game, played by the 11.2 opening strategy
+# (REF-8) for 7,200 ticks. Generated from `reference/content/test/balance`
+# so the scenario and the strategy cannot drift apart; regenerate with
+# `pnpm test --project reference-content generate`.
+scenario:
+  id: ref.tier.scenario.complete_game
+  requirements: [SCN-14, GDD-23.4, GDD-23.5]
+  content:
+    packages: [reference/content/ref.tier]
+  setup:
+    seed: [1, 2]
+    tick_duration_ms: 1000
+    world: ref.tier.world.prototype
+  commands:
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [27, 0], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [27, 3], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [19, 4], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [22, 4], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [15, 5], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [30, 5], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [33, 5], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [36, 5], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [0, 6], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [3, 6], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [25, 6], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [18, 7], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [21, 7], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.residence_s1',
+          'location_id': 1,
+          'logical_transform': { 'position': [30, 8], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.slot_extractor_p2',
+          'location_id': 1,
+          'logical_transform': { 'position': [33, 8], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.slot_extractor_p2',
+          'location_id': 1,
+          'logical_transform': { 'position': [36, 8], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.slot_extractor_p2',
+          'location_id': 1,
+          'logical_transform': { 'position': [0, 9], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.area_extractor_p1',
+          'location_id': 1,
+          'logical_transform': { 'position': [3, 9], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.refiner_bm1',
+          'location_id': 1,
+          'logical_transform': { 'position': [30, 11], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.refiner_bm1',
+          'location_id': 1,
+          'logical_transform': { 'position': [33, 11], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.refiner_bm1',
+          'location_id': 1,
+          'logical_transform': { 'position': [36, 11], 'orientation': 0 },
+        }
+    - tick: 1
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.storage_module',
+          'location_id': 1,
+          'logical_transform': { 'position': [0, 0], 'orientation': 0 },
+        }
+    - tick: 740
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.refiner_bm2',
+          'location_id': 1,
+          'logical_transform': { 'position': [0, 12], 'orientation': 0 },
+        }
+    - tick: 900
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.combiner_c1',
+          'location_id': 1,
+          'logical_transform': { 'position': [19, 0], 'orientation': 0 },
+        }
+    - tick: 900
+      actor: owner.0
+      type: PlaceEntityPlan
+      payload:
+        {
+          'definition_id': 'ref.tier.entity.coverage_service',
+          'location_id': 1,
+          'logical_transform': { 'position': [23, 0], 'orientation': 0 },
+        }
+    - tick: 3
+      actor: owner.0
+      type: SetEntityEnabled
+      payload: { 'entity_id': '@ref.tier.entity.refiner_h1#1', 'enabled': false }
+    - tick: 3
+      actor: owner.0
+      type: SetEntityEnabled
+      payload: { 'entity_id': '@ref.tier.entity.refiner_h1#2', 'enabled': false }
+    - tick: 740
+      actor: owner.0
+      type: SetEntityEnabled
+      payload: { 'entity_id': '@ref.tier.entity.refiner_h1#1', 'enabled': true }
+  run:
+    ticks: 7200
+    hash_interval: 600
+    invariants: true
+    metrics_interval: 600
+  expect:
+    - at: 1500
+      event_count: { type: TransitionStarted }
+      greater: 0
+    - at: 7200
+      metric: { population: { tier: ref.tier.population.s2 } }
+      greater_equal: 1

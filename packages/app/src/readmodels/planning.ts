@@ -288,20 +288,21 @@ const buildScope = (
     tierRows.set(residence.tier, existing);
   }
   for (const [tier, rows] of tierRows) {
-    const perCapita = rows.reduce(
-      (total, row) =>
-        addR(
-          total,
-          rational(
-            row.needs
+    // Per-capita demand is a property of the tier, not of the number of
+    // residences: every residence of a tier consumes the same rate per
+    // inhabitant, so summing across residences would scale demand by their
+    // count. The first row (ascending entity ID) is authoritative.
+    const first = rows[0];
+    const perCapita =
+      first === undefined
+        ? ZERO
+        : rational(
+            first.needs
               .filter((need) => need.type === 'resource_consumption' && need.resource === resource)
               .reduce((sum, need) => sum + need.quantityPerPopulationPerTick, 0) *
-              row.consumptionFactor,
+              first.consumptionFactor,
             1000,
-          ),
-        ),
-      ZERO,
-    );
+          );
     const population = rows.reduce((total, row) => total + row.count, 0);
     const supported =
       perCapita.n === 0 ? 0 : isNegativeR(net) ? 0 : Math.max(0, floorR(divR(net, perCapita)));

@@ -208,6 +208,27 @@ describe('[PIC-10.5] planning metrics', () => {
     ]);
   });
 
+  it('[SCN-18][PIC-10.5] per-capita demand does not scale with the residence count', () => {
+    const state = economySession();
+    // A second residence of the same tier: supported population is the chain's
+    // rate divided by the tier's per-capita demand, not by the sum over houses.
+    const template = state.world.stores
+      .get<{ readonly tier: number; readonly consumptionFactor: number }>('residence')
+      .get(ids.entityId(24));
+    if (template === undefined) throw new Error('missing residence');
+    const group = state.world.stores
+      .get<{ readonly count: number; readonly capacity: number }>('populationGroup')
+      .get(ids.entityId(24));
+    if (group === undefined) throw new Error('missing group');
+    state.world.stores.get('residence').set(ids.entityId(25), { ...template });
+    state.world.stores.get('populationGroup').set(ids.entityId(25), { ...group });
+    state.world.stores.get('owner').set(ids.entityId(25), { owner: ids.ownerHandle(0) });
+    const planning = planningMetrics(state, ids.ownerHandle(0));
+    const ownerScope = planning.resources[0]?.scopes.find((scope) => scope.scope === 'owner');
+    expect(ownerScope?.tiers[0]?.per_capita_permille).toBe(2000);
+    expect(ownerScope?.tiers[0]?.supported).toBe(1);
+  });
+
   it('[PIC-10.5] the location scope mirrors an owner with one location', () => {
     const state = economySession();
     const planning = planningMetrics(state, ids.ownerHandle(0));
