@@ -29,3 +29,31 @@ satisfaction_bands:
         effects:
           - { type: growth, policy: ref.tier.growth.default }
           - { type: enable_advancement }
+  - id: ref.tier.bands.s3
+    bands:
+      - min: 0
+        effects:
+          - { type: growth, policy: ref.tier.growth.emigration }
+      - min: 250
+        effects:
+          - { type: trigger_decline, transition: ref.tier.transition.s3_s2, grace_ticks: 60 }
+      - min: 500
+        effects: []
+      - min: 800
+        effects:
+          - { type: growth, policy: ref.tier.growth.default }
+          - { type: enable_advancement }
+  - id: ref.tier.bands.s4
+    bands:
+      - min: 0
+        effects:
+          - { type: growth, policy: ref.tier.growth.emigration }
+      - min: 250
+        effects:
+          - { type: trigger_decline, transition: ref.tier.transition.s4_s3, grace_ticks: 60 }
+      - min: 500
+        effects: []
+      - min: 800
+        effects:
+          - { type: growth, policy: ref.tier.growth.default }
+          - { type: enable_advancement }

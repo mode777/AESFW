@@ -55,6 +55,18 @@ entity_definitions:
         charge_policy: while_enabled
         shortage_policy: owner_deficit_policy
 
+  # Advanced combiner: 4x4, 60 credits/min (B.3).
+  - id: ref.tier.template.advanced_combiner
+    tags: [ref.tier.role.template]
+    includes: [ref.tier.template.networked]
+    components:
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 360000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
   # New S1 residence: 6 BM1 (B.7).
   - id: ref.tier.template.residence
     tags: [ref.tier.role.template]
@@ -63,4 +75,24 @@ entity_definitions:
         duration_ticks: 10
         costs:
           - { resource: ref.tier.resource.bm1, quantity: 36000 }
+        commit_policy: start
+
+  # S3/S4 residence advancement costs (B.7).
+  - id: ref.tier.template.residence_s3
+    tags: [ref.tier.role.template]
+    components:
+      construction:
+        duration_ticks: 20
+        costs:
+          - { resource: ref.tier.resource.bm2, quantity: 84000 }
+          - { resource: ref.tier.resource.bm3, quantity: 48000 }
+        commit_policy: start
+  - id: ref.tier.template.residence_s4
+    tags: [ref.tier.role.template]
+    components:
+      construction:
+        duration_ticks: 25
+        costs:
+          - { resource: ref.tier.resource.bm3, quantity: 108000 }
+          - { resource: ref.tier.resource.bm4, quantity: 60000 }
         commit_policy: start

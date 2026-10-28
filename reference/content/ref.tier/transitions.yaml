@@ -30,3 +30,57 @@ transitions:
     conversion:
       population: clamp_to_target_capacity
       entity_definition: ref.tier.entity.residence_s1
+  - id: ref.tier.transition.s2_s3
+    source_tier: ref.tier.population.s2
+    target_tier: ref.tier.population.s3
+    trigger: automatic
+    condition: ref.tier.condition.advance_s2_s3
+    costs:
+      - { resource: ref.tier.resource.bm2, quantity: 84000 }
+      - { resource: ref.tier.resource.bm3, quantity: 48000 }
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 15
+    conversion:
+      population: retain_count_clamped
+      entity_definition: ref.tier.entity.residence_s3
+  - id: ref.tier.transition.s3_s4
+    source_tier: ref.tier.population.s3
+    target_tier: ref.tier.population.s4
+    trigger: automatic
+    condition: ref.tier.condition.advance_s3_s4
+    costs:
+      - { resource: ref.tier.resource.bm3, quantity: 108000 }
+      - { resource: ref.tier.resource.bm4, quantity: 60000 }
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 20
+    conversion:
+      population: retain_count_clamped
+      entity_definition: ref.tier.entity.residence_s4
+  - id: ref.tier.transition.s3_s2
+    source_tier: ref.tier.population.s3
+    target_tier: ref.tier.population.s2
+    trigger: manual_command
+    costs: []
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 10
+    conversion:
+      population: clamp_to_target_capacity
+      entity_definition: ref.tier.entity.residence_s2
+  - id: ref.tier.transition.s4_s3
+    source_tier: ref.tier.population.s4
+    target_tier: ref.tier.population.s3
+    trigger: manual_command
+    costs: []
+    cost_source: location_inventory
+    cost_access_purpose: population_transition
+    refund_policy: { policy: none }
+    duration_ticks: 10
+    conversion:
+      population: clamp_to_target_capacity
+      entity_definition: ref.tier.entity.residence_s3

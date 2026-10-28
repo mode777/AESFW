@@ -10,6 +10,24 @@ entity_definitions:
           - { resource: ref.tier.resource.bm2, quantity: 120000 }
         commit_policy: start
 
+  - id: ref.tier.entity.transport_t2
+    components:
+      construction:
+        duration_ticks: 90
+        costs:
+          - { resource: ref.tier.resource.bm2, quantity: 480000 }
+          - { resource: ref.tier.resource.bm3, quantity: 240000 }
+        commit_policy: start
+
+  - id: ref.tier.entity.transport_t3
+    components:
+      construction:
+        duration_ticks: 120
+        costs:
+          - { resource: ref.tier.resource.bm3, quantity: 720000 }
+          - { resource: ref.tier.resource.bm4, quantity: 360000 }
+        commit_policy: start
+
 transport_units:
   - id: ref.tier.transport.t1
     tags: [ref.tier.transport.standard]
@@ -30,6 +48,49 @@ transport_units:
       interval_ticks: 60
       inputs:
         - { resource: ref.tier.resource.credits, quantity: 150000 }
+      charge_policy: while_enabled
+      shortage_policy: owner_deficit_policy
+
+  - id: ref.tier.transport.t2
+    tags: [ref.tier.transport.standard]
+    entity_definition: ref.tier.entity.transport_t2
+    cargo:
+      compartment_policy: typed_slots
+      slots: 4
+      slot_capacity: 600000
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 800
+      allowed_connection_tags: [ref.tier.transport.standard]
+    handling:
+      loading_rate_per_tick: 10000
+      unloading_rate_per_tick: 10000
+    order_modes: [route, explore, establish, trade]
+    maintenance:
+      interval_ticks: 60
+      inputs:
+        - { resource: ref.tier.resource.credits, quantity: 360000 }
+      charge_policy: while_enabled
+      shortage_policy: owner_deficit_policy
+  - id: ref.tier.transport.t3
+    tags: [ref.tier.transport.standard]
+    entity_definition: ref.tier.entity.transport_t3
+    cargo:
+      compartment_policy: typed_slots
+      slots: 6
+      slot_capacity: 900000
+      acceptance: transportable_resources
+    movement:
+      speed_permille: 700
+      allowed_connection_tags: [ref.tier.transport.standard]
+    handling:
+      loading_rate_per_tick: 10000
+      unloading_rate_per_tick: 10000
+    order_modes: [route, explore, establish, trade]
+    maintenance:
+      interval_ticks: 60
+      inputs:
+        - { resource: ref.tier.resource.credits, quantity: 720000 }
       charge_policy: while_enabled
       shortage_policy: owner_deficit_policy
 

@@ -33,6 +33,36 @@ exchanges:
       - resource: ref.tier.resource.bm2
         buy_from_exchange: { base_price: 360, enabled: true }
         sell_to_exchange: { base_price: 100, enabled: true }
+      - resource: ref.tier.resource.p5
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p6
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p7
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p8
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.h3
+        buy_from_exchange: { base_price: 150, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h4
+        buy_from_exchange: { base_price: 150, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h5
+        buy_from_exchange: { base_price: 150, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h6
+        buy_from_exchange: { base_price: 150, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm3
+        buy_from_exchange: { base_price: 360, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm4
+        buy_from_exchange: { base_price: 600, enabled: false }
+        sell_to_exchange: { base_price: 150, enabled: true }
     elasticity:
       window_ticks: 600
       step_quantity: 600000
@@ -70,6 +100,36 @@ exchanges:
       - resource: ref.tier.resource.bm2
         buy_from_exchange: { base_price: 360, enabled: false }
         sell_to_exchange: { base_price: 100, enabled: true }
+      - resource: ref.tier.resource.p5
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p6
+        buy_from_exchange: { base_price: 60, enabled: false }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p7
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.p8
+        buy_from_exchange: { base_price: 60, enabled: true }
+        sell_to_exchange: { base_price: 20, enabled: true }
+      - resource: ref.tier.resource.h3
+        buy_from_exchange: { base_price: 150, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h4
+        buy_from_exchange: { base_price: 150, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h5
+        buy_from_exchange: { base_price: 150, enabled: false }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.h6
+        buy_from_exchange: { base_price: 150, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm3
+        buy_from_exchange: { base_price: 360, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
+      - resource: ref.tier.resource.bm4
+        buy_from_exchange: { base_price: 600, enabled: true }
+        sell_to_exchange: { base_price: 50, enabled: true }
     elasticity:
       window_ticks: 600
       step_quantity: 600000

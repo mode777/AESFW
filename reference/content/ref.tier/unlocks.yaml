@@ -13,3 +13,18 @@ unlocks:
       - { type: entity_definition, id: ref.tier.entity.coverage_service }
       - { type: transition, id: ref.tier.transition.s1_s2 }
     condition: ref.tier.condition.s1_population_150
+  - id: ref.tier.unlock.s2_400
+    scope: owner
+    targets:
+      - { type: entity_definition, id: ref.tier.entity.advanced_combiner_c9 }
+      - { type: entity_definition, id: ref.tier.entity.advanced_combiner_c10 }
+      - { type: entity_definition, id: ref.tier.entity.advanced_combiner_c11 }
+      - { type: entity_definition, id: ref.tier.entity.advanced_combiner_c12 }
+      - { type: transition, id: ref.tier.transition.s2_s3 }
+    condition: ref.tier.condition.s2_population_400
+  - id: ref.tier.unlock.s3_900
+    scope: owner
+    targets:
+      - { type: entity_definition, id: ref.tier.entity.coverage_service_s4 }
+      - { type: transition, id: ref.tier.transition.s3_s4 }
+    condition: ref.tier.condition.s3_population_900

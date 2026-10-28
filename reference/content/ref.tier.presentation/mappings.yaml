@@ -170,6 +170,156 @@ presentation_mapping:
       category_key: ref.tier.category.s2
       sort_order: 100
 
+  - target_definition: ref.tier.entity.refiner_h3
+    localization:
+      name_key: ref.tier.entity.refiner_h3
+      description_key: ref.tier.entity.refiner_h3.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 90
+
+  - target_definition: ref.tier.entity.refiner_h4
+    localization:
+      name_key: ref.tier.entity.refiner_h4
+      description_key: ref.tier.entity.refiner_h4.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 100
+
+  - target_definition: ref.tier.entity.refiner_h5
+    localization:
+      name_key: ref.tier.entity.refiner_h5
+      description_key: ref.tier.entity.refiner_h5.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 110
+
+  - target_definition: ref.tier.entity.refiner_h6
+    localization:
+      name_key: ref.tier.entity.refiner_h6
+      description_key: ref.tier.entity.refiner_h6.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 120
+
+  - target_definition: ref.tier.entity.refiner_bm3
+    localization:
+      name_key: ref.tier.entity.refiner_bm3
+      description_key: ref.tier.entity.refiner_bm3.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 130
+
+  - target_definition: ref.tier.entity.refiner_bm4
+    localization:
+      name_key: ref.tier.entity.refiner_bm4
+      description_key: ref.tier.entity.refiner_bm4.description
+    visual:
+      fallback_shape: refiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 140
+
+  - target_definition: ref.tier.entity.combiner_c5
+    localization:
+      name_key: ref.tier.entity.combiner_c5
+      description_key: ref.tier.entity.combiner_c5.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 150
+
+  - target_definition: ref.tier.entity.combiner_c6
+    localization:
+      name_key: ref.tier.entity.combiner_c6
+      description_key: ref.tier.entity.combiner_c6.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s3
+      sort_order: 160
+
+  - target_definition: ref.tier.entity.combiner_c7
+    localization:
+      name_key: ref.tier.entity.combiner_c7
+      description_key: ref.tier.entity.combiner_c7.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s4
+      sort_order: 170
+
+  - target_definition: ref.tier.entity.combiner_c8
+    localization:
+      name_key: ref.tier.entity.combiner_c8
+      description_key: ref.tier.entity.combiner_c8.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s4
+      sort_order: 180
+
+  - target_definition: ref.tier.entity.advanced_combiner_c9
+    localization:
+      name_key: ref.tier.entity.advanced_combiner_c9
+      description_key: ref.tier.entity.advanced_combiner_c9.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s4
+      sort_order: 190
+
+  - target_definition: ref.tier.entity.advanced_combiner_c10
+    localization:
+      name_key: ref.tier.entity.advanced_combiner_c10
+      description_key: ref.tier.entity.advanced_combiner_c10.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s4
+      sort_order: 200
+
+  - target_definition: ref.tier.entity.advanced_combiner_c11
+    localization:
+      name_key: ref.tier.entity.advanced_combiner_c11
+      description_key: ref.tier.entity.advanced_combiner_c11.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s4
+      sort_order: 210
+
+  - target_definition: ref.tier.entity.advanced_combiner_c12
+    localization:
+      name_key: ref.tier.entity.advanced_combiner_c12
+      description_key: ref.tier.entity.advanced_combiner_c12.description
+    visual:
+      fallback_shape: combiner
+    display:
+      category_key: ref.tier.category.s4
+      sort_order: 220
+
+  - target_definition: ref.tier.entity.coverage_service_s4
+    localization:
+      name_key: ref.tier.entity.coverage_service_s4
+      description_key: ref.tier.entity.coverage_service_s4.description
+    visual:
+      fallback_shape: coverage_service
+    display:
+      category_key: ref.tier.category.s4
+      sort_order: 230
+
 fallback:
   shape: box
   locale: en

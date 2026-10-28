@@ -39,3 +39,43 @@ conditions:
       greater_equal:
         left: { population_count: { tier: ref.tier.population.s1 } }
         right: 150
+  - id: ref.tier.condition.advance_s2_s3
+    expression:
+      all:
+        - greater_equal:
+            left: { residence_population: current_entity }
+            right: 20
+        - sustained:
+            ticks: 60
+            condition:
+              greater_equal:
+                left: { aggregate_need_fulfillment: current_entity }
+                right: 800
+        - greater_equal:
+            left: { population_count: { tier: ref.tier.population.s2 } }
+            right: 400
+  - id: ref.tier.condition.advance_s3_s4
+    expression:
+      all:
+        - greater_equal:
+            left: { residence_population: current_entity }
+            right: 35
+        - sustained:
+            ticks: 60
+            condition:
+              greater_equal:
+                left: { aggregate_need_fulfillment: current_entity }
+                right: 800
+        - greater_equal:
+            left: { population_count: { tier: ref.tier.population.s3 } }
+            right: 900
+  - id: ref.tier.condition.s2_population_400
+    expression:
+      greater_equal:
+        left: { population_count: { tier: ref.tier.population.s2 } }
+        right: 400
+  - id: ref.tier.condition.s3_population_900
+    expression:
+      greater_equal:
+        left: { population_count: { tier: ref.tier.population.s3 } }
+        right: 900

@@ -10,6 +10,8 @@ need_categories:
       required_score_by_tier:
         ref.tier.population.s1: 1000
         ref.tier.population.s2: 2000
+        ref.tier.population.s3: 3000
+        ref.tier.population.s4: 4000
     members:
       - { need: ref.tier.need.c1, weight: 1000 }
       - { need: ref.tier.need.c2, weight: 2000 }
@@ -19,9 +21,24 @@ need_categories:
       required_score: 1000
       required_score_by_tier:
         ref.tier.population.s2: 1000
+        ref.tier.population.s3: 2000
+        ref.tier.population.s4: 3000
     members:
       - { need: ref.tier.need.c3, weight: 2000 }
       - { need: ref.tier.need.c4, weight: 3000 }
+  # B4 (B.5): complexity-3-4 consumer goods that are only combinable with at
+  # least one cross-region input, required score 2 at S4.
+  - id: ref.tier.need_category.b4
+    evaluation:
+      mode: weighted_score
+      required_score: 2000
+      required_score_by_tier:
+        ref.tier.population.s4: 2000
+    members:
+      - { need: ref.tier.need.c9, weight: 3000 }
+      - { need: ref.tier.need.c10, weight: 3000 }
+      - { need: ref.tier.need.c11, weight: 4000 }
+      - { need: ref.tier.need.c12, weight: 4000 }
   # B3 has one coverage service in R3; with a single member `all` is the
   # weighted score with A(S2) = 1 (and avoids `breadth_depth_collapse`).
   - id: ref.tier.need_category.b3
@@ -71,6 +88,86 @@ needs:
     fulfillment:
       measurement_window_ticks: 60
       target_ratio: 1000
+  - id: ref.tier.need.c5
+    category: ref.tier.need_category.b2
+    applies_to: [ref.tier.population.s3, ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c5
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c6
+    category: ref.tier.need_category.b2
+    applies_to: [ref.tier.population.s3, ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c6
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c7
+    category: ref.tier.need_category.b2
+    applies_to: [ref.tier.population.s3, ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c7
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c8
+    category: ref.tier.need_category.b2
+    applies_to: [ref.tier.population.s3, ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c8
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c9
+    category: ref.tier.need_category.b4
+    applies_to: [ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c9
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c10
+    category: ref.tier.need_category.b4
+    applies_to: [ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c10
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c11
+    category: ref.tier.need_category.b4
+    applies_to: [ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c11
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
+  - id: ref.tier.need.c12
+    category: ref.tier.need_category.b4
+    applies_to: [ref.tier.population.s4]
+    demand:
+      type: resource_consumption
+      resource: ref.tier.resource.c12
+      quantity_per_population_per_tick: 1
+    fulfillment:
+      measurement_window_ticks: 60
+      target_ratio: 1000
   - id: ref.tier.need.coverage
     category: ref.tier.need_category.b3
     applies_to: [ref.tier.population.s2]
@@ -83,6 +180,9 @@ needs:
       target_ratio: 1000
 
 services:
+  - id: ref.tier.service.b4
+    mode: coverage
+    default_relation: { type: radius, cells: 22 }
   - id: ref.tier.service.b3
     mode: coverage
     default_relation: { type: radius, cells: 18 }

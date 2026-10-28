@@ -28,6 +28,39 @@ population_tiers:
         scope: owner
         rate_per_population_per_tick: 250
         satisfaction_curve: ref.tier.curve.income
+  - id: ref.tier.population.s3
+    consumption_factor: 2250
+    need_categories:
+      [ref.tier.need_category.b1, ref.tier.need_category.b2, ref.tier.need_category.b3]
+    decline_transitions: [ref.tier.transition.s3_s2]
+    satisfaction: { aggregation: average, bands: ref.tier.bands.s3 }
+    outputs:
+      - resource: ref.tier.capability.ak3
+        scope: location
+        rate_per_population_per_tick: 1
+      - resource: ref.tier.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 55
+        satisfaction_curve: ref.tier.curve.income
+  - id: ref.tier.population.s4
+    consumption_factor: 3400
+    need_categories:
+      [
+        ref.tier.need_category.b1,
+        ref.tier.need_category.b2,
+        ref.tier.need_category.b3,
+        ref.tier.need_category.b4,
+      ]
+    decline_transitions: [ref.tier.transition.s4_s3]
+    satisfaction: { aggregation: average, bands: ref.tier.bands.s4 }
+    outputs:
+      - resource: ref.tier.capability.ak4
+        scope: location
+        rate_per_population_per_tick: 1
+      - resource: ref.tier.resource.credits
+        scope: owner
+        rate_per_population_per_tick: 120
+        satisfaction_curve: ref.tier.curve.income
 
 growth_policies:
   # +1 inhabitant every 8 s while Z >= 0.80 and capacity remains (B.6).

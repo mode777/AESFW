@@ -80,6 +80,115 @@ resources:
     storage: { policy: normal, scope: inventory }
     transportable: true
 
+  - id: ref.tier.resource.p5
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.p6
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.p7
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.p8
+    tags: [storable, ref.tier.role.primary]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.h3
+    tags: [storable, ref.tier.role.intermediate]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.h4
+    tags: [storable, ref.tier.role.intermediate]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.h5
+    tags: [storable, ref.tier.role.intermediate]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.h6
+    tags: [storable, ref.tier.role.intermediate]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c5
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 3
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c6
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 3
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c7
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 3
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c8
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 3
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c9
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 3
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c10
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 3
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c11
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 4
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.c12
+    tags: [storable, ref.tier.role.consumer]
+    complexity: 4
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.bm3
+    tags: [storable, ref.tier.role.construction]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.resource.bm4
+    tags: [storable, ref.tier.role.construction]
+    quantity: { precision: fixed, scale: 6000 }
+    storage: { policy: normal, scope: inventory }
+    transportable: true
+  - id: ref.tier.capability.ak3
+    tags: [virtual, capability]
+    quantity: { precision: integer, scale: 1 }
+    storage: { policy: recomputed, scope: location }
+    transportable: false
+  - id: ref.tier.capability.ak4
+    tags: [virtual, capability]
+    quantity: { precision: integer, scale: 1 }
+    storage: { policy: recomputed, scope: location }
+    transportable: false
+
   # Balance (B.2, B.9).
   - id: ref.tier.resource.credits
     tags: [balance]

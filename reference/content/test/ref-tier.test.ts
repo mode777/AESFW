@@ -105,16 +105,16 @@ describe('[REF-5] reference content package', () => {
 
   it('[REF-5] the catalogue matches its stage counts', () => {
     expect(idsWithPrefix('location', 'ref.tier.location.')).toHaveLength(6);
-    expect(idsWithPrefix('resource', 'ref.tier.resource.p')).toHaveLength(4);
-    expect(idsWithPrefix('resource', 'ref.tier.resource.h')).toHaveLength(2);
+    expect(idsWithPrefix('resource', 'ref.tier.resource.p')).toHaveLength(8);
+    expect(idsWithPrefix('resource', 'ref.tier.resource.h')).toHaveLength(6);
     expect(
       idsWithPrefix('resource', 'ref.tier.resource.c').filter(
         (id) => id !== 'ref.tier.resource.credits',
       ),
-    ).toHaveLength(4);
-    expect(idsWithPrefix('resource', 'ref.tier.resource.bm')).toHaveLength(2);
-    expect(idsWithPrefix('tier', 'ref.tier.population.')).toHaveLength(2);
-    expect(idsWithPrefix('transportType', 'ref.tier.transport.')).toHaveLength(1);
+    ).toHaveLength(12);
+    expect(idsWithPrefix('resource', 'ref.tier.resource.bm')).toHaveLength(4);
+    expect(idsWithPrefix('tier', 'ref.tier.population.')).toHaveLength(4);
+    expect(idsWithPrefix('transportType', 'ref.tier.transport.')).toHaveLength(3);
   });
 
   it('[REF-5] the reference content defines the closed loop', () => {
@@ -308,6 +308,113 @@ describe('[REF-7] R3 start state', () => {
       expect(outcome.outputs.length).toBeGreaterThanOrEqual(0);
     }
     expect(lowest).toBeGreaterThanOrEqual(800);
+  });
+});
+
+describe('[REF-7] R4 catalogue and cross-region pressure', () => {
+  it('[REF-7] the advanced tiers provide AK3 and AK4', () => {
+    const s3 = definitionData('tier', 'ref.tier.population.s3');
+    const s4 = definitionData('tier', 'ref.tier.population.s4');
+    expect(s3?.['consumption_factor']).toBe(2250);
+    expect(s4?.['consumption_factor']).toBe(3400);
+    expect(s3?.['outputs']).toContainEqual({
+      resource: 'ref.tier.capability.ak3',
+      scope: 'location',
+      rate_per_population_per_tick: 1,
+    });
+    expect(s4?.['outputs']).toContainEqual({
+      resource: 'ref.tier.capability.ak4',
+      scope: 'location',
+      rate_per_population_per_tick: 1,
+    });
+    expect(s3?.['outputs']).toContainEqual({
+      resource: 'ref.tier.resource.credits',
+      scope: 'owner',
+      rate_per_population_per_tick: 55,
+      satisfaction_curve: 'ref.tier.curve.income',
+    });
+    expect(s4?.['outputs']).toContainEqual({
+      resource: 'ref.tier.resource.credits',
+      scope: 'owner',
+      rate_per_population_per_tick: 120,
+      satisfaction_curve: 'ref.tier.curve.income',
+    });
+  });
+
+  it('[REF-7] S2 to S3 and S3 to S4 advance automatically', () => {
+    const s2s3 = definitionData('transition', 'ref.tier.transition.s2_s3');
+    expect(s2s3?.['trigger']).toBe('automatic');
+    expect(s2s3?.['costs']).toEqual([
+      { resource: 'ref.tier.resource.bm2', quantity: 84000 },
+      { resource: 'ref.tier.resource.bm3', quantity: 48000 },
+    ]);
+    const s3s4 = definitionData('transition', 'ref.tier.transition.s3_s4');
+    expect(s3s4?.['costs']).toEqual([
+      { resource: 'ref.tier.resource.bm3', quantity: 108000 },
+      { resource: 'ref.tier.resource.bm4', quantity: 60000 },
+    ]);
+    for (const id of ['ref.tier.transition.s3_s2', 'ref.tier.transition.s4_s3']) {
+      expect(definitionData('transition', id)?.['refund_policy']).toEqual({ policy: 'none' });
+      expect(
+        (definitionData('transition', id)?.['conversion'] as Record<string, JsonValue>)[
+          'population'
+        ],
+      ).toBe('clamp_to_target_capacity');
+    }
+  });
+
+  it('[REF-7][GDD-3.3] every B4 member combines inputs from both regions', () => {
+    // Resources sourced in α, including the intermediates refined there.
+    const alpha = new Set(['p1', 'p2', 'p5', 'p6', 'h1', 'h3', 'h5', 'bm1', 'bm2']);
+    // Resources sourced in β, including their intermediates.
+    const beta = new Set(['p3', 'p4', 'p7', 'p8', 'h2', 'h4', 'h6', 'bm3', 'bm4']);
+    const short = (value: JsonValue | undefined): string =>
+      typeof value === 'string' ? (value.split('.').at(-1) ?? '') : '';
+    const recipe = (id: string): readonly string[] =>
+      (
+        (definitionData('recipe', id)?.['inputs'] ?? []) as readonly Record<string, JsonValue>[]
+      ).map((entry) => short(entry['resource']));
+    const b4 = (
+      (definitionData('needCategory', 'ref.tier.need_category.b4')?.['members'] ??
+        []) as readonly Record<string, JsonValue>[]
+    ).map((member) => short(member['need']));
+    expect(b4.sort()).toEqual(['c10', 'c11', 'c12', 'c9']);
+    for (const member of b4) {
+      const inputs = recipe(`ref.tier.recipe.combine_${member}`);
+      expect(inputs.some((input) => alpha.has(input))).toBe(true);
+      expect(inputs.some((input) => beta.has(input))).toBe(true);
+    }
+  });
+
+  it('[REF-7] the advanced combiners need AK3 and unlock at 400 S2', () => {
+    const producer = componentsOf('ref.tier.entity.advanced_combiner_c9')['producer'] as Record<
+      string,
+      JsonValue
+    >;
+    const recipeId = String((producer['recipes'] as readonly string[])[0]);
+    const capabilities = definitionData('recipe', recipeId)?.[
+      'capability_requirements'
+    ] as readonly Record<string, JsonValue>[];
+    expect(capabilities).toEqual([{ resource: 'ref.tier.capability.ak3', quantity: 30 }]);
+    const unlock = definitionData('unlock', 'ref.tier.unlock.s2_400');
+    expect(unlock?.['targets']).toContainEqual({
+      type: 'entity_definition',
+      id: 'ref.tier.entity.advanced_combiner_c9',
+    });
+    expect(unlock?.['condition']).toBe('ref.tier.condition.s2_population_400');
+  });
+
+  it('[REF-7] T2 and T3 declare their cargo, speed, cost, and upkeep', () => {
+    const t2 = definitionData('transportType', 'ref.tier.transport.t2');
+    expect((t2?.['cargo'] as Record<string, JsonValue>)['slots']).toBe(4);
+    expect((t2?.['cargo'] as Record<string, JsonValue>)['slot_capacity']).toBe(600000);
+    expect((t2?.['movement'] as Record<string, JsonValue>)['speed_permille']).toBe(800);
+    expect(t2?.['maintenance']).toMatchObject({
+      inputs: [{ resource: 'ref.tier.resource.credits', quantity: 360000 }],
+    });
+    const t3 = definitionData('transportType', 'ref.tier.transport.t3');
+    expect((t3?.['cargo'] as Record<string, JsonValue>)['slots']).toBe(6);
+    expect((t3?.['movement'] as Record<string, JsonValue>)['speed_permille']).toBe(700);
   });
 });
 
@@ -680,9 +787,12 @@ describe('[REF-5] presentation package', () => {
     expect(mappings.map((entry) => entry['target_definition']).sort()).toEqual(placeable);
     for (const entry of mappings) {
       const display = entry['display'] as Record<string, JsonValue>;
-      expect(['ref.tier.category.s1', 'ref.tier.category.s2']).toContain(
-        display['category_key'] as string,
-      );
+      expect([
+        'ref.tier.category.s1',
+        'ref.tier.category.s2',
+        'ref.tier.category.s3',
+        'ref.tier.category.s4',
+      ]).toContain(display['category_key'] as string);
       expect(typeof display['sort_order']).toBe('number');
       const visual = entry['visual'] as Record<string, JsonValue>;
       expect(typeof visual['fallback_shape']).toBe('string');

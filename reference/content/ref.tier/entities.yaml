@@ -230,3 +230,180 @@ entity_definitions:
         initial_population: 0
         growth_policy: ref.tier.growth.default
         empty_residence: { policy: decay, delay_ticks: 0 }
+
+  - id: ref.tier.entity.refiner_h3
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_h3]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_h4
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_h4]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_h5
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_h5]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_h6
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_h6]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_bm3
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_bm3]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.refiner_bm4
+    includes: [ref.tier.template.refiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.refine_bm4]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_c5
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.combine_c5]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_c6
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.combine_c6]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_c7
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.combine_c7]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.combiner_c8
+    includes: [ref.tier.template.combiner]
+    components:
+      placement:
+        footprint: [3, 3]
+      producer:
+        recipes: [ref.tier.recipe.combine_c8]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.advanced_combiner_c9
+    includes: [ref.tier.template.advanced_combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c9]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.advanced_combiner_c10
+    includes: [ref.tier.template.advanced_combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c10]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.advanced_combiner_c11
+    includes: [ref.tier.template.advanced_combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c11]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  - id: ref.tier.entity.advanced_combiner_c12
+    includes: [ref.tier.template.advanced_combiner]
+    components:
+      placement:
+        footprint: [4, 4]
+      producer:
+        recipes: [ref.tier.recipe.combine_c12]
+        process_slots: 1
+        input_inventory: location.shared
+        output_inventory: location.shared
+  # Coverage service for the S4-era B4 category (B.5).
+  - id: ref.tier.entity.coverage_service_s4
+    includes: [ref.tier.template.networked]
+    components:
+      placement:
+        footprint: [4, 4]
+      service_provider:
+        mode: coverage
+        service: ref.tier.service.b4
+        relation: { type: radius, cells: 22 }
+      maintenance:
+        interval_ticks: 60
+        inputs:
+          - { resource: ref.tier.resource.credits, quantity: 360000 }
+        charge_policy: while_enabled
+        shortage_policy: owner_deficit_policy
+
+  # S3 and S4 residences: reached by advancement only (B.7).
+  - id: ref.tier.entity.residence_s3
+    includes: [ref.tier.template.residence_s3]
+    components:
+      residence:
+        population_tier: ref.tier.population.s3
+        capacity: 35
+        initial_population: 0
+        growth_policy: ref.tier.growth.default
+        empty_residence: { policy: decay, delay_ticks: 0 }
+  - id: ref.tier.entity.residence_s4
+    includes: [ref.tier.template.residence_s4]
+    components:
+      residence:
+        population_tier: ref.tier.population.s4
+        capacity: 55
+        initial_population: 0
+        growth_policy: ref.tier.growth.default
+        empty_residence: { policy: decay, delay_ticks: 0 }
