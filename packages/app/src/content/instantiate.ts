@@ -20,6 +20,7 @@ import type {
   ConnectivityNode,
   DefinitionHandle,
   Diagnostic,
+  EntityId,
   Growth,
   Location,
   LocationHub,
@@ -472,24 +473,27 @@ const instantiateTransport = (
   }
 };
 
-export const instantiateDefinition = (
+/**
+ * Writes the behavioural components of one entity from its definition (CONT-6.8,
+ * amendment A15). Used both for world instantiation and for entities the player
+ * creates, so a constructed building behaves exactly like an authored one.
+ *
+ * Source: CONT-6.8, GDD-18.1
+ */
+export const materializeEntityComponents = (
   world: World,
   registry: ContentRegistry,
   definition: CompiledDefinition,
-  location: number,
-  owner: number | null,
-): number => {
+  entity: EntityId,
+  location: EntityId,
+): void => {
   const data = asRecord(definition.data);
   const components = data === null ? null : asRecord(data['components']);
-  const entity = allocateEntity(world);
-  const hub = world.stores.get<LocationHub>('locationHub').get(ids.entityId(location));
+  const hub = world.stores.get<LocationHub>('locationHub').get(location);
   const inventory = hub?.inventories[0] ?? null;
-  if (owner !== null) {
-    world.stores.get<{ owner: number }>('owner').set(entity, { owner });
-  }
   if (components === null) {
     instantiateTransport(world, registry, definition.handle, entity, location);
-    return entity;
+    return;
   }
   const setDefinition = (): void => {
     world.stores.get<{ definition: DefinitionHandle }>('definition').set(entity, {
@@ -514,7 +518,7 @@ export const instantiateDefinition = (
         capability: requirement.resource,
         substitutes: [],
         scope: 'location',
-        location: ids.entityId(location),
+        location,
         model: 'proportional',
         priority: 0,
         weight: 1000,
@@ -532,8 +536,8 @@ export const instantiateDefinition = (
       if (growth !== null) world.stores.get<Growth>('growth').set(entity, growth);
     }
   }
-  applyStorageProvider(world, registry, definition.handle, entity, ids.entityId(location));
-  applyServiceProvider(world, registry, definition.handle, entity, ids.entityId(location));
+  applyStorageProvider(world, registry, definition.handle, entity, location);
+  applyServiceProvider(world, registry, definition.handle, entity, location);
   if (components['connectivity'] !== undefined) {
     const node = connectivityNodeFrom(components['connectivity']);
     if (node !== null) {
@@ -546,6 +550,25 @@ export const instantiateDefinition = (
     world.stores.get<Maintenance>('maintenance').set(entity, maintenance);
   }
   instantiateTransport(world, registry, definition.handle, entity, location);
+};
+
+/**
+ * Allocates an entity and writes its behavioural components (CONT-6.6).
+ *
+ * Source: CONT-6.6, CONT-6.8
+ */
+export const instantiateDefinition = (
+  world: World,
+  registry: ContentRegistry,
+  definition: CompiledDefinition,
+  location: number,
+  owner: number | null,
+): number => {
+  const entity = allocateEntity(world);
+  if (owner !== null) {
+    world.stores.get<{ owner: number }>('owner').set(entity, { owner });
+  }
+  materializeEntityComponents(world, registry, definition, entity, ids.entityId(location));
   return entity;
 };
 

@@ -110,7 +110,13 @@ const applyOne = (ctx: TickContext, scheduled: ScheduledCommand): CommandOutcome
           command.location,
         );
       }
-      const outcome = applyPlaceEntityPlan(world, ctx.registry, command, ctx.conditionEvaluator);
+      const outcome = applyPlaceEntityPlan(
+        world,
+        ctx.registry,
+        command,
+        ctx.conditionEvaluator,
+        ctx.entityMaterializer,
+      );
       if (!outcome.ok) return reject(outcome.errors, [command.location], command.location);
       return emitApplied(outcome.entity, command.location);
     }
@@ -526,6 +532,18 @@ export const phase01ApplyCommands: SystemDescriptor = {
     'ledger',
     'producer',
     'capabilityConsumer',
+    'modifierSet',
+    // Materializing a placement that needs no construction writes these
+    // (amendment A15).
+    'resourceSource',
+    'residence',
+    'populationGroup',
+    'growth',
+    'connectivityNode',
+    'maintenance',
+    'cargo',
+    'movement',
+    'handling',
     'revision',
     'transportOrder',
     'transportAssignment',

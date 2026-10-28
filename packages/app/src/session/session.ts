@@ -33,6 +33,7 @@ import type { CompiledContent, ContentRegistry } from '@aesfw/content';
 import { buildSustainedTimerUpdater, buildUnlockSystem, unlockQueryValue } from '@aesfw/content';
 
 import { buildEstablishmentSystem } from '../content/establishment.js';
+import { buildEntityMaterializer } from '../content/materializer.js';
 import { buildConditionEvaluator } from './placement.js';
 import type {
   AdvanceResult,
@@ -627,6 +628,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
   );
   const unlockSystem = buildUnlockSystem(session.content);
   const establishmentSystem = buildEstablishmentSystem(session.content);
+  const entityMaterializer = buildEntityMaterializer(session.content);
   let revision = session.revision;
   for (let index = 0; index < ticks; index += 1) {
     const due = session.world.commandQueue.filter(
@@ -639,6 +641,7 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
       sustainedTimerUpdater,
       unlockSystem,
       establishmentSystem,
+      entityMaterializer,
     });
     revision += 1;
     if (

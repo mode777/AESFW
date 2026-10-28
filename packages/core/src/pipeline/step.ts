@@ -23,6 +23,7 @@ import type {
   PolicySet,
   SustainedTimerUpdater,
   SystemDescriptor,
+  EntityMaterializer,
   EstablishmentSystem,
   UnlockSystem,
   TickContext,
@@ -51,6 +52,7 @@ interface RunnerState {
   readonly sustainedTimerUpdater: SustainedTimerUpdater;
   readonly unlockSystem: UnlockSystem | null;
   readonly establishmentSystem: EstablishmentSystem | null;
+  readonly entityMaterializer: EntityMaterializer | null;
 }
 
 const mergeScheduledCommands = (world: World, commands: readonly ScheduledCommand[]): void => {
@@ -77,6 +79,7 @@ const runOne = (descriptor: SystemDescriptor, state: RunnerState): void => {
       sustainedTimerUpdater: state.sustainedTimerUpdater,
       unlockSystem: state.unlockSystem,
       establishmentSystem: state.establishmentSystem,
+      entityMaterializer: state.entityMaterializer,
     };
     descriptor.run(context);
   } finally {
@@ -105,6 +108,7 @@ const execute = (
     sustainedTimerUpdater: input.sustainedTimerUpdater ?? NOOP_TIMER_UPDATER,
     unlockSystem: input.unlockSystem ?? null,
     establishmentSystem: input.establishmentSystem ?? null,
+    entityMaterializer: input.entityMaterializer ?? null,
   };
 
   mergeScheduledCommands(world, input.commands);

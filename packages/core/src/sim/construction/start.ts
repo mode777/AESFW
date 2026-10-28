@@ -8,7 +8,15 @@
  * Source: GDD-9.1, GDD-18.1, CONT-6.8, ARCH-6.2, TDS-11.1
  */
 import { mulDiv } from '../../fx/index.js';
-import type { EntityId, ReservationId, Tick } from '../../ids/index.js';
+import type {
+  DefinitionHandle,
+  EntityId,
+  OwnerHandle,
+  ReservationId,
+  Tick,
+} from '../../ids/index.js';
+import type { EntityMaterializer } from '../../pipeline/types.js';
+import { transformOf } from '../spatial.js';
 import type { EventWriter } from '../../events/event-writer.js';
 import type { TransactionWriter } from '../../tx/index.js';
 import type { World } from '../../world/types.js';
@@ -48,6 +56,7 @@ const complete = (
   entity: EntityId,
   plan: ConstructionPlan,
   progress: ConstructionProgress,
+  materializer: EntityMaterializer | null,
 ): void => {
   commitReservations(world, tx, progress.reservations);
   world.stores.get<ConstructionProgress>('constructionProgress').set(entity, {
@@ -56,6 +65,16 @@ const complete = (
     reservations: [],
   });
   setLifecycle(world, entity, 'active');
+  // The definition's behavioural components appear when the entity becomes
+  // operational (amendment A15).
+  if (materializer !== null) {
+    const definition = world.stores.get<{ definition: DefinitionHandle }>('definition').get(entity);
+    const location = transformOf(world, entity)?.location ?? null;
+    const owner = world.stores.get<{ owner: OwnerHandle }>('owner').get(entity)?.owner ?? null;
+    if (definition !== undefined && location !== null) {
+      materializer.materialize(world, entity, definition.definition, location, owner);
+    }
+  }
   events.emit({
     type: 'ConstructionCompleted',
     subjects: [entity],
@@ -77,6 +96,7 @@ export function resolveConstruction(
   tx: TransactionWriter,
   events: EventWriter,
   tick: Tick,
+  materializer: EntityMaterializer | null = null,
 ): void {
   reconcileOperationalStates(world);
   const planStore = world.stores.get<ConstructionPlan>('constructionPlan');
@@ -124,7 +144,15 @@ export function resolveConstruction(
         ? commitContinuous(world, tx, plan, progress.reservations, progress.committed, elapsed)
         : progress.committed;
     if (elapsed >= plan.duration) {
-      complete(world, tx, events, entity, plan, { ...progress, progress: elapsed, committed });
+      complete(
+        world,
+        tx,
+        events,
+        entity,
+        plan,
+        { ...progress, progress: elapsed, committed },
+        materializer,
+      );
     } else {
       progressStore.set(entity, { ...progress, progress: elapsed, committed });
     }

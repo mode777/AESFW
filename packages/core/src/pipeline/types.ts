@@ -111,6 +111,28 @@ export interface EstablishmentSystem {
   ) => EntityId | null;
 }
 
+/**
+ * Materializes the behavioural components of an entity the player created
+ * (GDD-18.1, 03 §6.8, amendment A15). A constructed entity is allocated by
+ * phase 01; its producer, residence, source, service, connectivity, cargo, and
+ * maintenance components come from its definition, which core cannot read.
+ * `@aesfw/app` builds the implementation from compiled content; without it a
+ * constructed entity stays an inert shell.
+ *
+ * Called once per entity: at placement when the definition has no
+ * construction plan (it is active immediately), otherwise when construction
+ * completes.
+ */
+export interface EntityMaterializer {
+  readonly materialize: (
+    world: World,
+    entity: EntityId,
+    definition: DefinitionHandle,
+    location: EntityId,
+    owner: OwnerHandle | null,
+  ) => void;
+}
+
 /** Re-exported transaction types (TDS-12); implemented by `../tx`. */
 export type { AtomicBuilder, Transaction, TransactionWriter, TxError };
 
@@ -131,6 +153,8 @@ export interface TickContext {
   readonly unlockSystem: UnlockSystem | null;
   /** Creates establishment hub entities in phase 18 (GDD-16.3, design D4). */
   readonly establishmentSystem: EstablishmentSystem | null;
+  /** Materializes constructed entities in phases 01 and 03 (amendment A15). */
+  readonly entityMaterializer: EntityMaterializer | null;
 }
 
 /** A registered system (TDS-11.2). */
@@ -163,6 +187,8 @@ export interface TickInput {
   /** Optional unlock system (GDD-19, design D4). Defaults to ungated. */
   readonly unlockSystem?: UnlockSystem;
   readonly establishmentSystem?: EstablishmentSystem;
+  /** Optional entity materializer (amendment A15). Defaults to inert shells. */
+  readonly entityMaterializer?: EntityMaterializer;
 }
 
 /** Output of one tick (TDS-10.1). */

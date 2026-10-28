@@ -10,7 +10,6 @@
 import type { Scenario, ScenarioCommand } from '@aesfw/testkit/scenario';
 import type { JsonValue } from '@aesfw/content';
 import type { ContentRegistry } from '@aesfw/content';
-import { ids } from '@aesfw/core';
 
 /** The build step of a strategy: one entity definition and its footprint. */
 export interface BuildStep {
@@ -25,12 +24,6 @@ export interface Placement extends BuildStep {
   readonly x: number;
   readonly y: number;
 }
-
-const handleOf = (registry: ContentRegistry, type: 'entity', id: string): number => {
-  const handle = registry.handleOf(type, ids.stringId(id));
-  if (handle === null) throw new Error(`unknown ${type} definition ${id}`);
-  return handle;
-};
 
 const footprintOf = (registry: ContentRegistry, id: string): readonly [number, number] => {
   const definition = registry.definitionsOf('entity').find((entry) => entry.id === id);
@@ -109,9 +102,9 @@ export function packPlacements(
   return placements;
 }
 
-/** Turns placements into `PlaceEntityPlan` commands. */
+/** Turns placements into `PlaceEntityPlan` wire commands. */
 export const placementCommands = (
-  registry: ContentRegistry,
+  _registry: ContentRegistry,
   location: number,
   placements: readonly Placement[],
   actor: string,
@@ -121,9 +114,9 @@ export const placementCommands = (
     actor,
     type: 'PlaceEntityPlan',
     payload: {
-      definition: handleOf(registry, 'entity', placement.definition),
-      location,
-      transform: { x: placement.x, y: placement.y, orientation: 0 },
+      definition_id: placement.definition,
+      location_id: location,
+      logical_transform: { position: [placement.x, placement.y], orientation: 0 },
     },
   }));
 

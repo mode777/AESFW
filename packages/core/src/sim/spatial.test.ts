@@ -132,4 +132,47 @@ describe('[TDS-8.4][INV-20] spatial cache', () => {
     expect([...first].sort((a, b) => a - b)).toEqual(first);
     expect(first.every((cell) => cell >= 0 && cell < 16)).toBe(true);
   });
+
+  it('[GDD-6.1] the ratio bounds hold at the extremes', () => {
+    expect(buildableMask(8, 8, 1000, [1, 2], 'spatial.buildable.a')).toEqual([]);
+    expect(buildableMask(8, 8, 0, [1, 2], 'spatial.buildable.a')).toHaveLength(64);
+    expect(buildableMask(10, 10, 500, [1, 2], 'spatial.buildable.a')).toHaveLength(50);
+    expect(buildableMask(10, 10, 400, [1, 2], 'spatial.buildable.a')).toHaveLength(60);
+  });
+
+  it('[GDD-6.1] blocked cells form regions, not an uncorrelated per-cell mask', () => {
+    // GDD 6.1 asks for buildable terrain, not white noise: a 40x40 grid at the
+    // reference range must keep room for the archetype footprints (3x3 to 4x4)
+    // on every probed seed. An independent per-cell mask fails this for most
+    // seeds (the chance of a free 4x4 is ratio^16).
+    const largestFreeSquare = (blocked: readonly number[], size: number): number => {
+      const set = new Set(blocked);
+      for (let square = size; square >= 1; square -= 1) {
+        for (let y = 0; y <= size - square; y += 1) {
+          for (let x = 0; x <= size - square; x += 1) {
+            let free = true;
+            for (let dy = 0; dy < square && free; dy += 1) {
+              for (let dx = 0; dx < square && free; dx += 1) {
+                if (set.has((y + dy) * size + (x + dx))) free = false;
+              }
+            }
+            if (free) return square;
+          }
+        }
+      }
+      return 0;
+    };
+    for (let seedIndex = 0; seedIndex < 16; seedIndex += 1) {
+      for (const ratio of [400, 550, 700]) {
+        const blocked = buildableMask(
+          40,
+          40,
+          ratio,
+          [seedIndex, seedIndex * 7],
+          'spatial.buildable.x',
+        );
+        expect(largestFreeSquare(blocked, 40)).toBeGreaterThanOrEqual(5);
+      }
+    }
+  });
 });

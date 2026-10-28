@@ -226,6 +226,14 @@ export function removeOccupancy(world: World, entity: EntityId): void {
  * stream name (TDS-15, GDD-6.1). The ratio is permille buildable; the returned
  * blocked cells are packed indices in ascending order.
  *
+ * Blocked cells form contiguous regions rather than an uncorrelated per-cell
+ * coin flip: a coarse seeded value field is smoothed over 3×3 blocks and the
+ * `blockedCount` highest-value cells are blocked, ties broken by the seeded
+ * permutation. An uncorrelated mask makes multi-cell footprints effectively
+ * unplaceable at the specified 40–70 % buildable range (a 4×4 needs `ratio^16`
+ * of positions), which contradicts GDD 6.1's "configurable fraction of
+ * non-buildable cells" as usable terrain. The ratio is honoured exactly.
+ *
  * Source: TDS-15, GDD-6.1, CONT-6.4
  */
 export function buildableMask(
@@ -238,6 +246,12 @@ export function buildableMask(
   const cellCount = width * height;
   const buildable = Math.floor((cellCount * ratioPermille) / 1000);
   const blockedCount = cellCount - buildable;
+  if (blockedCount <= 0) return [];
+  if (blockedCount >= cellCount) {
+    return Array.from({ length: cellCount }, (_, cell) => cell);
+  }
+
+  // Seeded permutation: the deterministic tie-breaker for equal field values.
   const cells: number[] = [];
   for (let cell = 0; cell < cellCount; cell += 1) cells.push(cell);
   let stream = createStream(seed, name);
@@ -248,7 +262,55 @@ export function buildableMask(
     cells[index] = cells[draw.value] ?? 0;
     cells[draw.value] = swap ?? 0;
   }
-  return cells.slice(0, blockedCount).sort((a, b) => a - b);
+  const rank = new Int32Array(cellCount);
+  cells.forEach((cell, position) => {
+    rank[cell] = position;
+  });
+
+  // Coarse value field: one draw per block, smoothed over the 3x3 block
+  // neighbourhood so the blocked set grows as regions, not confetti.
+  const blockSize = 5;
+  const blocksX = Math.ceil(width / blockSize);
+  const blocksY = Math.ceil(height / blockSize);
+  const raw = new Int32Array(blocksX * blocksY);
+  for (let by = 0; by < blocksY; by += 1) {
+    for (let bx = 0; bx < blocksX; bx += 1) {
+      const blockStream = createStream(seed, `${name}.field.${bx}.${by}`);
+      raw[by * blocksX + bx] = nextInt(blockStream, 1000).value;
+    }
+  }
+  const smoothed = new Int32Array(blocksX * blocksY);
+  for (let by = 0; by < blocksY; by += 1) {
+    for (let bx = 0; bx < blocksX; bx += 1) {
+      let total = 0;
+      let samples = 0;
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const x = bx + dx;
+          const y = by + dy;
+          if (x < 0 || y < 0 || x >= blocksX || y >= blocksY) continue;
+          total += raw[y * blocksX + x] ?? 0;
+          samples += 1;
+        }
+      }
+      smoothed[by * blocksX + bx] = Math.floor(total / samples);
+    }
+  }
+
+  const order: number[] = [];
+  for (let cell = 0; cell < cellCount; cell += 1) order.push(cell);
+  const cellValue = (cell: number): Int => {
+    const x = cell % width;
+    const y = Math.floor(cell / width);
+    const bx = Math.floor(x / blockSize);
+    const by = Math.floor(y / blockSize);
+    return smoothed[by * blocksX + bx] ?? 0;
+  };
+  order.sort((a, b) => {
+    const difference = cellValue(b) - cellValue(a);
+    return difference === 0 ? (rank[a] ?? 0) - (rank[b] ?? 0) : difference;
+  });
+  return order.slice(0, blockedCount).sort((a, b) => a - b);
 }
 
 /**

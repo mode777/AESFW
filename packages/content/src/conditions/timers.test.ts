@@ -91,6 +91,7 @@ const stepTimers = (
       sustainedTimerUpdater: () => undefined,
       unlockSystem: null,
       establishmentSystem: null,
+      entityMaterializer: null,
     };
     updater(context);
   }
@@ -220,6 +221,7 @@ describe('[TDS-14.3][GDD-19] owner-scoped sustained timers', () => {
       sustainedTimerUpdater: () => undefined,
       unlockSystem: null,
       establishmentSystem: null,
+      entityMaterializer: null,
     });
     updater(context());
     updater(context());

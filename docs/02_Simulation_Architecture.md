@@ -317,6 +317,8 @@ No authoritative system may use frame delta or wall-clock time.
 
 System order is framework-owned and not content-configurable.
 
+Phase 01 and phase 03 also materialize an entity the player creates from its definition, so a constructed entity gains the same components as an authored one (05 §26 A15). A placement whose definition declares no `construction` is materialized in phase 01; a constructed one is materialized when it becomes `active`.
+
 Phase 07 evaluates resource sources (slot binding, working area, location-property scaling, conditions, capability allocation, connectivity) and producers alike. Phase 08 computes need demand from the population counts of the previous tick. Phase 09 collects every throughput request of the tick before allocation: planned source output, planned producer input and output movement, planned need deliveries from phase 08, and planned handling of transport units already docked at the start of the tick. Phase 10 allocates each location's throughput pool to all these requesters proportionally, using integer division with deterministic remainder distribution by entity ID; phases 11–20 then execute within the granted throughput.
 
 Phase 27 pauses entities in the configured order until the stop condition holds and resumes them in reverse order when the resume condition holds; a paused entity is excluded from phases 07–13 and from maintenance in the following tick.

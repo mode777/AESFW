@@ -12,12 +12,12 @@
 
 ## 3. Balance corpus (reference/content/test/balance)
 
-- [ ] 3.1 Author the opening strategy (first S1 chain, second-tier economy) as a player-command scenario; verify it runs to its horizon with no findings [REF-8]. **Blocked:** the seeded `buildableMask` (05 §…, GDD 6.1) is uniform white noise, so at the R3 ratio range (400–700 permille) most seeds contain no free 3×3 square at all and none of the 24 probed seeds admit the 15 residences the plan needs. The packer and strategy harness are in place (`strategies.ts`), but the content cannot be placed on the generated terrain. See `design.md` "Open blocker".
+- [ ] 3.1 Author the opening strategy (first S1 chain, second-tier economy) as a player-command scenario; verify it runs to its horizon with no findings [REF-8]. **Blocked by open defect 4** (authored initial entities have no transform, so the start chain cannot connect) and **defect 5** (INV-05 fires on decline). The packer, the strategy harness, and a full opening build plan exist (`strategies.ts`); the plan cannot be validated until the start state runs.
 - [ ] 3.2 Author the overexpansion strategy (deficit entry, then expansion stop) and the pyramid variant (> 60 % advancement); verify their metrics rows via [REF-8] tests. Blocked by 3.1.
 - [ ] 3.3 Implement the balancing-target checks as reference tests (advancement window 900–1500, pyramid starvation, trade share < 20 % over the last 600 ticks, recovery ≤ 1800 ticks, start-state no-deadlock); verify each [REF-8] scenario. Blocked by 3.1.
-- [ ] 3.4 Retune `ref.tier` start stock or rates where a target fails, or record the deviation in this change's design; verify the full corpus re-runs green. Blocked by 3.1.
+- [ ] 3.4 Retune `ref.tier` start stock or rates where a target fails, or record the deviation in this change's design; verify the full corpus re-runs green. Blocked by 3.1; the measured direction (income ×10, higher C1 stock) is recorded in the design as provisional and not committed.
 
 ## 4. Documentation and verification
 
-- [ ] 4.1 Document the "equilibrium = final 600 ticks" definition and any deviations in this design; update 08 only if risks or dependencies moved.
-- [ ] 4.2 Run `pnpm verify` and `pnpm trace`; all green, and no new untraced requirement IDs in the claimed sections.
+- [ ] 4.1 Document the "equilibrium = final 600 ticks" definition and any deviations in this design; update 08 only if risks or dependencies moved. Partly done: the design records the corpus findings; the equilibrium definition is unchanged.
+- [ ] 4.2 Run `pnpm verify` and `pnpm trace`; all green, and no new untraced requirement IDs in the claimed sections. Green as of this commit; re-run after 3.1–3.4.

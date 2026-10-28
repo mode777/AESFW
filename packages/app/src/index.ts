@@ -41,3 +41,4 @@ export {
 export { save, load, FRAMEWORK_VERSION, HASH_ALGORITHM } from './persistence/index.js';
 export type { SaveDocument, SaveHeader, SaveSessionState } from './persistence/index.js';
 export { instantiateContentEntities, instantiateWorldContent } from './content/instantiate.js';
+export { buildEntityMaterializer } from './content/materializer.js';

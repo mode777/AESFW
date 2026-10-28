@@ -35,6 +35,7 @@ import {
   placementSpecOf,
 } from './definition.js';
 import { evaluatePlacement } from './query.js';
+import type { EntityMaterializer } from '../../pipeline/types.js';
 import type { PlacementConditionEvaluator } from './types.js';
 
 /** The outcome of applying a `PlaceEntityPlan` command. */
@@ -61,6 +62,7 @@ export function applyPlaceEntityPlan(
   registry: Registry,
   command: Extract<Command, { type: 'PlaceEntityPlan' }>,
   evaluateCondition: PlacementConditionEvaluator,
+  materializer: EntityMaterializer | null = null,
 ): PlaceEntityOutcome {
   if (!isKnownEntityDefinition(registry, command.definition)) {
     return unknownDefinition(command.definition);
@@ -119,9 +121,15 @@ export function applyPlaceEntityPlan(
   );
   if (plan === null) {
     setLifecycle(world, entity, 'active');
+    // An entity that needs no construction is operational now, so its
+    // behavioural components are materialized immediately (amendment A15).
+    materializer?.materialize(world, entity, command.definition, command.location, owner);
   } else {
     createConstructionPlan(world, entity, plan);
   }
+  // A new entity can act as a connectivity provider or requirement, so the
+  // derived caches are stale until phase 04 rebuilds them (TDS-8.4, INV-20).
+  world.caches.dirty = true;
   return { ok: true, entity };
 }
 

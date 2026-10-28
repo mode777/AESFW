@@ -54,26 +54,28 @@ Metrics assembly iterates residences, tiers, locations, and exchanges in ascendi
 
 ## Open blocker (discovered while authoring the corpus)
 
-The strategy corpus cannot be completed against the R3 content as it stands: **the seeded buildable mask is unusable for the R3 footprints.**
+The strategy corpus cannot run end to end against the R3 content. Authoring the opening exposed a chain of real framework defects; the first three are fixed in this change, the last two are open and block tasks 3.1–3.4.
 
-`buildableMask` (packages/core/src/sim/spatial.ts) shuffles all `width × height` cells with the `spatial.buildable.<entity>` stream and blocks the first `(1 − ratio)` of them. That is uniform white noise, so the chance that a given cell is free is `ratio`, and a `w × h` footprint needs `ratio^(w·h)` of the grid. At the specified 400–700 permille range a 3×3 residence needs 4 %–0.4 % of positions, and a 4×4 hub 1.5 %–0.02 %.
+### Fixed in this change
 
-A probe over 24 seeds (40×40, R3 content) found:
+1. **The seeded buildable mask was unusable.** `buildableMask` shuffled all cells and blocked the first `(1 − ratio)`, i.e. an uncorrelated per-cell coin flip. A `w × h` footprint then needs `ratio^(w·h)` of positions: at 400–700 permille a 3×3 residence fits on 4 %–0.4 % of positions and a 4×4 hub on 1.5 %–0.02 %. A probe over 24 seeds found no seed that admits the 15 residences the opening needs. The generator now draws a coarse seeded value field, smooths it over 3×3 blocks, and blocks the highest-value cells (ratio still honoured exactly, ties broken by the seeded permutation). All 24 probed seeds now admit ≥ 10×10 and hundreds of free 3×3/4×4 positions, and a core regression test pins that. No golden contained a grid location, so no hash changed.
+2. **Constructed entities were inert shells.** Phase 01 allocated an entity and wrote definition, owner, placement, enabled, and lifecycle, but never the producer, residence, source, service, connectivity, cargo, or maintenance components — only authored entities got those through `@aesfw/app`. A player-built refiner could never produce. This is now the `EntityMaterializer` seam (05 §26 A15): phase 01 materializes a placement that needs no construction, phase 03 materializes a constructed entity when it becomes `active`. `@aesfw/app` implements it with the same component writer as authored entities, and an app test covers a placed refiner gaining its producer component on completion.
+3. **Placement left the derived caches stale.** `applyPlaceEntityPlan` did not mark `world.caches.dirty`, so a new connectivity provider or requirement never entered the connectivity groups (phase 04 only rebuilds a dirty cache). Every placed networked building stayed `missing_inventory_access` forever. Placement now dirties the caches.
 
-| Buildable permille | Seeds | Largest free square |
-|---|---|---|
-| 402–496 | 11 | 2–3 |
-| 522–584 | 6 | 3 |
-| 610–697 | 7 | 3–5 |
+### Open
 
-None of the 24 seeds admits the 15 S1 residences (3×3 each) the opening needs, and the two seeds at 688/636 permille admit a single 4×4 at best. Placement is therefore impossible regardless of balance.
+4. **Authored initial entities have no spatial transform.** `initial_entities` in world content carries only a definition and a location, and `instantiateDefinition` writes no `transform`/`footprint`. Connectivity is transform-based (`collectNodes` only sees entities with a transform), so every authored entity that carries `connectivity.requires` is permanently disconnected and blocked with `missing_inventory_access`. In the R3 start state that is the hub, both area extractors, the slot extractor, and the refiners: the whole start chain is dead, which is why population stalls at the 20 beds of the two residences and C1 stock never refills. This needs a decision:
+   - **Option A (recommended).** Add an optional `position`/`orientation` to `worlds[].owners[].initial_entities` and place authored entities through the grid policy, exactly like a command. Content then authors the start layout (which 11.4b/11.4c also want for the client) and the schema change is additive.
+   - **Option B.** Auto-place authored entities at the first free cell, row-major, at instantiation. No schema change, but content cannot author the start layout and the client must not depend on it.
+   Neither option is in 11.2's stated scope; both are framework changes with content-side effects.
+5. **Capability grants exceed supply during decline.** With population falling (emigration after a C1 stock-out) the tick invariant INV-05 fires from the decline onward: `capability pool location:1:0 grants 80 above supply 78`, then a chain of off-by-larger values. Phase 05 rebuilds supply from the *previous* tick's population, phase 06 allocates against it, and phase 23 changes the population later in the same tick, so the grant lags the supply by one tick. The invariant should compare against the supply the allocation used, or the allocation should follow the population update. This is a real engine defect, independent of content, and it must be fixed before SCN-14 (11.3) can run with `invariants: true`.
 
-GDD 6.1 intends 40–70 % buildable *terrain*, i.e. contiguous buildable areas with obstacles, not an uncorrelated per-cell coin flip. Fixing the generator (correlated/clustered mask) is a framework change with hash consequences, and this change's Impact section excludes `core`. Two directions:
+### Balance findings (provisional, unvalidated)
 
-1. **Framework fix (recommended).** Make `buildableMask` produce clustered blocked regions (e.g. seeded blobs/corridors whose area matches the ratio), bump the algorithm version tag, and regenerate the goldens of the grid scenarios with an explained hash change (06 §9.4). This makes every seed playable and keeps "seeded generation" honest. It needs an amendment to this change (Impact: `core`) or its own small change row, because it is a versioned algorithm.
-2. **Content workaround.** Author `spatial_parameters.blocked_cells` for the six R3 locations (the loader supports it), leaving the ratio path for fixtures. No core or hash change, but the R3 world stops using seeded masks, which weakens 8.1 and makes a 1,600-cell table the source of terrain.
+With the fixes above but before a playable start state exists, the numbers show two further problems that task 3.4 must address:
 
-Whichever is chosen, the corpus tasks (3.1–3.4) stay blocked until the terrain admits the archetype footprints; everything upstream of placement (expectations, metrics, CSV) is complete and tested.
+- **Income is an order of magnitude too low.** At 20 S1 population the owner nets about `−9,300` base units per tick: 20 × 10 = 200 revenue against roughly 9,500 of `while_enabled` maintenance (hub 20/min, transport 25/min, two area extractors 12/min, two refiners 30/min, slot extractor 8/min). The 30,000,000 credit start stock only delays insolvency to about tick 3,200. Appendix B.4's `0.10` per population per minute cannot pay B.3's maintenance; about `1.0` per minute (100 base units per tick) makes 150 S1 break even against the chain that supports them. Appendix B is non-normative example content, so this is a legitimate retune, but it must be measured against the targets before it is committed — the numbers were reverted to 11.1's values rather than shipped unvalidated.
+- **The C1 start stock and the unlock order do not close.** The only C1 producer is the combiner, unlock-gated at 150 S1; reaching 150 S1 needs 13 more residences, which need 78 BM1 against a 40-unit start stock and a BM1 chain that itself needs AK1 from those residences. On top of that, 150 S1 consume 60,000 base units of C1 in about 750 ticks, exactly the start stock, so the population starves before the first advancement can complete. Once the start state is playable these numbers need a measured retune (higher C1 stock, and either an earlier combiner unlock or a cheaper first residence).
 
 ## Migration Plan
 

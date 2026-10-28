@@ -19,8 +19,28 @@ export const phase03ResolveLifecycleAndConstruction: SystemDescriptor = {
     'producer',
     'inventory',
   ],
-  writes: ['lifecycle', 'constructionProgress', 'inventory', 'ledger'],
+  writes: [
+    'lifecycle',
+    'definition',
+    'constructionProgress',
+    'inventory',
+    'ledger',
+    // Materializing a completed entity writes its behavioural components
+    // (amendment A15).
+    'resourceSource',
+    'producer',
+    'capabilityConsumer',
+    'residence',
+    'populationGroup',
+    'growth',
+    'modifierSet',
+    'connectivityNode',
+    'maintenance',
+    'cargo',
+    'movement',
+    'handling',
+  ],
   run: (ctx) => {
-    resolveConstruction(ctx.world, ctx.tx, ctx.events, ctx.tick);
+    resolveConstruction(ctx.world, ctx.tx, ctx.events, ctx.tick, ctx.entityMaterializer);
   },
 };

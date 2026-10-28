@@ -28,6 +28,33 @@ const entityData = {
   },
 };
 
+const REFINER = 'test.entity.refiner';
+
+const refinerData = {
+  components: {
+    placement: { footprint: [1, 1] },
+    construction: {
+      duration_ticks: 2,
+      costs: [{ resource: 'test.resource.build', quantity: 1000 }],
+      commit_policy: 'completion',
+    },
+    producer: {
+      recipes: ['test.recipe.a'],
+      process_slots: 1,
+      input_inventory: 'location.shared',
+      output_inventory: 'location.shared',
+    },
+  },
+};
+
+const recipeData = {
+  id: 'test.recipe.a',
+  mode: 'batch',
+  duration_ticks: 5,
+  inputs: [{ resource: 'test.resource.build', quantity: 1000 }],
+  outputs: [{ resource: 'test.resource.out', quantity: 1000 }],
+};
+
 const conditionData = {
   id: CONDITION,
   expression: {
@@ -43,6 +70,11 @@ const definitions = new Map<string, CompiledDefinition>([
   [
     CONDITION,
     { id: CONDITION, handle: ids.definitionHandle(7), type: 'condition', data: conditionData },
+  ],
+  [REFINER, { id: REFINER, handle: ids.definitionHandle(11), type: 'entity', data: refinerData }],
+  [
+    'test.recipe.a',
+    { id: 'test.recipe.a', handle: ids.definitionHandle(30), type: 'recipe', data: recipeData },
   ],
   [
     'test.resource.build',
@@ -229,6 +261,37 @@ describe('[ARCH-7.3] placement through the command gateway', () => {
       y: 1,
     });
     expect(advanced.world.stores.get<Producer>('producer').get(ids.entityId(100))).toBeUndefined();
+  });
+
+  it('[GDD-18.1][A15] a constructed entity is materialized when it becomes operational', () => {
+    const session = makeSession();
+    session.world.stores.get<Inventory>('inventory').set(ids.entityId(2), {
+      owner: ids.ownerHandle(0),
+      policy: 'framework.inventory.shared_location',
+      revision: 0,
+      entries: [{ resource: ids.definitionHandle(20), quantity: 1000 }],
+      capacity: { total: null, perResource: null },
+      acceptance: { accepts: [] },
+    });
+    const submitted = submitCommand(
+      session,
+      envelope({
+        payload: {
+          definition_id: REFINER,
+          location_id: 1,
+          logical_transform: { position: [1, 1], orientation: 0 },
+        },
+      }),
+    );
+    expect(submitted.result.status).toBe('accepted');
+    const { session: built } = advance(submitted.session, 1);
+    // The refiner needs construction, so it is still a shell at placement.
+    expect(built.world.stores.get<Producer>('producer').get(ids.entityId(100))).toBeUndefined();
+    const { session: completed } = advance(built, 3);
+    const producer = completed.world.stores.get<Producer>('producer').get(ids.entityId(100));
+    expect(producer).toBeDefined();
+    expect(producer?.recipes).toHaveLength(1);
+    expect(producer?.location).toBe(ids.entityId(1));
   });
 
   it('[ARCH-7.3] an illegal placement is rejected at the gateway', () => {

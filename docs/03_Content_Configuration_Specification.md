@@ -355,6 +355,8 @@ recipe:
 
 ### 6.8 Entity definition
 
+Alignment note (05 §26 A15): every component of an entity definition is materialized both for authored world entities and for entities the player creates, at placement when the definition declares no `construction`, otherwise when construction completes.
+
 ```yaml
 entity_definition:
   id: example.entity.producer_c
