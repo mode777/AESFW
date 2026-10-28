@@ -372,6 +372,29 @@ export function createLocationGrid(
         }),
       ),
       svg('g', { class: 'grid-ghost' }, ...ghostNodes),
+      svg(
+        'g',
+        { class: 'grid-markers', 'data-testid': 'grid-markers' },
+        ...shapes
+          .filter((shape) => shape.state.glyph !== undefined)
+          .map((shape) =>
+            svg(
+              'g',
+              {
+                class: 'status-marker',
+                'data-testid': `status-marker-${shape.entityId}`,
+                transform: `translate(${shape.x + shape.width / 2} ${shape.y - 0.35})`,
+              },
+              svg('circle', { r: 0.45, class: 'status-marker-bg' }),
+              svg('text', {
+                class: 'status-marker-glyph',
+                'text-anchor': 'middle',
+                'dominant-baseline': 'central',
+                text: shape.state.glyph,
+              }),
+            ),
+          ),
+      ),
     );
     status.textContent = `${model.width}×${model.height} · ${shapes.length}`;
   };

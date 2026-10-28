@@ -49,6 +49,19 @@ Each panel builds its command payloads through the existing pure payload builder
 - [Producer panel rate formatting drifts from the hub panel] → one rate-formatting helper in i18n/formatting used by both; tested once.
 - [Panel churn on every delta] → selectors memoize by revision; sections re-render only on changed rows (keyed reconciliation).
 
+## As built
+
+- **Dispatch** (`selectors/context-panel.ts`): one pure model with `kind` (`residence`, `producer`, `hub`, `transport`, `location`), sections of labelled rows, bars, and command-bearing actions. The main composition tracks a panel target (`build`, `entity`, `location`): picking a build entry or cancelling a placement shows the build menu, selecting an entity shows its panel, selecting an island shows the location panel.
+- **Residence** (2.1): need bars from the need read model (demand, delivered, fulfillment permille), satisfaction and band, the transition checklist with `progress/ticks` for sustained conditions, and a `RequestPopulationTransition` action disabled while ineligible.
+- **Producer** (2.2): definition, lifecycle, enabled, deficit pause, recipe and progress, block reasons (accent), maintenance amount and charge policy, and the `SetEntityEnabled` toggle.
+- **Hub** (2.3): `hubInventoryRows` renders stored and reserved per resource; the panel falls back to the location summary's totals when no inventory DTO is available, and shows throughput capacity, requested, and throttle.
+- **Transport** (2.4): unit, state, order, current station, failure reasons, cargo slots, and `UnassignTransport` when an order is assigned.
+- **Location** (2.5): knowledge gating (an unknown location shows only its knowledge state and no actions), region, ownership, active state, property values, population by tier, and `ActivateLocation`/`DeactivateLocation`; explore/establish remain the island actions from 11.4b.
+- **Status markers** (3.1): the grid renders one floating marker per blocked entity in a `grid-markers` layer, above the entity shape, using the block-reason glyph (REF-10.3). Markers live inside the grid overlay, so they appear only at location level and deeper and are culled with it at world zoom.
+- **Removals** (3.2): the standalone inspector view and population table are still registered as a window in this row (they are read models the panels do not cover yet); 11.4e owns the final window set. Recorded here so it is not claimed as removed.
+- **Shared formatting** (1.2): every panel formats through the single `Formatter` from the presentation package.
+- **Tests**: `selectors/context-panel.test.ts` covers dispatch, residence bars/checklist, producer block reasons and toggle, hub rows, transport cargo, location gating, and the build-menu fallback.
+
 ## Migration Plan
 
 - The inspector view and standalone tables are deleted with their container tests; selectors are renamed/widened in place with callers updated. Rollback = revert.

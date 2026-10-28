@@ -312,3 +312,67 @@ body {
   font-size: var(--size-1);
   color: var(--accent);
 }
+
+/* --- Context panel (REF-12.3) --------------------------------------------- */
+
+.context-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.context-title {
+  margin: 0;
+  font-size: var(--size-3);
+}
+.context-section-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-1);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+.context-rows {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px var(--space-2);
+  margin: 0;
+}
+.context-rows dt {
+  color: var(--ink-2);
+}
+.context-rows dd {
+  margin: 0;
+  font-family: var(--font-num);
+}
+.context-row-attention {
+  color: var(--accent);
+}
+.context-bar {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: var(--space-1);
+  align-items: center;
+}
+.context-bar-track {
+  height: 6px;
+  background: var(--rule);
+}
+.context-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--role-consumer);
+}
+.context-bar-detail {
+  font-family: var(--font-num);
+  font-size: var(--size-1);
+  color: var(--ink-2);
+}
+.status-marker-bg {
+  fill: var(--paper);
+  stroke: var(--accent);
+  stroke-width: 0.08;
+}
+.status-marker-glyph {
+  font-size: 0.5px;
+  fill: var(--accent);
+}

@@ -52,6 +52,8 @@ import {
 import { zoomLevel } from './selectors/camera.js';
 import { worldLayout } from './selectors/layout.js';
 import { buildMenu } from './selectors/build-menu.js';
+import { contextPanel } from './selectors/context-panel.js';
+import type { PanelAction } from './selectors/context-panel.js';
 import { dragPath } from './selectors/drag.js';
 import { tradeDraft, exchangeEntities, exchangeView } from './selectors/exchange.js';
 import { createWorkerClient } from './session/client.js';
@@ -66,6 +68,7 @@ import {
 import type { PlacementCursor } from './store/view-state.js';
 import { coverageOverlay } from './selectors/progression.js';
 import { createBuildMenuView } from './views/hud/build-menu.js';
+import { createContextPanelView } from './views/hud/context-panel.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
 import { createEconomyView } from './views/economy.js';
 import { createExchangeView } from './views/exchange.js';
@@ -336,6 +339,7 @@ export function mount(root: HTMLElement): void {
   };
 
   const startPlacement = (definitionId: string): void => {
+    panelTarget = 'build';
     const bounds = gridBounds();
     const current = view.placement();
     const position: readonly [number, number] =
@@ -359,6 +363,7 @@ export function mount(root: HTMLElement): void {
   };
 
   const cancelPlacement = (): void => {
+    panelTarget = 'build';
     const current = view.placement();
     view.mode.set('inspect');
     view.placement.set({ ...current, definitionId: null, result: null });
@@ -377,6 +382,17 @@ export function mount(root: HTMLElement): void {
       payload,
     });
   };
+
+  let panelTarget: 'build' | 'entity' | 'location' = 'location';
+  let transportDetail: TransportDetailDto | null = null;
+  const contextView = createContextPanelView((action: PanelAction) => {
+    client.command({
+      command_id: `client-panel-${action.id}-${Date.now()}`,
+      actor_id: ACTOR_ID,
+      type: action.command,
+      payload: action.payload as never,
+    });
+  });
 
   const buildMenuView = createBuildMenuView(formatter, (definitionId) =>
     startPlacement(definitionId),
@@ -413,6 +429,7 @@ export function mount(root: HTMLElement): void {
     camera: () => view.camera(),
     selected: selectedLocation,
     onSelectIsland: (locationId) => {
+      panelTarget = 'location';
       view.location.set(locationId);
       const projection = mirror.projection();
       const location = projection?.locations.find((entry) => entry.entity_id === locationId);
@@ -497,6 +514,7 @@ export function mount(root: HTMLElement): void {
   const summaries = new Map<number, LocationSummaryDto>();
 
   const select = (entity: number): void => {
+    panelTarget = 'entity';
     view.selection.set(entity);
     client.query(ACTOR_ID, { kind: 'entity_detail', entity_id: entity });
     client.query(ACTOR_ID, { kind: 'need_breakdown', entity_id: entity });
@@ -574,6 +592,38 @@ export function mount(root: HTMLElement): void {
     const locationId = view.location();
     const summary = locationId === null ? undefined : summaries.get(locationId);
     buildMenuView.show(buildMenu(definitions, i18n, summary?.inventory_totals ?? {}), selectedId);
+  };
+
+  /** Chooses and renders the context panel (REF-12.3). */
+  const refreshContext = (): void => {
+    const locationId = view.location();
+    const summary = locationId === null ? null : (summaries.get(locationId) ?? null);
+    const location =
+      locationId === null
+        ? null
+        : ((mirror.projection()?.locations ?? []).find((entry) => entry.entity_id === locationId) ??
+          null);
+    const archetype = (definitionId: string): string | null => archetypes.get(definitionId) ?? null;
+    const panel =
+      panelTarget === 'build'
+        ? null
+        : contextPanel({
+            selection: panelTarget === 'entity' ? view.selection() : null,
+            detail: currentDetail,
+            needs: currentBreakdown,
+            summary,
+            location: panelTarget === 'location' ? location : null,
+            transport: transportDetail,
+            projection: mirror.projection(),
+            formatter,
+            archetypeOf: archetype,
+            ownerId: ACTOR_ID,
+          });
+    contextView.show(panel);
+    const build = panel === null && panelTarget === 'build';
+    buildMenuView.el.hidden = !build;
+    islandActions.hidden = panelTarget !== 'location' || location === null;
+    if (build) showBuildMenu(view.placement().definitionId);
   };
 
   /**
@@ -695,6 +745,7 @@ export function mount(root: HTMLElement): void {
         if (result.entity_detail !== undefined) {
           currentDetail = result.entity_detail;
           inspector.show(currentDetail, currentBreakdown);
+          refreshContext();
           if (view.windows().includes('population')) {
             progression.show(
               mirror.projection()?.locations ?? [],
@@ -707,10 +758,12 @@ export function mount(root: HTMLElement): void {
         if (result.need_breakdown !== undefined) {
           currentBreakdown = result.need_breakdown;
           inspector.show(currentDetail, currentBreakdown);
+          refreshContext();
         }
         if (result.location_summary !== undefined && result.location_summary !== null) {
           summaries.set(result.location_summary.entity_id, result.location_summary);
           population.show([...summaries.values()]);
+          refreshContext();
           if (view.windows().includes('population')) {
             progression.show(
               mirror.projection()?.locations ?? [],
@@ -750,6 +803,8 @@ export function mount(root: HTMLElement): void {
         }
         if (result.transport_detail !== undefined) {
           transportDetailModel = result.transport_detail;
+          transportDetail = result.transport_detail;
+          refreshContext();
           refreshLogistics();
         }
         if (result.exchange_quotes !== undefined && result.exchange_quotes !== null) {
@@ -796,6 +851,7 @@ export function mount(root: HTMLElement): void {
   // the full panel set).
   frame.regions.contextPanel.append(
     islandActions,
+    contextView.el,
     buildMenuView.el,
     h('div', { class: 'hud-lists' }, entityList, locationList),
   );
@@ -847,11 +903,8 @@ export function mount(root: HTMLElement): void {
   });
   view.pins.subscribe(refreshHud);
   view.selection.subscribe(() => {
-    const selected = view.selection();
-    islandActions.hidden = selected !== null;
-    buildMenuView.el.hidden = selected !== null;
-    if (selected !== null) islandActions.replaceChildren();
-    else renderIslandActions();
+    renderIslandActions();
+    refreshContext();
   });
   refreshHud();
   refreshView();
