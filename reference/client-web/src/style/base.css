@@ -376,3 +376,73 @@ body {
   font-size: 0.5px;
   fill: var(--accent);
 }
+
+/* --- News rail and milestones (REF-12.6) ---------------------------------- */
+
+.news-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-2);
+}
+.news-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow: auto;
+}
+.news-entry {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: var(--space-1);
+  cursor: pointer;
+  font-size: var(--size-1);
+}
+.news-entry:hover {
+  background: var(--rule);
+}
+.news-warning .news-text {
+  color: var(--accent);
+}
+.news-tick {
+  font-family: var(--font-num);
+  color: var(--ink-3);
+}
+.milestone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--size-1);
+}
+.milestone-complete {
+  color: var(--ink-2);
+}
+.milestone-mark {
+  margin-right: var(--space-1);
+}
+.log-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow: auto;
+  font-size: var(--size-1);
+}
+.log-line {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+.log-tick {
+  font-family: var(--font-num);
+  color: var(--ink-3);
+}
+.statistics-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 60px;
+  font-family: var(--font-num);
+  font-size: var(--size-1);
+}

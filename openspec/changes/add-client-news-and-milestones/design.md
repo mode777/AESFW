@@ -47,6 +47,14 @@ See proposal.md "Why". The redesign (D8) settled milestones as client data, not 
 - [Milestone thresholds drift from balance changes] → thresholds live only in `milestones.ts`; SCN-14/strategies (11.2/11.3) pin the advancement window, so drift surfaces there.
 - [Per-save-slot keying across slots] → the host exposes the slot id; if absent in v1 sessions, fall back to a single list (recorded deviation, still discardable).
 
+## As built
+
+- **News rail** (1.1, 1.2): `newsEntries` lists newsworthy families newest first, capped at `NEWS_LIMIT` (20), with one pending warning per blocked entity. Block onset is deduped through a carry map (`newsCarry`) so a persistent block reports once and re-arms after it clears. Clicking an entry calls `focusSubject` and selects the entity and/or location, moving the camera.
+- **Hints** (2.1–2.3): `hintForReason` maps block reasons and command-rejection codes to `hint.*` keys with the raw code as fallback, `hintsForEntity` orders them by the host's block order and appends the deficit pause. The context panel gains a Hints section for the selected entity; command rejections surface through the same mapping. The `hint.*` keys live in `ref.tier.presentation` and are regenerated into the client catalogue; an empty catalogue still falls back to the keys.
+- **Milestones** (3.1, 3.2): `DEFAULT_MILESTONES` are the five opening-script predicates (residence, producer, 50 inhabitants, S1→S2 advancement, transport route) over projected facts and location summaries. Completion is persisted per save slot under `aesfw-ref.client.v2:milestones:<slot>`, with `slot.default` as the fallback key (D3/D5). A blocked or missing storage leaves the tracker in-memory and never throws; discarding it never affects the session (PIC-16).
+- **Threshold source (D3)**: the 50-inhabitant milestone is a client-local product threshold (REF-12.6), not a simulation rule; it reads the location summaries only.
+- **Tests**: `selectors/news.test.ts` covers rail bounding, newsworthy filtering, block dedupe/re-arm, warning marks, hint resolution and order, rejection hints, every milestone predicate, and per-slot persistence including a failing storage.
+
 ## Migration Plan
 
 - Additive views and selectors; storage grows one namespaced field. Rollback = revert.

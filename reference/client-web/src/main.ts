@@ -52,6 +52,14 @@ import {
 import { zoomLevel } from './selectors/camera.js';
 import { worldLayout } from './selectors/layout.js';
 import { logLines, logTypes } from './selectors/log.js';
+import { focusSubject, newsCarry, newsEntries } from './selectors/news.js';
+import { hintsForEntity } from './selectors/hints.js';
+import {
+  milestones,
+  newlyComplete,
+  readMilestones,
+  writeMilestones,
+} from './selectors/milestones.js';
 import { statisticsView } from './selectors/statistics.js';
 import { buildMenu } from './selectors/build-menu.js';
 import { contextPanel } from './selectors/context-panel.js';
@@ -72,6 +80,8 @@ import { coverageOverlay } from './selectors/progression.js';
 import { createBuildMenuView } from './views/hud/build-menu.js';
 import { createContextPanelView } from './views/hud/context-panel.js';
 import { createLogView } from './views/hud/log-window.js';
+import { createMilestoneTracker } from './views/hud/milestones.js';
+import { createNewsRail } from './views/hud/news-rail.js';
 import { createStatisticsView } from './views/hud/statistics.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
 import { createEconomyView } from './views/economy.js';
@@ -85,7 +95,6 @@ import { createActionBar } from './views/hud/action-bar.js';
 import type { WindowKind } from './views/hud/action-bar.js';
 import { createHudFrame } from './views/hud/frame.js';
 import { createLocationBannerView } from './views/hud/location-banner.js';
-import { mountNewsPlaceholder } from './views/hud/placeholders.js';
 import { createResourceBarView } from './views/hud/resource-bar.js';
 import { createWindowHost } from './views/hud/window-host.js';
 import { createWorldCanvas } from './views/world/canvas.js';
@@ -648,7 +657,23 @@ export function mount(root: HTMLElement): void {
             archetypeOf: archetype,
             ownerId: ACTOR_ID,
           });
-    contextView.show(panel);
+    if (panel !== null && currentDetail !== null) {
+      const hints = hintsForEntity(currentDetail, i18n).map((hint) => ({
+        label: 'Hint',
+        value: hint.text,
+        attention: true,
+      }));
+      if (hints.length > 0) {
+        contextView.show({
+          ...panel,
+          sections: [...panel.sections, { title: 'Hints', rows: hints }],
+        });
+      } else {
+        contextView.show(panel);
+      }
+    } else {
+      contextView.show(panel);
+    }
     const build = panel === null && panelTarget === 'build';
     buildMenuView.el.hidden = !build;
     islandActions.hidden = panelTarget !== 'location' || location === null;
@@ -851,8 +876,23 @@ export function mount(root: HTMLElement): void {
   });
   const bannerView = createLocationBannerView();
   const actionBar = createActionBar(client, mirror, view, toggleWindow);
+  const newsRail = createNewsRail((entry) => {
+    const focus = focusSubject(entry, mirror.projection());
+    if (focus.entity !== null) {
+      panelTarget = 'entity';
+      view.selection.set(focus.entity);
+      client.query(ACTOR_ID, { kind: 'entity_detail', entity_id: focus.entity });
+    }
+    if (focus.location !== null) {
+      view.location.set(focus.location);
+      refreshHud();
+    }
+  });
+  const milestoneTracker = createMilestoneTracker();
+  let milestoneCarry: readonly string[] = readMilestones('auto');
+  let newsCarryIds: Readonly<Record<string, number>> = {};
   frame.regions.minimap.append(minimapView.el);
-  mountNewsPlaceholder(frame.regions.news);
+  frame.regions.news.append(newsRail.el, milestoneTracker.el);
   frame.regions.resourceBar.append(resourceBarView.el);
   frame.regions.banner.append(bannerView.el);
   frame.regions.actionBar.append(actionBar.el);
@@ -908,7 +948,18 @@ export function mount(root: HTMLElement): void {
     canvas.invalidate();
     minimapView.update();
   };
-  mirror.projection.subscribe(refreshHud);
+  mirror.projection.subscribe(() => {
+    newsCarryIds = { ...newsCarryIds, ...newsCarry(mirror.projection()) };
+    newsRail.show(newsEntries(mirror.events(), mirror.projection(), newsCarryIds));
+    const facts = { projection: mirror.projection(), summaries: [...summaries.values()] };
+    const done = newlyComplete(facts, milestoneCarry);
+    if (done.length > 0) {
+      milestoneCarry = [...milestoneCarry, ...done];
+      writeMilestones('auto', milestoneCarry);
+    }
+    milestoneTracker.show(milestones(facts, milestoneCarry));
+    refreshHud();
+  });
   view.location.subscribe(() => {
     refreshHud();
     persist();
