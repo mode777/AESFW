@@ -36,7 +36,12 @@ describe('[REF-13.1][REF-13.2] placement mode view state', () => {
   });
 
   it('[REF-13.1][REF-13.2] an unrelated key leaves the mode unchanged', () => {
-    expect(nextMode('place', 'x')).toBe('place');
+    expect(nextMode('place', 'z')).toBe('place');
+  });
+
+  it('[REF-13.1] X enters demolish mode and Escape returns to inspect', () => {
+    expect(nextMode('inspect', 'x')).toBe('demolish');
+    expect(nextMode('demolish', 'Escape')).toBe('inspect');
   });
 
   it('[REF-13.1][REF-13.2] the placement cursor is client-local state', () => {

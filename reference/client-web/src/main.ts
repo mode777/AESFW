@@ -51,6 +51,8 @@ import {
 } from './selectors/camera.js';
 import { zoomLevel } from './selectors/camera.js';
 import { worldLayout } from './selectors/layout.js';
+import { buildMenu } from './selectors/build-menu.js';
+import { dragPath } from './selectors/drag.js';
 import { tradeDraft, exchangeEntities, exchangeView } from './selectors/exchange.js';
 import { createWorkerClient } from './session/client.js';
 import { createMirror } from './store/mirror.js';
@@ -63,7 +65,7 @@ import {
 } from './store/view-state.js';
 import type { PlacementCursor } from './store/view-state.js';
 import { coverageOverlay } from './selectors/progression.js';
-import { createBuildPalette } from './views/build-palette.js';
+import { createBuildMenuView } from './views/hud/build-menu.js';
 import { createDebugOverlay } from './views/debug-overlay.js';
 import { createEconomyView } from './views/economy.js';
 import { createExchangeView } from './views/exchange.js';
@@ -347,7 +349,7 @@ export function mount(root: HTMLElement): void {
       orientation: current.orientation,
       result: null,
     });
-    paletteView.show(palette, definitionId);
+    showBuildMenu(definitionId);
     schedulePlacementQuery();
   };
 
@@ -360,7 +362,7 @@ export function mount(root: HTMLElement): void {
     const current = view.placement();
     view.mode.set('inspect');
     view.placement.set({ ...current, definitionId: null, result: null });
-    paletteView.show(palette, null);
+    showBuildMenu(null);
   };
 
   const submitPlacement = (): void => {
@@ -376,7 +378,9 @@ export function mount(root: HTMLElement): void {
     });
   };
 
-  const paletteView = createBuildPalette((definitionId) => startPlacement(definitionId));
+  const buildMenuView = createBuildMenuView(formatter, (definitionId) =>
+    startPlacement(definitionId),
+  );
   const grid = createLocationGrid(mirror, view, i18n, {
     archetypes: () => archetypes,
     footprints: () => footprints,
@@ -388,6 +392,14 @@ export function mount(root: HTMLElement): void {
       setCursor({ ...current, position, result: null });
     },
     onConfirm: () => submitPlacement(),
+    onEntityClick: (entityId) => {
+      if (view.mode() === 'demolish') demolishEntity(entityId);
+      else select(entityId);
+    },
+    onPathBegin: (position) => {
+      dragStart = position;
+    },
+    onPathEnd: (position) => submitPath(position),
   });
   const selectedLocation = (): number | null => view.location();
   const layoutNow = (): ReturnType<typeof worldLayout> => {
@@ -557,6 +569,65 @@ export function mount(root: HTMLElement): void {
     });
   };
 
+  /** Renders the tier-tabbed build menu from the current metadata and stock. */
+  const showBuildMenu = (selectedId: string | null): void => {
+    const locationId = view.location();
+    const summary = locationId === null ? undefined : summaries.get(locationId);
+    buildMenuView.show(buildMenu(definitions, i18n, summary?.inventory_totals ?? {}), selectedId);
+  };
+
+  /**
+   * Demolish (REF-13.1): a planned entity is cancelled, an existing one is
+   * deconstructed. The lifecycle decides which command is correct.
+   */
+  const demolishEntity = (entityId: number): void => {
+    const entity = mirror.projection()?.entities.find((entry) => entry.entity_id === entityId);
+    const lifecycle = entity?.lifecycle ?? 'active';
+    const type =
+      lifecycle === 'planned' || lifecycle === 'awaiting_resources'
+        ? 'CancelEntityPlan'
+        : 'DeconstructEntity';
+    client.command({
+      command_id: `client-demolish-${Date.now()}`,
+      actor_id: ACTOR_ID,
+      type,
+      payload: { entity_id: entityId },
+    });
+  };
+
+  /**
+   * Connector drag (REF-13.3 step 4): the path is computed as an axis-aligned L
+   * and one `PlaceEntityPlan` is submitted per cell in path order. Placement
+   * validity stays authoritative: a cell the host rejects produces no entity
+   * and is reported as a rejection (04 §14).
+   */
+  let dragStart: readonly [number, number] | null = null;
+  const submitPath = (end: readonly [number, number]): void => {
+    const location = currentLocation();
+    const start = dragStart;
+    dragStart = null;
+    if (location === undefined || start === null) return;
+    const cells = dragPath({ x: start[0], y: start[1] }, { x: end[0], y: end[1] });
+    if (cells.length <= 1) return;
+    const definitionId = view.placement().definitionId;
+    if (definitionId === null) return;
+    for (const cell of cells) {
+      client.command({
+        command_id: `client-place-${Date.now()}-${cell.x}-${cell.y}`,
+        actor_id: ACTOR_ID,
+        type: 'PlaceEntityPlan',
+        payload: {
+          definition_id: definitionId,
+          location_id: location.entity_id,
+          logical_transform: {
+            position: [cell.x, cell.y],
+            orientation: view.placement().orientation,
+          },
+        },
+      });
+    }
+  };
+
   const refreshLists = (): void => {
     const projection = mirror.projection();
     const entities = projection?.entities ?? [];
@@ -666,7 +737,7 @@ export function mount(root: HTMLElement): void {
               if (footprint !== null) footprints.set(definition.definition_id, footprint);
             }
             palette = paletteEntries(result.definition_metadata, i18n);
-            paletteView.show(palette, view.placement().definitionId);
+            showBuildMenu(view.placement().definitionId);
             grid.update();
           }
         }
@@ -720,11 +791,12 @@ export function mount(root: HTMLElement): void {
   frame.regions.banner.append(bannerView.el);
   frame.regions.actionBar.append(actionBar.el);
 
-  // The context panel hosts the build palette and the map actions until 11.4c
-  // and 11.4d fill it (design D2).
+  // The context panel shows the build menu when nothing is selected and the
+  // island actions for a selected island (REF-12.3; 11.4d replaces this with
+  // the full panel set).
   frame.regions.contextPanel.append(
     islandActions,
-    paletteView.el,
+    buildMenuView.el,
     h('div', { class: 'hud-lists' }, entityList, locationList),
   );
   gridOverlay.append(grid.el);
@@ -774,6 +846,13 @@ export function mount(root: HTMLElement): void {
     persist();
   });
   view.pins.subscribe(refreshHud);
+  view.selection.subscribe(() => {
+    const selected = view.selection();
+    islandActions.hidden = selected !== null;
+    buildMenuView.el.hidden = selected !== null;
+    if (selected !== null) islandActions.replaceChildren();
+    else renderIslandActions();
+  });
   refreshHud();
   refreshView();
   bindCamera();
@@ -833,7 +912,7 @@ export function mount(root: HTMLElement): void {
         }
       }
     }
-    if (event.key === 'b' || event.key === 'B') {
+    if (event.key === 'b' || event.key === 'B' || event.key === 'x' || event.key === 'X') {
       const next = nextMode(view.mode(), event.key);
       view.mode.set(next);
       if (next === 'place' && view.placement().definitionId === null && palette[0] !== undefined) {
@@ -871,8 +950,6 @@ export function mount(root: HTMLElement): void {
       event.key === 'P' ||
       event.key === 'l' ||
       event.key === 'L' ||
-      event.key === 'x' ||
-      event.key === 'X' ||
       event.key === 'v' ||
       event.key === 'V'
     ) {

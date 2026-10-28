@@ -38,6 +38,11 @@ export interface LocationGridDeps {
   readonly propertyId: string;
   readonly onCursorMove?: (position: readonly [number, number]) => void;
   readonly onConfirm?: () => void;
+  /** A left click on an entity shape (demolish mode, REF-13.1). */
+  readonly onEntityClick?: (entityId: number) => void;
+  /** The first and last cell of a connector drag (REF-13.3 step 4). */
+  readonly onPathBegin?: (position: readonly [number, number]) => void;
+  readonly onPathEnd?: (position: readonly [number, number]) => void;
 }
 
 const shapeGeometry = (shape: GhostShape): SVGElement[] => {
@@ -145,6 +150,7 @@ const renderShape = (shape: EntityShape, throttled = false): SVGElement => {
     'aria-label': shape.label,
   });
   group.append(svg('title', { text: shape.label }));
+  group.setAttribute('data-entity', String(shape.entityId));
   for (const node of geometry(shape)) group.append(node);
   return group;
 };
@@ -359,7 +365,11 @@ export function createLocationGrid(
       svg(
         'g',
         { class: 'grid-entities' },
-        ...shapes.map((shape) => renderShape(shape, throttledIds.has(shape.entityId))),
+        ...shapes.map((shape) => {
+          const node = renderShape(shape, throttledIds.has(shape.entityId));
+          node.addEventListener('click', () => deps.onEntityClick?.(shape.entityId));
+          return node;
+        }),
       ),
       svg('g', { class: 'grid-ghost' }, ...ghostNodes),
     );
@@ -377,6 +387,28 @@ export function createLocationGrid(
   });
   svgRoot.addEventListener('click', () => {
     if (view.mode() === 'place') deps.onConfirm?.();
+  });
+  let dragStart: readonly [number, number] | null = null;
+  svgRoot.addEventListener('pointerdown', (event) => {
+    if (view.mode() !== 'place' || width === 0 || height === 0) return;
+    const rect = svgRoot.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const x = Math.floor(((event.clientX - rect.left) / rect.width) * width);
+    const y = Math.floor(((event.clientY - rect.top) / rect.height) * height);
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    dragStart = [x, y];
+    deps.onPathBegin?.([x, y]);
+  });
+  svgRoot.addEventListener('pointerup', (event) => {
+    if (dragStart === null || width === 0 || height === 0) return;
+    const rect = svgRoot.getBoundingClientRect();
+    const x = Math.floor(((event.clientX - rect.left) / rect.width) * width);
+    const y = Math.floor(((event.clientY - rect.top) / rect.height) * height);
+    const start = dragStart;
+    dragStart = null;
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    deps.onPathEnd?.([x, y]);
+    void start;
   });
 
   view.location.subscribe(update);

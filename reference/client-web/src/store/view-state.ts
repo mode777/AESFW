@@ -9,7 +9,7 @@ import { signal } from './signals.js';
 import type { Signal } from './signals.js';
 
 /** The interaction modes of REF-13.1. */
-export type ClientMode = 'inspect' | 'place' | 'route-edit';
+export type ClientMode = 'inspect' | 'place' | 'demolish' | 'route-edit';
 
 /** The grid overlays of REF-12.2. */
 export type GridOverlay = 'connectivity' | 'suitability' | 'throughput' | 'coverage' | null;
@@ -89,6 +89,7 @@ export function toggleOverlay(current: GridOverlay, key: string): GridOverlay {
  */
 export function nextMode(current: ClientMode, key: string): ClientMode {
   if (key === 'b' || key === 'B') return 'place';
+  if (key === 'x' || key === 'X') return 'demolish';
   if (key === 'Escape') return 'inspect';
   return current;
 }
