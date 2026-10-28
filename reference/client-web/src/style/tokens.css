@@ -1,5 +1,21 @@
 :root {
   --paper: #f7f7f4;
+  --sea: #dfe7ec;
+  --land: #f4f1e8;
+  --role-primary: #2f6f8f;
+  --role-intermediate: #6d7f3a;
+  --role-consumer: #a4622d;
+  --role-construction: #7a5a97;
+  --role-establishment: #2f7a6b;
+  --role-balance: #8a7b2f;
+  --tier-1: #4a7fa5;
+  --tier-2: #7b6aa8;
+  --tier-3: #a86a6a;
+  --tier-4: #587f55;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
   --ink: #151515;
   --ink-2: #5c5c5c;
   --ink-3: #a3a3a3;

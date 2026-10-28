@@ -34,7 +34,7 @@ test('[VER-8.2] browser and CLI hashes match', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('`');
   for (let index = 0; index < TICKS; index += 1) {
-    await page.getByTestId('topbar-step').click();
+    await page.getByTestId('action-step').click();
   }
   await expect(page.getByTestId('debug-overlay')).toContainText(`hash ${cliHash}`);
 });

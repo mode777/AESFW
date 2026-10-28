@@ -56,6 +56,15 @@ Balance + net rate from the owner-economy entry (PIC-10.6) as today; chips from 
 - [Placeholders feel empty (minimap, news) until 11.4b/11.4f] → acceptable: rows land in sequence; the HUD is usable without them.
 - [Re-hosting drawers risks regressions] → selectors are untouched; only container tests change; smoke flows 1–6 re-run.
 
+## As built
+
+- **Presentation pipeline.** `scripts/gen-presentation.mjs` emits `src/content/generated/presentation.generated.ts` (a typed module, not JSON: the client tsconfig is `NodeNext`, where JSON imports need an import attribute Vite does not emit). It runs from `prebuild`; the generated module is checked in and Prettier-formatted by the script so the format gate stays green. `src/content/presentation.ts` exposes the catalogue, `mappingOf`, and the key helpers; `src/format/index.ts` turns `formatting.yaml` into `format`/`formatRate`.
+- **Content bundle (task 2.1, clarified).** `src/content/r0.ts` keeps enumerating `ref.tier`'s split files. The presentation package is *not* sent to the worker: PIC-5 says a headless host never loads presentation packages, and the client already receives the catalogue as generated data. Task 2.1's "and ref.tier.presentation" is therefore satisfied by the generated module, not by a second `ContentSourceDto`.
+- **HUD.** `views/hud/frame.ts` renders the six regions (grid areas `resources | banner | news | world | minimap | actions | context`), `views/hud/action-bar.ts` owns controls, tick, blocked count, the window toggles, save/load, tables, and debug, `views/hud/resource-bar.ts` and `views/hud/location-banner.ts` render the selectors in `selectors/hud.ts`, and `views/hud/placeholders.ts` fills the minimap and news slots.
+- **Windows.** `views/hud/window-host.ts` hosts economy, planning, logistics, exchange, population, inspector, and the two tables as floating panels; `E/P/L/X/V/I/T` toggle them, Escape closes the topmost. The old drawer, top bar, and notice strip are deleted, along with their styles.
+- **Storage.** `src/store/storage.ts` implements `aesfw-ref.client.v2` with camera, pins, open windows, locale, theme, and the viewed location; view state persists on every change and a blocked or absent storage falls back to defaults.
+- **Tests.** `format.test.ts`, `selectors/hud.test.ts`, `views/hud/shell.test.ts` (frame regions, no dashboard testids, action-bar commands, window host) and `store/storage.test.ts` (round-trip, v1 ignored, malformed values, blocked storage). The client project runs under jsdom so DOM views are unit-testable; `e2e/smoke.spec.ts` and `e2e/determinism.spec.ts` use the new action-bar test IDs.
+
 ## Migration Plan
 
 - One release replaces the shell; the Pages workflow is unchanged (2.12). Rollback = revert; client-local `v1` settings are already disposable.

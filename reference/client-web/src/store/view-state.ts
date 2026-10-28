@@ -22,6 +22,16 @@ export interface PlacementCursor {
   readonly result: PlacementResultDto | null;
 }
 
+/** The camera of the world area (REF-14.3; behaviour lands in 11.4b). */
+export interface Camera {
+  readonly x: number;
+  readonly y: number;
+  readonly zoom: number;
+}
+
+/** The colour themes of REF-10.1 (the dark theme lands in 11.4). */
+export type Theme = 'light' | 'dark';
+
 /** Client-local view state (REF-14.1). */
 export interface ViewState {
   readonly selection: Signal<number | null>;
@@ -33,6 +43,25 @@ export interface ViewState {
   readonly drawer: Signal<string | null>;
   readonly debug: Signal<boolean>;
   readonly worldMap: Signal<boolean>;
+  /** Pinned resource IDs of the resource bar, in pin order (REF-11). */
+  readonly pins: Signal<readonly string[]>;
+  /** Open windows, in open order (REF-12.4). */
+  readonly windows: Signal<readonly string[]>;
+  /** The world-area camera (REF-14.3). */
+  readonly camera: Signal<Camera>;
+  /** The colour theme (REF-10.1). */
+  readonly theme: Signal<Theme>;
+}
+
+/**
+ * Toggles a pin in the resource bar, keeping pin order (REF-11).
+ *
+ * Source: REF-11
+ */
+export function togglePin(current: readonly string[], resourceId: string): readonly string[] {
+  return current.includes(resourceId)
+    ? current.filter((entry) => entry !== resourceId)
+    : [...current, resourceId];
 }
 
 /**
@@ -102,5 +131,9 @@ export function createViewState(): ViewState {
     drawer: signal<string | null>(null),
     debug: signal(false),
     worldMap: signal(false),
+    pins: signal<readonly string[]>([]),
+    windows: signal<readonly string[]>([]),
+    camera: signal<Camera>({ x: 0, y: 0, zoom: 1 }),
+    theme: signal<Theme>('light'),
   };
 }

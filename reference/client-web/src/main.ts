@@ -17,12 +17,15 @@ import type {
   TransportDetailDto,
   TransportOrderDto,
 } from '@aesfw/protocol';
+import { PRESENTATION, presentationEntries } from './content/presentation.js';
 import { R0_CONTENT } from './content/r0.js';
 import { h, replaceChildren } from './dom/h.js';
+import { createFormatter } from './format/index.js';
 import { createI18n } from './i18n/index.js';
+import { locationBanner, resourceBar, viewedLocation } from './selectors/hud.js';
+import { readClientSettings, writeClientSettings } from './store/storage.js';
 import {
   archetypeOf,
-  commandNotice,
   economyView,
   gridCells,
   paletteEntries,
@@ -41,7 +44,13 @@ import type { Footprint, PaletteEntry, ShapeArchetype } from './selectors/index.
 import { tradeDraft, exchangeEntities, exchangeView } from './selectors/exchange.js';
 import { createWorkerClient } from './session/client.js';
 import { createMirror } from './store/mirror.js';
-import { createViewState, drawerAction, nextMode, toggleOverlay } from './store/view-state.js';
+import {
+  createViewState,
+  drawerAction,
+  nextMode,
+  toggleOverlay,
+  togglePin,
+} from './store/view-state.js';
 import type { PlacementCursor } from './store/view-state.js';
 import { coverageOverlay } from './selectors/progression.js';
 import { createBuildPalette } from './views/build-palette.js';
@@ -51,12 +60,17 @@ import { createExchangeView } from './views/exchange.js';
 import { createInspector } from './views/inspector.js';
 import { createInventoryTable } from './views/inventory-table.js';
 import { createLocationGrid } from './views/location-grid.js';
-import { createNotice } from './views/notice.js';
 import { createPlanningView } from './views/planning.js';
 import { createLogisticsView } from './views/logistics.js';
 import { createProgressionView } from './views/progression.js';
 import { createPopulationTable } from './views/population-table.js';
-import { createTopBar } from './views/top-bar.js';
+import { createActionBar } from './views/hud/action-bar.js';
+import type { WindowKind } from './views/hud/action-bar.js';
+import { createHudFrame } from './views/hud/frame.js';
+import { createLocationBannerView } from './views/hud/location-banner.js';
+import { mountMinimapPlaceholder, mountNewsPlaceholder } from './views/hud/placeholders.js';
+import { createResourceBarView } from './views/hud/resource-bar.js';
+import { createWindowHost } from './views/hud/window-host.js';
 import { createWorldMap } from './views/world-map.js';
 import type { WorldMapSelection } from './views/world-map.js';
 
@@ -135,13 +149,24 @@ interface QueryResult {
 export function mount(root: HTMLElement): void {
   const { client } = createWorkerClient();
   const view = createViewState();
-  const i18n = createI18n(CLIENT_STRINGS);
+  const settings = readClientSettings();
+  view.pins.set(settings.pins);
+  view.locale.set(settings.locale);
+  view.theme.set(settings.theme);
+  view.camera.set(settings.camera);
+  const i18n = createI18n({ ...presentationEntries(), ...CLIENT_STRINGS });
+  const formatter = createFormatter({
+    baseScale: PRESENTATION.formatting.base_scale,
+    grouping: PRESENTATION.formatting.number.grouping,
+    decimals: PRESENTATION.formatting.number.decimals,
+    perMinute: PRESENTATION.formatting.rates.per_minute,
+    tickDurationMs: PRESENTATION.formatting.rates.tick_duration_ms,
+  });
   const metadata = { protocolVersion: PROTOCOL_VERSION, checksum: '', lastHash: '' };
   const mirror = createMirror({ requestSnapshot: () => client.subscribe(ACTOR_ID) });
   const inspector = createInspector(client, ACTOR_ID, i18n);
   const inventory = createInventoryTable(i18n);
   const population = createPopulationTable(i18n);
-  const notice = createNotice();
   const economy = createEconomyView(client, ACTOR_ID, i18n);
   const planning = createPlanningView(i18n);
   let transportOrderList: readonly TransportOrderDto[] = [];
@@ -202,43 +227,30 @@ export function mount(root: HTMLElement): void {
   let metadataRequest: 'palette' | 'exchange' = 'palette';
   const exchange = createExchangeView(i18n, (exchangeId, resourceId, direction, quantity) => {
     logistics.prefill(tradeDraft(exchangeId, resourceId, direction, quantity));
-    view.drawer.set('logistics');
-    refreshDrawer();
+    view.windows.set(['logistics']);
+    windowHost.open('logistics');
+    refreshWindows();
   });
-  const drawer = h(
-    'div',
-    { class: 'drawer', 'data-testid': 'drawer' },
-    economy.el,
-    planning.el,
-    logistics.el,
-    progression.el,
-    exchange.el,
-  );
+  const windowHost = createWindowHost();
   let trend: readonly number[] = [];
   const archetypes = new Map<string, ShapeArchetype>();
   const footprints = new Map<string, Footprint>();
   let definitions: readonly DefinitionMetadataDto[] = [];
   let palette: readonly PaletteEntry[] = [];
 
-  const refreshDrawer = (): void => {
-    const kind = view.drawer();
-    economy.el.hidden = kind !== 'economy';
-    planning.el.hidden = kind !== 'planning';
-    logistics.el.hidden = kind !== 'logistics';
-    progression.el.hidden = kind !== 'population';
-    exchange.el.hidden = kind !== 'exchange';
-    drawer.hidden = kind === null;
-    if (kind === 'economy') {
+  const refreshWindows = (): void => {
+    const open = view.windows();
+    if (open.includes('economy')) {
       economy.show(economyView(mirror.projection(), ACTOR_ID, trend));
     }
-    if (kind === 'planning') {
+    if (open.includes('planning')) {
       client.query(ACTOR_ID, { kind: 'planning' });
     }
-    if (kind === 'logistics') {
+    if (open.includes('logistics')) {
       refreshLogistics();
       client.query(ACTOR_ID, { kind: 'transport_orders' });
     }
-    if (kind === 'exchange') {
+    if (open.includes('exchange')) {
       metadataRequest = 'exchange';
       client.query(ACTOR_ID, { kind: 'definition_metadata', definition_type: 'exchange' });
       for (const id of exchangeEntities(mirror.projection(), exchangeDefinitionIds)) {
@@ -246,7 +258,7 @@ export function mount(root: HTMLElement): void {
       }
       exchange.show(exchangeView([...exchangeQuotesById.values()]));
     }
-    if (kind === 'population') {
+    if (open.includes('population')) {
       progression.show(
         mirror.projection()?.locations ?? [],
         [...summaries.values()],
@@ -256,9 +268,22 @@ export function mount(root: HTMLElement): void {
     }
   };
 
-  const setDrawer = (kind: 'economy' | 'planning'): void => {
-    view.drawer.set(view.drawer() === kind ? null : kind);
-    refreshDrawer();
+  const toggleWindow = (kind: WindowKind): void => {
+    windowHost.toggle(kind);
+    view.windows.set(windowHost.openKinds());
+    persist();
+    refreshWindows();
+  };
+
+  const persist = (): void => {
+    writeClientSettings({
+      camera: view.camera(),
+      pins: view.pins(),
+      windows: view.windows(),
+      locale: view.locale(),
+      theme: view.theme(),
+      location: view.location(),
+    });
   };
 
   const currentLocation = (): LocationDto | undefined => {
@@ -383,15 +408,17 @@ export function mount(root: HTMLElement): void {
     if (knowledge !== 'unknown') {
       mapActions.append(
         button('map-explore', 'Explore', () => {
-          view.drawer.set('logistics');
-          refreshDrawer();
+          view.windows.set(['logistics']);
+          windowHost.open('logistics');
+          refreshWindows();
           logistics.prefill(exploreDraft(locationId));
           mapSelection = null;
           renderMapActions();
         }),
         button('map-establish', 'Establish', () => {
-          view.drawer.set('logistics');
-          refreshDrawer();
+          view.windows.set(['logistics']);
+          windowHost.open('logistics');
+          refreshWindows();
           logistics.prefill(establishDraft(locationId));
           mapSelection = null;
           renderMapActions();
@@ -494,7 +521,6 @@ export function mount(root: HTMLElement): void {
         refreshLists();
         break;
       case 'command_result':
-        notice.show(commandNotice(response.result, i18n));
         if (response.result.status === 'accepted') {
           client.query(ACTOR_ID, { kind: 'transport_orders' });
         }
@@ -504,7 +530,7 @@ export function mount(root: HTMLElement): void {
         if (result.entity_detail !== undefined) {
           currentDetail = result.entity_detail;
           inspector.show(currentDetail, currentBreakdown);
-          if (view.drawer() === 'population') {
+          if (view.windows().includes('population')) {
             progression.show(
               mirror.projection()?.locations ?? [],
               [...summaries.values()],
@@ -520,7 +546,7 @@ export function mount(root: HTMLElement): void {
         if (result.location_summary !== undefined && result.location_summary !== null) {
           summaries.set(result.location_summary.entity_id, result.location_summary);
           population.show([...summaries.values()]);
-          if (view.drawer() === 'population') {
+          if (view.windows().includes('population')) {
             progression.show(
               mirror.projection()?.locations ?? [],
               [...summaries.values()],
@@ -563,7 +589,7 @@ export function mount(root: HTMLElement): void {
         }
         if (result.exchange_quotes !== undefined && result.exchange_quotes !== null) {
           exchangeQuotesById.set(result.exchange_quotes.entity_id, result.exchange_quotes);
-          if (view.drawer() === 'exchange') {
+          if (view.windows().includes('exchange')) {
             exchange.show(exchangeView([...exchangeQuotesById.values()]));
           }
         }
@@ -581,32 +607,70 @@ export function mount(root: HTMLElement): void {
   mirror.projection.subscribe(() => {
     const model = economyView(mirror.projection(), ACTOR_ID, trend);
     trend = pushTrend(trend, model.netPerTick);
-    refreshDrawer();
+    refreshWindows();
   });
-  refreshDrawer();
+  refreshWindows();
   refreshView();
 
-  const topBar = createTopBar(client, mirror, view, i18n, setDrawer);
   const debug = createDebugOverlay(mirror, view, metadata);
-  const panels = h(
-    'div',
-    { class: 'panels' },
-    h(
-      'aside',
-      { class: 'navigator' },
-      entityList,
-      locationList,
-      h('h3', { class: 'palette-title', text: i18n.t('palette.title') }),
-      mapButton,
-      paletteView.el,
-    ),
-    h('main', { class: 'canvas' }, grid.el, worldMapView.el, mapActions),
-    inspector.el,
-    inventory.el,
-    population.el,
-    drawer,
+  const frame = createHudFrame();
+  const resourceBarView = createResourceBarView(formatter, (resourceId) => {
+    view.pins.set(togglePin(view.pins(), resourceId));
+    persist();
+  });
+  const bannerView = createLocationBannerView();
+  const actionBar = createActionBar(client, mirror, view, toggleWindow);
+  mountMinimapPlaceholder(frame.regions.minimap);
+  mountNewsPlaceholder(frame.regions.news);
+  frame.regions.resourceBar.append(resourceBarView.el);
+  frame.regions.banner.append(bannerView.el);
+  frame.regions.actionBar.append(actionBar.el);
+
+  // The context panel hosts the build palette and the map actions until 11.4c
+  // and 11.4d fill it (design D2).
+  frame.regions.contextPanel.append(
+    mapButton,
+    paletteView.el,
+    h('div', { class: 'hud-lists' }, entityList, locationList),
   );
-  root.append(topBar.el, panels, notice.el, debug.el);
+  frame.world.append(grid.el, worldMapView.el, mapActions, windowHost.el);
+
+  for (const window of [
+    { kind: 'economy', title: i18n.t('economy.title'), el: economy.el },
+    { kind: 'planning', title: i18n.t('planning.title'), el: planning.el },
+    { kind: 'logistics', title: 'Logistics', el: logistics.el },
+    { kind: 'exchange', title: i18n.t('exchange.title'), el: exchange.el },
+    { kind: 'population', title: i18n.t('progression.title'), el: progression.el },
+    { kind: 'inspector', title: 'Inspector', el: inspector.el },
+    {
+      kind: 'tables',
+      title: 'Tables',
+      el: h('div', { class: 'hud-tables' }, inventory.el, population.el),
+    },
+  ]) {
+    windowHost.register(window);
+  }
+  for (const kind of view.windows()) windowHost.open(kind);
+
+  const refreshHud = (): void => {
+    const projection = mirror.projection();
+    const owner = projection?.owners.find((entry) => entry.owner_id === ACTOR_ID);
+    const location = viewedLocation(projection, view.location());
+    const summary = location === null ? null : (summaries.get(location.entity_id) ?? null);
+    resourceBarView.show(resourceBar(owner, summary, definitions, view.pins(), formatter));
+    bannerView.show(locationBanner(location));
+    actionBar.update();
+  };
+  mirror.projection.subscribe(refreshHud);
+  view.location.subscribe(() => {
+    refreshHud();
+    persist();
+  });
+  view.pins.subscribe(refreshHud);
+  refreshHud();
+  refreshWindows();
+
+  root.append(frame.el, debug.el);
 
   document.addEventListener('keydown', (event) => {
     if (event.key === '`') view.debug.set(!view.debug());
@@ -642,9 +706,21 @@ export function mount(root: HTMLElement): void {
     if (event.key === 'Escape') {
       cancelPlacement();
       view.overlay.set(null);
+      windowHost.closeTop();
+      view.windows.set(windowHost.openKinds());
+      persist();
+      return;
     }
     if (event.key === 'c' || event.key === 'C' || event.key === 's' || event.key === 'S') {
       view.overlay.set(toggleOverlay(view.overlay(), event.key));
+    }
+    if (event.key === 'i' || event.key === 'I') {
+      toggleWindow('inspector');
+      return;
+    }
+    if (event.key === 't' || event.key === 'T') {
+      toggleWindow('tables');
+      return;
     }
     if (
       event.key === 'e' ||
@@ -654,13 +730,12 @@ export function mount(root: HTMLElement): void {
       event.key === 'l' ||
       event.key === 'L' ||
       event.key === 'x' ||
-      event.key === 'X'
+      event.key === 'X' ||
+      event.key === 'v' ||
+      event.key === 'V'
     ) {
-      const next = drawerAction(view.drawer(), event.key);
-      if (next !== view.drawer()) {
-        view.drawer.set(next);
-        refreshDrawer();
-      }
+      const next = drawerAction(null, event.key);
+      if (next !== null) toggleWindow(next as WindowKind);
     }
   });
 
