@@ -150,7 +150,8 @@ describe('[GDD-6.6][GDD-15.1][TDS-6.3] internal-logistics throughput', () => {
     setProducer(world, 4, producer());
     runPhases(world, registry, [9, 10], input);
     expect(allocationOf(world, 3)?.granted).toBe(1000);
-    expect(allocationOf(world, 4)?.granted).toBe(1000);
+    // A batch spreads its 1000 units of movement over 10 ticks (TDS-11.3).
+    expect(allocationOf(world, 4)?.granted).toBe(100);
     expect(allocationOf(world, 4)?.throttlePermille).toBe(1000);
   });
 
@@ -160,9 +161,10 @@ describe('[GDD-6.6][GDD-15.1][TDS-6.3] internal-logistics throughput', () => {
     setSource(world, 3, 1000);
     setProducer(world, 4, producer());
     runPhases(world, registry, [9, 10], input);
-    expect(allocationOf(world, 3)?.granted).toBe(500);
-    expect(allocationOf(world, 4)?.granted).toBe(500);
-    expect(allocationOf(world, 3)?.throttlePermille).toBe(500);
+    // Requests are 1000 and 100; the pool grants proportionally.
+    expect(allocationOf(world, 3)?.granted).toBe(909);
+    expect(allocationOf(world, 4)?.granted).toBe(91);
+    expect(allocationOf(world, 3)?.throttlePermille).toBe(909);
   });
 
   it('[TDS-6.3] remainder ties break by ascending entity ID', () => {
@@ -185,12 +187,12 @@ describe('[GDD-6.6][GDD-15.1][TDS-6.3] internal-logistics throughput', () => {
     expect(allocationOf(world, 4)).toBeUndefined();
   });
 
-  it('[GDD-15.1] a processing batch producer requests only on its completion tick', () => {
+  it('[GDD-15.1] a processing batch producer requests its per-tick share every tick', () => {
     const world = makeWorld();
     setPool(world, 1000);
     setProducer(world, 4, producer({ progress: 4 }));
     runPhases(world, registry, [9, 10], input);
-    expect(allocationOf(world, 4)).toBeUndefined();
+    expect(allocationOf(world, 4)?.granted).toBe(100);
   });
 
   it('[GDD-15.1] a location without internal logistics is unbounded', () => {

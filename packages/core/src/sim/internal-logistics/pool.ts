@@ -93,12 +93,22 @@ export function throughputCapacity(
   return capacity;
 }
 
-const producerMovesThisTick = (producer: Producer): boolean => {
+/**
+ * The throughput a producer moves in one tick (GDD-15.1, TDS-11.3 rule 3). A
+ * batch spreads its total input and output movement over its duration, so the
+ * pool constrains the sustained rate: charging the whole batch on its last
+ * tick made `alloc-v1` throttle every batch to a fraction and a 30-tick recipe
+ * then ran at a seventh of its rating.
+ */
+const producerMovementPerTick = (producer: Producer): Int => {
   const recipe = recipeOf(producer);
-  if (recipe === null) return false;
+  if (recipe === null) return 0;
   const duration = effectiveDuration(recipe);
-  if (producer.state === 'processing') return producer.progress + 1 >= duration;
-  return producer.state === 'idle' && duration === 1;
+  if (duration <= 1) return itemTotal(planInputs(recipe)) + itemTotal(planOutputs(recipe));
+  const perTick = Math.ceil(
+    (itemTotal(planInputs(recipe)) + itemTotal(planOutputs(recipe))) / duration,
+  );
+  return perTick;
 };
 
 const itemTotal = (items: readonly { readonly quantity: Int }[]): Int => {
@@ -133,11 +143,7 @@ export function collectThroughputRequests(world: World, scratch: TickScratch): v
     if (producer.location === null) continue;
     if (hasBlockingReason(producer.blockReasons)) continue;
     if (isExcluded(world, entity, producer.location)) continue;
-    if (!producerMovesThisTick(producer)) continue;
-    const recipe = recipeOf(producer);
-    if (recipe === null) continue;
-    const quantity = itemTotal(planInputs(recipe)) + itemTotal(planOutputs(recipe));
-    add(entity, producer.location, quantity);
+    add(entity, producer.location, producerMovementPerTick(producer));
   }
 
   const sourceStore = world.stores.get<ResourceSource>('resourceSource');
