@@ -68,6 +68,8 @@ The strategy corpus cannot run end to end against the R3 content. Authoring the 
 
 6. **Disabled entities diluted the capability pool.** `allocateCapabilities` counted every consumer, including entities the player disabled or the deficit policy paused, so a player could not free capability by switching a building off: five refiners requesting 20 each against 80 AK1 all received 16 and all blocked with `missing_capability`, which made the opening impossible. Consumers that are not operating are now excluded from allocation (GDD-9.1, GDD-20.3).
 
+7. **Sustained transition clauses never advanced.** The sustained-timer updater was built with the unlock query resolver for owner-scoped queries and the default `() => 0` for entity-scoped ones, so a transition condition's `sustained` clause (`aggregate_need_fulfillment >= 800`) always read 0 and no automatic advancement could fire. The updater now receives the same entity query resolver the condition evaluator uses. This was the last blocker between the opening and the first advancement.
+
 ### Balance findings (measured, not yet resolved)
 
 With defects 1–6 fixed the opening runs with no findings, no rejected commands, and a connected start chain. It still does not reach the first advancement. The measurements:
@@ -75,6 +77,24 @@ With defects 1–6 fixed the opening runs with no findings, no rejected commands
 - **Producers ran far below their recipe arithmetic; fixed.** A batch start requested its whole input plus output movement (18,000) on one tick against a 6,000–8,000/tick hub pool, so `alloc-v1` throttled it and a 30-tick recipe completed at about a seventh of its rating. Batches are now paced per tick (05 §26 A16), which the design records as the chosen semantics. With pacing, the opening reaches 150 S1 at tick 360 instead of never. The remaining gap to the first advancement is strategy scheduling, not mechanics: the plan must enable H1 and BM2 production early enough to bank 6 BM2 for the S1→S2 cost.
 - **Income is an order of magnitude too low.** At 120 S1 population the owner nets about `−15,700` base units per tick (1,200 revenue against ~16,900 maintenance). Appendix B.4's `0.10` per population per minute cannot pay B.3's maintenance; a 10× retune brought the same state to `−2,000` and to break-even at ~140 S1, which is the right order for a chain that must pay for itself. Appendix B is non-normative example content, so this is a legitimate retune, but it was reverted rather than shipped unvalidated.
 - **The start stock and the unlock order do not close yet.** With 60 BM1 the opening reaches 150 S1 by tick 360 and holds it, but the 60,000-base-unit C1 stock is exhausted around tick 650 (150 pop consume 150 per tick), while the combiner that would replenish C1 is gated on 25 AK2 from the first S2 residents — which need the advancement. The measured deltas that work are a 10× income retune (net `+1,000` at 150 S1 instead of `−12,500`) and a 150,000 C1 stock (runway past tick 1,140), plus enough BM1 to start with ten residences. These were reverted pending the strategy schedule, then become the 3.4 retune.
+
+### Applied retunes (task 3.4)
+
+The corpus now measures these numbers, so they are committed rather than provisional:
+
+| Parameter | Before (11.1) | Corpus value | Why |
+| --- | --- | --- | --- |
+| S1 income (`population.s1` credits output) | 10 / pop / tick | 100 | Appendix B.4's 0.10 per pop per minute cannot pay B.3's maintenance; at 150 S1 the owner now breaks even instead of losing ~12,500 per tick. Appendix B is non-normative example content, so this is a legitimate retune, recorded here. |
+| S2 income | 25 / pop / tick | 250 | Keeps the B.4 ratio (2.5×) after the S1 retune. |
+| C1 / C2 start stock | 60,000 | 150,000 | The only C1 producer is the combiner, gated on 25 AK2 from S2 residents; the stock must cover the climb to 150 S1 and the first two advancements. |
+| BM1 start stock | 240,000 (40 units) | 360,000 (60 units) | Ten residences are affordable immediately, so the base does not spend the C1 window waiting for BM1. |
+| Credits start stock | 30,000,000 (5,000 units) | 600,000 (100 units) | 5,000 units hid the deficit spiral for ~3,000 ticks, making the 07 §8 loss-spiral target unmeasurable. 100 units reaches the deficit within the overexpansion run. |
+
+The strategy corpus is `reference/content/test/balance/`: `strategies.ts` (build plans and command schedules), `harness.ts` (content load, start-layout packing, run helpers), `strategies.test.ts` (packer units) and `targets.test.ts` (the five 07 §8 checks). Measured results at seed `[1, 2]`: first advancement **879–910 ticks**, start-state satisfaction 1,000 permille throughout, overexpansion pauses and resumes, the pyramid advance drops S1 to 140, trade share 0 %.
+
+### Equilibrium definition (task 4.1)
+
+"At equilibrium" for the trade-share target means the final 600 ticks of the opening run (design D5). The opening issues no trade commands, so this target currently measures 0 %; a later strategy that trades extends the same measurement.
 
 ## Golden impact
 

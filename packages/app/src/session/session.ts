@@ -34,7 +34,7 @@ import { buildSustainedTimerUpdater, buildUnlockSystem, unlockQueryValue } from 
 
 import { buildEstablishmentSystem } from '../content/establishment.js';
 import { buildEntityMaterializer } from '../content/materializer.js';
-import { buildConditionEvaluator } from './placement.js';
+import { buildConditionEvaluator, conditionQueryValue } from './placement.js';
 import type {
   AdvanceResult,
   AcceptedCommandRecord,
@@ -623,7 +623,9 @@ export function advance(session: SessionState, ticks: number): AdvanceResult {
   const registry = session.content.registry as ContentRegistry;
   const sustainedTimerUpdater = buildSustainedTimerUpdater(
     session.content,
-    undefined,
+    // Sustained clauses of transition and source conditions are evaluated per
+    // entity, exactly like the conditions that read their timer.
+    (world, subject, query) => conditionQueryValue(registry, world, subject, query),
     (world, owner, query) => unlockQueryValue(registry, world, owner, query),
   );
   const unlockSystem = buildUnlockSystem(session.content);

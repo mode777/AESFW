@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { createMemorySource, loadContent, parseYamlStrict } from '@aesfw/content';
-import type { LoadResult } from '@aesfw/content';
+import type { ContentResult } from '@aesfw/content';
 
 const packageDir = fileURLToPath(new URL('../../ref.tier/', import.meta.url));
 
@@ -26,7 +26,7 @@ const packageFiles = (): readonly string[] => {
 };
 
 /** Loads `ref.tier` strictly, as `aesfw run` does. */
-export function loadReferenceContent(): LoadResult {
+export function loadReferenceContent(): ContentResult {
   const source = createMemorySource('ref.tier', {
     'package.yaml': read('package.yaml'),
     ...Object.fromEntries(packageFiles().map((name) => [name, read(name)])),

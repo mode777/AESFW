@@ -378,16 +378,18 @@ describe('[REF-7] R3 tiers and needs', () => {
       scope: 'location',
       rate_per_population_per_tick: 1,
     });
+    // Income is retuned by the balance corpus (10 -> 100 and 25 -> 250), see
+    // the add-balance-runner-strategies design.
     expect(s1?.['outputs']).toContainEqual({
       resource: 'ref.tier.resource.credits',
       scope: 'owner',
-      rate_per_population_per_tick: 10,
+      rate_per_population_per_tick: 100,
       satisfaction_curve: 'ref.tier.curve.income',
     });
     expect(s2?.['outputs']).toContainEqual({
       resource: 'ref.tier.resource.credits',
       scope: 'owner',
-      rate_per_population_per_tick: 25,
+      rate_per_population_per_tick: 250,
       satisfaction_curve: 'ref.tier.curve.income',
     });
   });

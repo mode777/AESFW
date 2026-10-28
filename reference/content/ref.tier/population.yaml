@@ -12,7 +12,7 @@ population_tiers:
         rate_per_population_per_tick: 1
       - resource: ref.tier.resource.credits
         scope: owner
-        rate_per_population_per_tick: 10
+        rate_per_population_per_tick: 100
         satisfaction_curve: ref.tier.curve.income
   - id: ref.tier.population.s2
     consumption_factor: 1500
@@ -26,7 +26,7 @@ population_tiers:
         rate_per_population_per_tick: 1
       - resource: ref.tier.resource.credits
         scope: owner
-        rate_per_population_per_tick: 25
+        rate_per_population_per_tick: 250
         satisfaction_curve: ref.tier.curve.income
 
 growth_policies:

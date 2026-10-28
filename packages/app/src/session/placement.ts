@@ -37,7 +37,7 @@ const ownerOf = (world: World, subject: EntityId): number | null => {
  *
  * Source: TDS-14.2, GDD-12.4, GDD-12.3
  */
-const queryValue = (
+export const conditionQueryValue = (
   registry: ContentRegistry,
   world: World,
   subject: EntityId,
@@ -126,7 +126,7 @@ export function buildConditionEvaluator(content: CompiledContent): PlacementCond
     if (compiled.condition === null) return false;
     const context: EvalContext = {
       subject: { kind: 'location', id: subject },
-      query: (query) => queryValue(registry, world, subject, query),
+      query: (query) => conditionQueryValue(registry, world, subject, query),
       aggregate: () => 0,
       timer: (slot) => timerTicks(world, condition, slot, subject),
     };

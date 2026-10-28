@@ -10,12 +10,12 @@ worlds:
       - id: ref.tier.loc.alpha_1
         template: ref.tier.location.alpha_1
         initial_inventory:
-          - { resource: ref.tier.resource.bm1, quantity: 240000 }
+          - { resource: ref.tier.resource.bm1, quantity: 360000 }
           - { resource: ref.tier.resource.p1, quantity: 120000 }
           - { resource: ref.tier.resource.p2, quantity: 120000 }
           - { resource: ref.tier.resource.h1, quantity: 60000 }
-          - { resource: ref.tier.resource.c1, quantity: 60000 }
-          - { resource: ref.tier.resource.c2, quantity: 60000 }
+          - { resource: ref.tier.resource.c1, quantity: 150000 }
+          - { resource: ref.tier.resource.c2, quantity: 150000 }
       - id: ref.tier.loc.alpha_2
         template: ref.tier.location.alpha_2
       - id: ref.tier.loc.alpha_3
@@ -60,7 +60,7 @@ worlds:
     owners:
       - id: owner.0
         initial_resources:
-          - { resource: ref.tier.resource.credits, quantity: 30000000 }
+          - { resource: ref.tier.resource.credits, quantity: 600000 }
         established_locations: [ref.tier.loc.alpha_1]
         known_locations: [ref.tier.loc.alpha_2, ref.tier.loc.alpha_3]
         # Authored start layout (CONT-6.6): the engine reserves these cells in

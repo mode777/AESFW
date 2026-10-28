@@ -12,7 +12,8 @@ import { advance, createSession, instantiateWorldContent, submitCommand } from '
 import type { SessionState } from '@aesfw/app';
 import { checkInvariants } from '../harness/invariants.js';
 import type { CompiledContent, ContentRegistry } from '@aesfw/content';
-import { evaluateExpectation } from './expectations.js';
+import { evaluateExpectation, resolveEntityRef } from './expectations.js';
+import type { JsonValue } from '@aesfw/content';
 import { metricsRow } from './metrics.js';
 import type {
   Scenario,
@@ -88,6 +89,24 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
   evaluateAt(0);
   sampleMetrics();
 
+  /**
+   * Resolves the `@<definition>#<n>` references VER-9.1 allows in a scenario's
+   * entity fields, so a strategy can address entities it creates later by
+   * definition and ordinal instead of by predicted entity ID.
+   */
+  const resolvePayload = (payload: JsonValue): JsonValue => {
+    if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return payload;
+    const record = payload as Record<string, JsonValue>;
+    const resolved: Record<string, JsonValue> = { ...record };
+    for (const field of ['entity_id', 'unit_id', 'order_id', 'location_id']) {
+      const value = record[field];
+      if (typeof value !== 'string' || !value.startsWith('@')) continue;
+      const entity = resolveEntityRef(session, value);
+      if (entity !== null) resolved[field] = entity;
+    }
+    return resolved;
+  };
+
   const hashing = scenario.run.hashInterval > 0;
   for (let tick = 1; tick <= scenario.run.ticks; tick += 1) {
     for (const command of scenario.commands.filter((entry) => entry.tick === tick)) {
@@ -95,7 +114,7 @@ export function runScenario(scenario: Scenario, content: CompiledContent): Scena
         command_id: `${scenario.id}.${tick}.${command.type}`,
         actor_id: command.actor,
         type: command.type,
-        payload: command.payload as never,
+        payload: resolvePayload(command.payload) as never,
       });
       session = submitted.session;
       if (submitted.result.status === 'rejected') {
