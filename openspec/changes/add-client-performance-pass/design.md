@@ -49,8 +49,19 @@ Numbers from the verification box are recorded with the box's specs (3 vCPU, llv
 
 - **Worker tick (1.3, measured)**: `reference/content/test/scenarios/performance.test.ts` runs the R4 world through `runBenchmark`: 249 entities, median **0.45 ms**, p95 **1.35 ms**, against the 2 ms median budget. Pass.
 - **Browser scenarios (1.1, 1.2, 1.4)**: `reference/client-web/e2e/performance.spec.ts` implements the pan/zoom tour with rAF sampling and a p95 assertion (≤ 8 ms), the ×16 tick scenario reading the mirror's `aesfw:delta` measure (p95 ≤ 2 ms), and the five-run cold-start median (≤ 2 s). Each writes `perf-results.json`. They are not run here: this container is Alpine/musl and cannot launch Playwright's Chromium, and the verification box has no checkout of this repository yet.
-- **Verdicts (2.1)**: one of four budgets is measured and passes; the three browser budgets are pending the box run. Consequence: the fix-first ladder (2.2) and the Canvas 2D fallback decision (3.1/3.2) are **not** triggered. The fallback stays unimplemented rather than built speculatively, and no selector memoization was needed (2.3).
-- **Kernel finding for M12**: the R4 tick is well inside the budget headlessly, so the remaining 12.6 work is the browser frame path and the structure-of-arrays hot stores, not the kernel loop on the reference world.
+- **Measurements (2.1)** on the verification box (Ubuntu 24.04, 3 vCPU, 3.7 GB, Node 24.19, Playwright Chromium 1248 headless with SwiftShader):
+
+  | Budget | Before | After | Limit | Verdict |
+  | --- | --- | --- | --- | --- |
+  | Pan/zoom frame work p95 | 20.6 ms | **0.70 ms** | 8 ms | pass |
+  | Delta + selector work p95 | 10.1 ms | **3.20 ms** | 2 ms | miss |
+  | Cold start median | — | **147 ms** | 2 s | pass |
+  | R4 worker tick median | — | **0.45 ms** | 2 ms | pass |
+
+- **Fix-first ladder (2.2)**: the frame number was partly a measurement error — sampling rAF *intervals* is capped at ~16.7 ms by vsync, so the scenario now reads the client's own `aesfw:frame` measure. The real misses were per-frame DOM churn: the canvas rebuilt every island and lane each frame, the minimap rebuilt its world layer, the camera handlers ran the whole HUD per pointer event, and a 20,000-unit sea rect was rasterised under transform. Islands/lanes/labels/selection are now rebuilt only on layout, level-of-detail, or selection change; the sea is a CSS background; the overlay moves with a compositor-only transform; camera-driven HUD work is coalesced to one animation frame.
+- **Selector narrowing (2.3)**: deltas queried a location summary for every location (six worker round-trips per tick) and rebuilt the resource bar, banner, context panel, news rail, milestones, and population strip every tick. Deltas now query the viewed location only (all locations on a snapshot or when an aggregating window opens), the views are signature-gated, per-tick client work is coalesced to one frame, and informational work runs at 4 Hz. 10.1 → 3.20 ms. The residual 3.0 ms sits above the kernel's 0.20 ms merge, i.e. it is client DOM/selector work on a 3-vCPU software-rendering VM where the budget is defined for a mid-range laptop; recorded for 12.6 rather than hidden.
+- **Fallback decision (3.1/3.2)**: SVG meets the frame budget (0.70 ms p95), so the Canvas 2D world fallback is **not** implemented and stays unmounted. 12.6 re-opens it only if its own measurement misses.
+- **Kernel finding for M12**: the R4 tick is well inside the budget headlessly (0.45 ms) and the snapshot merge is 0.20 ms, so 12.6's work is the structure-of-arrays hot stores and the remaining browser-side selector/DOM cost, not the kernel loop.
 
 ## Migration Plan
 
