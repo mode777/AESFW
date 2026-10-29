@@ -297,6 +297,13 @@ export function mount(root: HTMLElement): void {
     view.windows.set(windowHost.openKinds());
     persist();
     refreshWindows();
+    // Windows that aggregate every location refresh their summaries on open
+    // (REF-14.6: deltas query only the viewed location).
+    if (kind === 'statistics' || kind === 'tables') {
+      for (const location of mirror.projection()?.locations ?? []) {
+        client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
+      }
+    }
   };
 
   const persist = (): void => {
@@ -736,39 +743,52 @@ export function mount(root: HTMLElement): void {
     }
   };
 
-  const refreshLists = (): void => {
+  let listSignature = '';
+  const refreshLists = (full = false): void => {
     const projection = mirror.projection();
     const entities = projection?.entities ?? [];
     const locations = projection?.locations ?? [];
-    replaceChildren(
-      entityList,
-      ...entities.map((entity) =>
-        h('button', {
-          class: 'entity-item',
-          'data-testid': `entity-item-${entity.entity_id}`,
-          text: `${entity.entity_id} ${entity.definition_id ?? ''}`.trim(),
-          onclick: () => select(entity.entity_id),
-        }),
-      ),
-    );
-    replaceChildren(
-      locationList,
-      ...locations.map((location) =>
-        h('button', {
-          class: 'location-item',
-          'data-testid': `location-item-${location.entity_id}`,
-          text: `${location.entity_id} ${location.definition_id ?? ''}`.trim(),
-          onclick: () => view.location.set(location.entity_id),
-        }),
-      ),
-    );
-    if (view.location() === null && locations[0] !== undefined) {
-      view.location.set(locations[0].entity_id);
+    const signature = `${entities.map((entry) => entry.entity_id).join(',')}#${locations
+      .map((entry) => `${entry.entity_id}:${entry.knowledge}`)
+      .join(',')}`;
+    if (signature !== listSignature) {
+      listSignature = signature;
+      replaceChildren(
+        entityList,
+        ...entities.map((entity) =>
+          h('button', {
+            class: 'entity-item',
+            'data-testid': `entity-item-${entity.entity_id}`,
+            text: `${entity.entity_id} ${entity.definition_id ?? ''}`.trim(),
+            onclick: () => select(entity.entity_id),
+          }),
+        ),
+      );
+      replaceChildren(
+        locationList,
+        ...locations.map((location) =>
+          h('button', {
+            class: 'location-item',
+            'data-testid': `location-item-${location.entity_id}`,
+            text: `${location.entity_id} ${location.definition_id ?? ''}`.trim(),
+            onclick: () => view.location.set(location.entity_id),
+          }),
+        ),
+      );
+      if (view.location() === null && locations[0] !== undefined) {
+        view.location.set(locations[0].entity_id);
+      }
     }
     inventory.show(projection);
     renderIslandActions();
     refreshLogistics();
-    for (const location of locations) {
+    // Summaries are queried for every known location on a full load, and for the
+    // viewed location only on a delta: six round-trips per tick dominated the
+    // delta budget (REF-14.6).
+    const locationsToQuery = full
+      ? locations
+      : locations.filter((entry) => entry.entity_id === view.location());
+    for (const location of locationsToQuery) {
       client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
     }
     const selected = view.selection();
@@ -786,7 +806,7 @@ export function mount(root: HTMLElement): void {
         break;
       case 'snapshot':
         mirror.applySnapshot(response.snapshot);
-        refreshLists();
+        refreshLists(true);
         break;
       case 'delta':
         if (response.hash !== undefined) metadata.lastHash = response.hash;

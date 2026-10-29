@@ -46,6 +46,7 @@ export function createMinimap(deps: MinimapDeps): Minimap {
     role: 'img',
     'aria-label': 'World map',
   });
+  const worldLayer = svg('g', { class: 'minimap-world', 'data-testid': 'minimap-world' });
   const rect = svg('rect', {
     class: 'minimap-viewport',
     'data-testid': 'minimap-viewport',
@@ -55,7 +56,11 @@ export function createMinimap(deps: MinimapDeps): Minimap {
     height: 0,
   });
   const strip = h('ul', { class: 'hud-population-strip', 'data-testid': 'population-strip' });
+  map.append(worldLayer, rect);
   const el = h('div', { class: 'hud-minimap-inner' }, map, strip);
+  // Structural caching (REF-14.6): the world layer is rebuilt only when the
+  // layout changes; every update writes the viewport rectangle and population.
+  let structureKey = '';
 
   map.addEventListener('click', (event) => {
     const bounds = map.getBoundingClientRect();
@@ -72,37 +77,43 @@ export function createMinimap(deps: MinimapDeps): Minimap {
   const update = (): void => {
     const layout = deps.layout();
     const projection = minimapProjection(layout.bounds, BOX);
-    map.replaceChildren(
-      ...layout.islands.flatMap((island) => {
-        const point = worldToMinimap(projection, island);
-        return [
-          svg('circle', {
+    const nextStructure = `${layout.islands
+      .map(
+        (island) =>
+          `${island.locationId}@${island.x},${island.y},${island.size},${island.knowledge}`,
+      )
+      .join('|')}#${layout.lanes.map((lane) => `${lane.id}:${lane.from}:${lane.to}`).join('|')}`;
+    if (nextStructure !== structureKey) {
+      structureKey = nextStructure;
+      worldLayer.replaceChildren(
+        ...layout.islands.map((island) => {
+          const point = worldToMinimap(projection, island);
+          return svg('circle', {
             class: island.knowledge === 'unknown' ? 'minimap-island minimap-fog' : 'minimap-island',
             cx: point.x,
             cy: point.y,
             r: Math.max(2, (island.size / 2) * projection.scale),
             'data-testid': `minimap-island-${island.locationId}`,
-          }),
-        ];
-      }),
-      ...layout.lanes.flatMap((lane) => {
-        const from = islandOf(layout, lane.from);
-        const to = islandOf(layout, lane.to);
-        if (from === null || to === null) return [];
-        const a = worldToMinimap(projection, from);
-        const b = worldToMinimap(projection, to);
-        return [
-          svg('line', {
-            class: 'minimap-lane',
-            x1: a.x,
-            y1: a.y,
-            x2: b.x,
-            y2: b.y,
-          }),
-        ];
-      }),
-      rect,
-    );
+          });
+        }),
+        ...layout.lanes.flatMap((lane) => {
+          const from = islandOf(layout, lane.from);
+          const to = islandOf(layout, lane.to);
+          if (from === null || to === null) return [];
+          const a = worldToMinimap(projection, from);
+          const b = worldToMinimap(projection, to);
+          return [
+            svg('line', {
+              class: 'minimap-lane',
+              x1: a.x,
+              y1: a.y,
+              x2: b.x,
+              y2: b.y,
+            }),
+          ];
+        }),
+      );
+    }
     const camera = deps.camera();
     const view = viewportRect(projection, camera, deps.viewport());
     rect.setAttribute('x', String(view.x));

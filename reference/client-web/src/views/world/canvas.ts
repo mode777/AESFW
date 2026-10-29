@@ -109,6 +109,11 @@ export function createWorldCanvas(deps: CanvasDeps): WorldCanvas {
   let pending = false;
   let renderedFrames = 0;
   let currentTransform = '';
+  // Structural caching (REF-14.6): islands and lanes are rebuilt only when the
+  // layout or the level of detail changes; panning and zooming then cost one
+  // transform write.
+  let structureKey = '';
+  let selectionKey = '';
 
   const viewport = (): Viewport => {
     const box = el.getBoundingClientRect();
@@ -127,78 +132,94 @@ export function createWorldCanvas(deps: CanvasDeps): WorldCanvas {
     }) scale(${camera.zoom})`;
     cameraGroup.setAttribute('transform', currentTransform);
 
-    // Islands: silhouettes at every level; known ones carry their region mark.
-    islandLayer.replaceChildren(
-      ...layout.islands.map((island) => {
-        const shape =
-          island.knowledge === 'unknown'
-            ? svg('path', {
-                class: 'island island-fog',
-                d: fogPath(island),
-                'data-testid': `island-${island.locationId}`,
-                'data-known': 'false',
-              })
-            : svg('polygon', {
-                class: 'island',
-                points: islandPolygon(island),
-                'data-testid': `island-${island.locationId}`,
-                'data-known': 'true',
-                'data-region': island.region,
-              });
-        shape.setAttribute('role', 'img');
-        shape.setAttribute('aria-label', `location ${island.locationId}`);
-        shape.addEventListener('click', () => deps.onSelectIsland(island.locationId));
-        return shape;
-      }),
-    );
+    const nextStructure = `${level}:${layout.islands
+      .map(
+        (island) =>
+          `${island.locationId}@${island.x},${island.y},${island.size},${island.knowledge}`,
+      )
+      .join(
+        '|',
+      )}#${layout.lanes.map((lane) => `${lane.id}:${lane.enabled}:${lane.durationTicks}`).join('|')}`;
+    if (nextStructure !== structureKey) {
+      structureKey = nextStructure;
+      // Islands: silhouettes at every level; known ones carry their region mark.
+      islandLayer.replaceChildren(
+        ...layout.islands.map((island) => {
+          const shape =
+            island.knowledge === 'unknown'
+              ? svg('path', {
+                  class: 'island island-fog',
+                  d: fogPath(island),
+                  'data-testid': `island-${island.locationId}`,
+                  'data-known': 'false',
+                })
+              : svg('polygon', {
+                  class: 'island',
+                  points: islandPolygon(island),
+                  'data-testid': `island-${island.locationId}`,
+                  'data-known': 'true',
+                  'data-region': island.region,
+                });
+          shape.setAttribute('role', 'img');
+          shape.setAttribute('aria-label', `location ${island.locationId}`);
+          shape.addEventListener('click', () => deps.onSelectIsland(island.locationId));
+          return shape;
+        }),
+      );
 
-    // Lanes appear once; the duration label shows at detail zoom only.
-    laneLayer.replaceChildren(
-      ...layout.lanes.flatMap((lane) => {
-        const from = islandOf(layout, lane.from);
-        const to = islandOf(layout, lane.to);
-        if (from === null || to === null) return [];
-        const line = svg('line', {
-          class: lane.enabled ? 'lane' : 'lane lane-disabled',
-          x1: from.x,
-          y1: from.y,
-          x2: to.x,
-          y2: to.y,
-          'data-testid': `lane-${lane.id}`,
-          'data-enabled': lane.enabled ? 'true' : 'false',
-        });
-        if (level !== 'detail' || lane.durationTicks === null) return [line];
-        return [
-          line,
-          svg(
-            'text',
-            {
-              class: 'lane-label',
-              x: (from.x + to.x) / 2,
-              y: (from.y + to.y) / 2 - 6,
-              'data-testid': `lane-label-${lane.id}`,
-            },
-            `${Math.round(lane.durationTicks / 60)} min`,
-          ),
-        ];
-      }),
-    );
+      // Lanes appear once; the duration label shows at detail zoom only.
+      laneLayer.replaceChildren(
+        ...layout.lanes.flatMap((lane) => {
+          const from = islandOf(layout, lane.from);
+          const to = islandOf(layout, lane.to);
+          if (from === null || to === null) return [];
+          const line = svg('line', {
+            class: lane.enabled ? 'lane' : 'lane lane-disabled',
+            x1: from.x,
+            y1: from.y,
+            x2: to.x,
+            y2: to.y,
+            'data-testid': `lane-${lane.id}`,
+            'data-enabled': lane.enabled ? 'true' : 'false',
+          });
+          if (level !== 'detail' || lane.durationTicks === null) return [line];
+          return [
+            line,
+            svg(
+              'text',
+              {
+                class: 'lane-label',
+                x: (from.x + to.x) / 2,
+                y: (from.y + to.y) / 2 - 6,
+                'data-testid': `lane-label-${lane.id}`,
+              },
+              `${Math.round(lane.durationTicks / 60)} min`,
+            ),
+          ];
+        }),
+      );
+    }
 
     const selected = deps.selected();
     const island = selected === null ? null : islandOf(layout, selected);
-    selectionLayer.replaceChildren(
-      ...(island === null
-        ? []
-        : [
-            svg('circle', {
-              class: 'island-selected',
-              cx: island.x,
-              cy: island.y,
-              r: island.size * 0.62,
-              'data-testid': 'island-selection',
-            }),
-          ]),
-    );
+    const nextSelection =
+      selected === null ? '' : `${selected}:${island?.x},${island?.y},${island?.size}`;
+    if (nextSelection !== selectionKey) {
+      selectionKey = nextSelection;
+      selectionLayer.replaceChildren(
+        ...(island === null
+          ? []
+          : [
+              svg('circle', {
+                class: 'island-selected',
+                cx: island.x,
+                cy: island.y,
+                r: island.size * 0.62,
+                'data-testid': 'island-selection',
+              }),
+            ]),
+      );
+    }
   };
 
   const invalidate = (): void => {
