@@ -906,8 +906,12 @@ export function mount(root: HTMLElement): void {
   });
 
   mirror.projection.subscribe(() => {
-    const model = economyView(mirror.projection(), ACTOR_ID, trend);
-    trend = pushTrend(trend, model.netPerTick);
+    // The trend is sampled only while the statistics window is open; the
+    // economy view is otherwise recomputed on demand (REF-14.6).
+    if (view.windows().includes('statistics')) {
+      const model = economyView(mirror.projection(), ACTOR_ID, trend);
+      trend = pushTrend(trend, model.netPerTick);
+    }
     refreshWindows();
   });
   refreshWindows();

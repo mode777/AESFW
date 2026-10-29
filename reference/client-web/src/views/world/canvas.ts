@@ -116,6 +116,8 @@ export function createWorldCanvas(deps: CanvasDeps): WorldCanvas {
   const render = (): void => {
     pending = false;
     renderedFrames += 1;
+    const marked = typeof performance !== 'undefined' && typeof performance.mark === 'function';
+    if (marked) performance.mark('aesfw:frame-start');
     const camera = deps.camera();
     const layout = deps.layout();
     const level = zoomLevel(camera.zoom);
@@ -212,6 +214,10 @@ export function createWorldCanvas(deps: CanvasDeps): WorldCanvas {
               }),
             ]),
       );
+    }
+    if (marked) {
+      performance.mark('aesfw:frame-end');
+      performance.measure('aesfw:frame', 'aesfw:frame-start', 'aesfw:frame-end');
     }
   };
 

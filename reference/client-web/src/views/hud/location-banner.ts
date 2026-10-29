@@ -17,9 +17,13 @@ export interface LocationBannerView {
 /** Creates the location banner view (REF-11). */
 export function createLocationBannerView(): LocationBannerView {
   const el = h('div', { class: 'hud-banner-inner' });
+  let signature: string | null = null;
   return {
     el,
     show(model) {
+      const next = model === null ? 'null' : JSON.stringify(model);
+      if (next === signature) return;
+      signature = next;
       if (model === null) {
         el.replaceChildren(
           h('span', { class: 'hud-banner-empty', 'data-testid': 'banner-empty', text: '—' }),

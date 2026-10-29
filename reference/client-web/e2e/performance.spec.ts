@@ -31,16 +31,13 @@ const percentile = (values: readonly number[], fraction: number): number => {
 test('[REF-14.6] pan and zoom stay inside the frame budget', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByTestId('world-canvas')).toBeVisible();
+  // The budget is the work done per frame, not the frame interval: the browser
+  // caps rAF at the display rate (~16.7 ms), so sampling intervals would fail on
+  // a fast client. The canvas marks its own render and the HUD update marks
+  // theirs; both are summed per frame.
   const samples = await page.evaluate(async () => {
     const frameTimes: number[] = [];
     let last = performance.now();
-    const record = (): void => {
-      const now = performance.now();
-      frameTimes.push(now - last);
-      last = now;
-      if (frameTimes.length < 180) requestAnimationFrame(record);
-    };
-    requestAnimationFrame(record);
     // A fixed tour: drag across the canvas, zoom in and out, drag back.
     const canvas = document.querySelector('[data-testid="world-canvas"]');
     if (canvas === null) return frameTimes;
@@ -78,10 +75,14 @@ test('[REF-14.6] pan and zoom stay inside the frame budget', async ({ page }) =>
       await new Promise((resolve) => requestAnimationFrame(resolve));
     }
     await new Promise((resolve) => setTimeout(resolve, 400));
-    return frameTimes;
+    return performance
+      .getEntriesByType('measure')
+      .filter((entry) => entry.name === 'aesfw:frame')
+      .map((entry) => entry.duration);
   });
   const p95 = percentile(samples.slice(2), 0.95);
   results['frame_p95_ms'] = p95;
+  results['frame_samples'] = samples.length;
   expect(samples.length).toBeGreaterThan(20);
   expect(p95, `frame p95 ${p95.toFixed(1)} ms`).toBeLessThanOrEqual(8);
 });

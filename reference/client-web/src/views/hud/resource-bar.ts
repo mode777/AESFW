@@ -40,7 +40,13 @@ export function createResourceBarView(
     chips,
   );
 
+  let signature = '';
   const show = (model: ResourceBarModel): void => {
+    const next = `${model.balance}|${model.netRate}|${model.chips
+      .map((chip) => `${chip.resourceId}:${chip.value}:${chip.pinned}`)
+      .join(',')}`;
+    if (next === signature) return;
+    signature = next;
     balance.textContent = model.balance;
     net.textContent = model.netRate;
     chips.replaceChildren(
