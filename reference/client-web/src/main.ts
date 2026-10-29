@@ -304,6 +304,11 @@ export function mount(root: HTMLElement): void {
         client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
       }
     }
+    if (kind === 'tables') {
+      inventory.show(mirror.projection());
+      population.show([...summaries.values()]);
+    }
+    if (kind === 'routes') refreshLogistics();
   };
 
   const persist = (): void => {
@@ -556,6 +561,7 @@ export function mount(root: HTMLElement): void {
    * view is reused unchanged instead of re-implemented in SVG, and hidden at
    * world zoom (REF-12.1).
    */
+  let gridSize = '';
   const placeGridOverlay = (): void => {
     const level = zoomLevel(view.camera().zoom);
     const locationId = view.location();
@@ -565,10 +571,23 @@ export function mount(root: HTMLElement): void {
       return;
     }
     gridOverlay.hidden = false;
-    gridOverlay.setAttribute(
-      'style',
-      `left:${screen.x}px;top:${screen.y}px;width:${screen.size}px;height:${screen.size}px;`,
-    );
+    const size = `${Math.round(screen.size)}x${Math.round(screen.size)}`;
+    if (size !== gridSize) {
+      // Resizing an SVG re-renders it, so the size is written only when zoom
+      // changes; panning is a compositor-only transform (REF-14.6).
+      gridSize = size;
+      gridOverlay.setAttribute(
+        'style',
+        `left:0;top:0;width:${Math.round(screen.size)}px;height:${Math.round(screen.size)}px;` +
+          `transform:translate(-50%,-50%) translate(${Math.round(screen.x)}px,${Math.round(
+            screen.y,
+          )}px);`,
+      );
+      return;
+    }
+    gridOverlay.style.transform = `translate(-50%,-50%) translate(${Math.round(
+      screen.x,
+    )}px,${Math.round(screen.y)}px)`;
   };
 
   const refreshView = (): void => {
@@ -592,7 +611,7 @@ export function mount(root: HTMLElement): void {
             canvas.viewport(),
           ),
         );
-        refreshHud();
+        scheduleHud();
       },
       { passive: false },
     );
@@ -608,7 +627,7 @@ export function mount(root: HTMLElement): void {
       view.camera.set(
         clampCamera(panBy(view.camera(), delta), layoutNow().bounds, canvas.viewport()),
       );
-      refreshHud();
+      scheduleHud();
     });
     canvas.el.addEventListener('pointerup', () => {
       dragging = null;
@@ -779,9 +798,11 @@ export function mount(root: HTMLElement): void {
         view.location.set(locations[0].entity_id);
       }
     }
-    inventory.show(projection);
+    const open = view.windows();
+    if (open.includes('tables')) inventory.show(projection);
+    if (open.includes('statistics')) population.show([...summaries.values()]);
     renderIslandActions();
-    refreshLogistics();
+    if (open.includes('routes')) refreshLogistics();
     // Summaries are queried for every known location on a full load, and for the
     // viewed location only on a delta: six round-trips per tick dominated the
     // delta budget (REF-14.6).
@@ -975,6 +996,19 @@ export function mount(root: HTMLElement): void {
   }
   for (const kind of view.windows()) windowHost.open(kind);
 
+  let hudPending = false;
+  /** Coalesces camera-driven HUD work to one update per animation frame. */
+  const scheduleHud = (): void => {
+    if (hudPending) return;
+    hudPending = true;
+    const run = (): void => {
+      hudPending = false;
+      refreshHud();
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else run();
+  };
+
   const refreshHud = (): void => {
     const projection = mirror.projection();
     const owner = projection?.owners.find((entry) => entry.owner_id === ACTOR_ID);
@@ -988,15 +1022,18 @@ export function mount(root: HTMLElement): void {
     minimapView.update();
   };
   mirror.projection.subscribe(() => {
-    newsCarryIds = { ...newsCarryIds, ...newsCarry(mirror.projection()) };
-    newsRail.show(newsEntries(mirror.events(), mirror.projection(), newsCarryIds));
-    const facts = { projection: mirror.projection(), summaries: [...summaries.values()] };
-    const done = newlyComplete(facts, milestoneCarry);
-    if (done.length > 0) {
-      milestoneCarry = [...milestoneCarry, ...done];
-      writeMilestones('auto', milestoneCarry);
+    const projection = mirror.projection();
+    if (projection?.tick !== undefined) {
+      newsCarryIds = { ...newsCarryIds, ...newsCarry(projection) };
+      newsRail.show(newsEntries(mirror.events(), projection, newsCarryIds));
+      const facts = { projection, summaries: [...summaries.values()] };
+      const done = newlyComplete(facts, milestoneCarry);
+      if (done.length > 0) {
+        milestoneCarry = [...milestoneCarry, ...done];
+        writeMilestones('auto', milestoneCarry);
+      }
+      milestoneTracker.show(milestones(facts, milestoneCarry));
     }
-    milestoneTracker.show(milestones(facts, milestoneCarry));
     refreshHud();
   });
   view.location.subscribe(() => {
