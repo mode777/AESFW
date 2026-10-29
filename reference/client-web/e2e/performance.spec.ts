@@ -97,14 +97,20 @@ test('[REF-14.6] delta application and selectors stay inside the tick budget', a
   await page.getByTestId('action-play').click();
   await page.waitForTimeout(3000);
   await page.getByTestId('action-pause').click();
-  const durations = await page.evaluate(() =>
-    performance
+  const measured = await page.evaluate(() => ({
+    delta: performance
       .getEntriesByType('measure')
       .filter((entry) => entry.name === 'aesfw:delta')
       .map((entry) => entry.duration),
-  );
+    merge: performance
+      .getEntriesByType('measure')
+      .filter((entry) => entry.name === 'aesfw:merge')
+      .map((entry) => entry.duration),
+  }));
+  const durations = measured.delta;
   const p95 = percentile(durations, 0.95);
   results['tick_p95_ms'] = p95;
+  results['merge_p95_ms'] = percentile(measured.merge, 0.95);
   expect(durations.length).toBeGreaterThan(5);
   expect(p95, `delta p95 ${p95.toFixed(2)} ms`).toBeLessThanOrEqual(2);
 });

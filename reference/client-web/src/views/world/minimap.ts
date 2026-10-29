@@ -61,6 +61,7 @@ export function createMinimap(deps: MinimapDeps): Minimap {
   // Structural caching (REF-14.6): the world layer is rebuilt only when the
   // layout changes; every update writes the viewport rectangle and population.
   let structureKey = '';
+  let lastStrip = '';
 
   map.addEventListener('click', (event) => {
     const bounds = map.getBoundingClientRect();
@@ -121,6 +122,12 @@ export function createMinimap(deps: MinimapDeps): Minimap {
     rect.setAttribute('width', String(view.width));
     rect.setAttribute('height', String(view.height));
 
+    const stripSignature = Object.entries(deps.population())
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([tier, count]) => `${tier}:${count}`)
+      .join(',');
+    if (stripSignature === lastStrip) return;
+    lastStrip = stripSignature;
     strip.replaceChildren(
       ...Object.entries(deps.population())
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))

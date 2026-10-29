@@ -18,7 +18,11 @@ export function createNewsRail(onSelect: (entry: NewsEntry) => void): NewsRail {
   const list = h('ol', { class: 'news-list', 'data-testid': 'news-list' });
   const el = h('div', { class: 'news-rail' }, h('h2', { class: 'news-title', text: 'News' }), list);
 
+  let signature = '';
   const show = (entries: readonly NewsEntry[]): void => {
+    const next = entries.map((entry) => entry.id).join(',');
+    if (next === signature) return;
+    signature = next;
     if (entries.length === 0) {
       list.replaceChildren(
         h('li', { class: 'news-empty', 'data-testid': 'news-empty', text: '—' }),

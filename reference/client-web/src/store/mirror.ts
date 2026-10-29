@@ -47,8 +47,14 @@ export function createMirror(deps: MirrorDeps): Mirror {
       // Performance marks for the tick budget (REF-14.6); the Playwright
       // scenario reads them from the performance timeline.
       const marked = typeof performance !== 'undefined' && typeof performance.mark === 'function';
+      if (marked) performance.mark('aesfw:merge-start');
+      const merged = applyDeltaToSnapshot(current, delta);
+      if (marked) {
+        performance.mark('aesfw:merge-end');
+        performance.measure('aesfw:merge', 'aesfw:merge-start', 'aesfw:merge-end');
+      }
       if (marked) performance.mark('aesfw:delta-start');
-      projection.set(applyDeltaToSnapshot(current, delta));
+      projection.set(merged);
       events.set([...events(), ...incoming]);
       if (marked) {
         performance.mark('aesfw:delta-end');

@@ -23,7 +23,11 @@ export function createMilestoneTracker(): MilestoneTracker {
     h('h3', { class: 'context-section-title', text: 'Milestones' }),
     list,
   );
+  let signature = '';
   const show = (milestones: readonly Milestone[]): void => {
+    const next = milestones.map((entry) => `${entry.id}:${entry.complete}`).join(',');
+    if (next === signature) return;
+    signature = next;
     list.replaceChildren(
       ...milestones.map((milestone) =>
         h(
