@@ -479,6 +479,7 @@ export function mount(root: HTMLElement): void {
     'data-testid': 'canvas-grid-overlay',
   });
   const islandActions = h('div', { class: 'island-actions', 'data-testid': 'island-actions' });
+  let islandActionsKey = '';
   const renderIslandActions = (): void => {
     const projection = mirror.projection();
     const locationId = selectedLocation();
@@ -487,11 +488,17 @@ export function mount(root: HTMLElement): void {
         ? undefined
         : projection?.locations.find((entry) => entry.entity_id === locationId);
     if (location === undefined) {
-      islandActions.replaceChildren();
+      if (islandActionsKey !== 'none') {
+        islandActionsKey = 'none';
+        islandActions.replaceChildren();
+      }
       islandActions.hidden = true;
       return;
     }
     islandActions.hidden = false;
+    const nextKey = `${location.entity_id}:${location.knowledge}:${location.active === true}`;
+    if (nextKey === islandActionsKey) return;
+    islandActionsKey = nextKey;
     const button = (testId: string, text: string, onclick: () => void): HTMLElement =>
       h('button', { 'data-testid': testId, text, onclick });
     islandActions.replaceChildren();
@@ -812,6 +819,7 @@ export function mount(root: HTMLElement): void {
     for (const location of locationsToQuery) {
       client.query(ACTOR_ID, { kind: 'location_summary', location_id: location.entity_id });
     }
+    void locations;
     const selected = view.selection();
     if (selected !== null) {
       client.query(ACTOR_ID, { kind: 'entity_detail', entity_id: selected });
@@ -851,7 +859,7 @@ export function mount(root: HTMLElement): void {
         }
         if (result.location_summary !== undefined && result.location_summary !== null) {
           summaries.set(result.location_summary.entity_id, result.location_summary);
-          population.show([...summaries.values()]);
+          if (view.windows().includes('tables')) population.show([...summaries.values()]);
           refreshContext();
         }
         if (result.definition_metadata !== undefined) {

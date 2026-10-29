@@ -18,7 +18,11 @@ export interface ContextPanelView {
 export function createContextPanelView(onCommand: (action: PanelAction) => void): ContextPanelView {
   const el = h('div', { class: 'context-panel', 'data-testid': 'context-panel-body' });
 
+  let signature: string | null = null;
   const show = (panel: ContextPanel | null): void => {
+    const next = panel === null ? 'null' : JSON.stringify(panel);
+    if (next === signature) return;
+    signature = next;
     if (panel === null) {
       el.replaceChildren();
       el.hidden = true;
