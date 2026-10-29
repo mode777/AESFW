@@ -1039,6 +1039,7 @@ export function mount(root: HTMLElement): void {
    * doing this work per delta wasted the tick budget (REF-14.6).
    */
   let tickWorkPending = false;
+  let lastInformationalAt = 0;
   const scheduleTickWork = (): void => {
     if (tickWorkPending) return;
     tickWorkPending = true;
@@ -1047,7 +1048,11 @@ export function mount(root: HTMLElement): void {
       const projection = mirror.projection();
       const marked = typeof performance !== 'undefined' && typeof performance.mark === 'function';
       if (marked) performance.mark('aesfw:tick-work-start');
-      if (projection?.tick !== undefined) {
+      // News and milestones are informational: recomputing them at most four
+      // times a second is imperceptible and keeps the tick budget (REF-14.6).
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      if (projection?.tick !== undefined && now - lastInformationalAt >= 250) {
+        lastInformationalAt = now;
         newsCarryIds = { ...newsCarryIds, ...newsCarry(projection) };
         newsRail.show(newsEntries(mirror.events(), projection, newsCarryIds));
         const facts = { projection, summaries: [...summaries.values()] };
