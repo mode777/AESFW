@@ -105,7 +105,7 @@ test('[REF-14.6] delta application and selectors stay inside the tick budget', a
   const measured = await page.evaluate(() => ({
     delta: performance
       .getEntriesByType('measure')
-      .filter((entry) => entry.name === 'aesfw:delta')
+      .filter((entry) => entry.name === 'aesfw:tick-work')
       .map((entry) => entry.duration),
     merge: performance
       .getEntriesByType('measure')

@@ -1033,21 +1033,43 @@ export function mount(root: HTMLElement): void {
     canvas.invalidate();
     minimapView.update();
   };
-  mirror.projection.subscribe(() => {
-    const projection = mirror.projection();
-    if (projection?.tick !== undefined) {
-      newsCarryIds = { ...newsCarryIds, ...newsCarry(projection) };
-      newsRail.show(newsEntries(mirror.events(), projection, newsCarryIds));
-      const facts = { projection, summaries: [...summaries.values()] };
-      const done = newlyComplete(facts, milestoneCarry);
-      if (done.length > 0) {
-        milestoneCarry = [...milestoneCarry, ...done];
-        writeMilestones('auto', milestoneCarry);
+  /**
+   * One per published animation frame: the canvas, HUD, news, milestones, and
+   * list queries. At ×16 the worker publishes up to sixteen deltas per frame;
+   * doing this work per delta wasted the tick budget (REF-14.6).
+   */
+  let tickWorkPending = false;
+  const scheduleTickWork = (): void => {
+    if (tickWorkPending) return;
+    tickWorkPending = true;
+    const run = (): void => {
+      tickWorkPending = false;
+      const projection = mirror.projection();
+      const marked = typeof performance !== 'undefined' && typeof performance.mark === 'function';
+      if (marked) performance.mark('aesfw:tick-work-start');
+      if (projection?.tick !== undefined) {
+        newsCarryIds = { ...newsCarryIds, ...newsCarry(projection) };
+        newsRail.show(newsEntries(mirror.events(), projection, newsCarryIds));
+        const facts = { projection, summaries: [...summaries.values()] };
+        const done = newlyComplete(facts, milestoneCarry);
+        if (done.length > 0) {
+          milestoneCarry = [...milestoneCarry, ...done];
+          writeMilestones('auto', milestoneCarry);
+        }
+        milestoneTracker.show(milestones(facts, milestoneCarry));
       }
-      milestoneTracker.show(milestones(facts, milestoneCarry));
-    }
-    refreshHud();
-  });
+      refreshLists();
+      refreshHud();
+      if (marked) {
+        performance.mark('aesfw:tick-work-end');
+        performance.measure('aesfw:tick-work', 'aesfw:tick-work-start', 'aesfw:tick-work-end');
+      }
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else run();
+  };
+
+  mirror.projection.subscribe(scheduleTickWork);
   view.location.subscribe(() => {
     refreshHud();
     persist();

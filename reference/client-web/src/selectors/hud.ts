@@ -73,7 +73,8 @@ export const definitionLabel = (
  *
  * Source: REF-11, PIC-10.6, PIC-10.2
  */
-let constructionCache: { readonly signature: string; readonly ids: readonly string[] } | null = null;
+let constructionCache: { readonly signature: string; readonly ids: readonly string[] } | null =
+  null;
 
 const constructionDefaults = (definitions: readonly DefinitionMetadataDto[]): readonly string[] => {
   const signature = definitions.map((definition) => definition.definition_id).join(',');
