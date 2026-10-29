@@ -404,7 +404,7 @@ export function mount(root: HTMLElement): void {
     });
   };
 
-  let panelTarget: 'build' | 'entity' | 'location' = 'location';
+  let panelTarget: 'build' | 'entity' | 'location' = 'build';
   let transportDetail: TransportDetailDto | null = null;
   const contextView = createContextPanelView((action: PanelAction) => {
     if (action.command === 'UI:explore' || action.command === 'UI:establish') {

@@ -73,6 +73,20 @@ export const definitionLabel = (
  *
  * Source: REF-11, PIC-10.6, PIC-10.2
  */
+let constructionCache: { readonly signature: string; readonly ids: readonly string[] } | null = null;
+
+const constructionDefaults = (definitions: readonly DefinitionMetadataDto[]): readonly string[] => {
+  const signature = definitions.map((definition) => definition.definition_id).join(',');
+  if (constructionCache !== null && constructionCache.signature === signature) {
+    return constructionCache.ids;
+  }
+  const ids = definitions
+    .filter((definition) => definition.tags.includes(CONSTRUCTION_TAG))
+    .map((definition) => definition.definition_id);
+  constructionCache = { signature, ids };
+  return ids;
+};
+
 export const resourceBar = (
   owner:
     | {
@@ -88,9 +102,7 @@ export const resourceBar = (
   const resources = owner?.resources ?? {};
   const balance = formatter.format(resources[CREDITS_RESOURCE_ID] ?? 0);
   const netRate = formatter.formatRate(owner?.balance?.net_per_interval ?? 0);
-  const defaults = definitions
-    .filter((definition) => definition.tags.includes(CONSTRUCTION_TAG))
-    .map((definition) => definition.definition_id);
+  const defaults = constructionDefaults(definitions);
   const pinned = pins.filter((id) => !defaults.includes(id));
   const chips: ResourceChip[] = [];
   for (const resourceId of [...defaults, ...pinned]) {
