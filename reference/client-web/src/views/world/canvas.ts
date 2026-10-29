@@ -82,18 +82,11 @@ const fogPath = (island: IslandLayout): string => {
 
 /** Creates the world canvas (REF-12.1). */
 export function createWorldCanvas(deps: CanvasDeps): WorldCanvas {
-  const sea = svg('rect', {
-    class: 'canvas-sea',
-    x: '-10000',
-    y: '-10000',
-    width: '20000',
-    height: '20000',
-  });
   const laneLayer = svg('g', { class: 'canvas-lanes', 'data-testid': 'canvas-lanes' });
   const islandLayer = svg('g', { class: 'canvas-islands', 'data-testid': 'canvas-islands' });
   const selectionLayer = svg('g', { class: 'canvas-selection', 'data-testid': 'canvas-selection' });
   const cameraGroup = svg('g', { class: 'canvas-camera', 'data-testid': 'canvas-camera' });
-  cameraGroup.append(sea, laneLayer, islandLayer, selectionLayer);
+  cameraGroup.append(laneLayer, islandLayer, selectionLayer);
   const el = svg(
     'svg',
     {
