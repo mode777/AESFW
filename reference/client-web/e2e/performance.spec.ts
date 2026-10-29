@@ -111,6 +111,9 @@ test('[REF-14.6] delta application and selectors stay inside the tick budget', a
   const p95 = percentile(durations, 0.95);
   results['tick_p95_ms'] = p95;
   results['merge_p95_ms'] = percentile(measured.merge, 0.95);
+  results['delta_samples'] = durations.length;
+  flush();
+  console.log(`perf: delta p95 ${p95.toFixed(2)} ms, merge p95 ${results['merge_p95_ms']?.toFixed(2)} ms, samples ${durations.length}`);
   expect(durations.length).toBeGreaterThan(5);
   expect(p95, `delta p95 ${p95.toFixed(2)} ms`).toBeLessThanOrEqual(2);
 });
