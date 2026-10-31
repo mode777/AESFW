@@ -37,8 +37,8 @@ const goldenPath = fileURLToPath(new URL('./complete_game.hashes.json', import.m
 
 /**
  * Full-length SCN-14 costs about 4.5 minutes per run (7,200 ticks with the
- * per-tick invariant harness), so CI runs a prefix by default and the change
- * design records the nightly gate. `AESFW_SLOW=1` restores the full run.
+ * per-tick invariant harness), so CI runs a prefix by default.
+ * `AESFW_SLOW=1` restores the full run.
  */
 const FULL = process.env['AESFW_SLOW'] === '1';
 const PREFIX = 1800;

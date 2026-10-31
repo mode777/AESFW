@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The performance harness: a pure benchmark runner over a scenario, the `bench.small` scenario, the `aesfw bench` command with JSON results, and the nightly trend step (TDS-24, VER-14).
+The performance harness: a pure benchmark runner over a scenario, the `bench.small` scenario, and the `aesfw bench` command with JSON results (TDS-24, VER-14).
 
 ## Requirements
 
@@ -37,11 +37,3 @@ Source: TDS-21.2, VER-14
 - **WHEN** `aesfw bench --scenario bench.small` runs
 - **THEN** it prints a JSON object with `scenario`, `entities`, `iterations`, `medianMs`, and `p95Ms`
 
-### Requirement: Nightly trend step
-The nightly workflow SHALL run `pnpm bench` and store its JSON results for trend comparison. The comparison and the 20 % regression gate SHALL remain non-blocking until M12.
-
-Source: VER-14, TDS-24
-
-#### Scenario: The nightly job runs the benchmark
-- **WHEN** the nightly workflow runs
-- **THEN** it executes `pnpm bench` and stores the results

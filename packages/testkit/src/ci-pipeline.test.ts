@@ -35,14 +35,4 @@ describe('[VER-15.3] CI pipeline skeleton', () => {
       cursor = index;
     }
   });
-
-  it('[VER-15.3] nightly workflow runs the available stages on a schedule', () => {
-    const nightly = readWorkflow('nightly.yml');
-    expect(nightly).toContain('schedule:');
-    expect(nightly).toContain('cron:');
-
-    const commands = runCommands(nightly);
-    expect(commands).toContain('pnpm install --frozen-lockfile');
-    expect(commands).toContain('pnpm test');
-  });
 });

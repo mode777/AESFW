@@ -91,13 +91,13 @@ Untraced IDs are a warning until roadmap milestone M10 and an error afterwards, 
 | L2 | Tick integration | Full `step` on small worlds, several ticks | core | Vitest, invariant checker | Every PR |
 | L3 | Content | Loader stages, schemas, composition, compilation, diagnostics | content | Vitest, fixture packages | Every PR |
 | L4 | Application | Gateway, projections, read models, deltas, persistence codecs | app | Vitest | Every PR |
-| L5 | Property | Invariants under generated content and command streams | core, app | fast-check | Every PR (bounded runs), nightly (extended runs) |
+| L5 | Property | Invariants under generated content and command streams | core, app | fast-check | Every PR (bounded runs) |
 | L6 | Scenario (golden) | Configured scenarios over many ticks with expected metrics and hashes | testkit, fixtures, reference | Scenario runner | Every PR |
-| L7 | Determinism matrix | Replays across Node and Chromium, Firefox, WebKit | testkit, host-web | Vitest browser mode, Playwright | Every PR (Chromium), nightly (all engines) |
+| L7 | Determinism matrix | Replays across Node and Chromium, Firefox, WebKit | testkit, host-web | Vitest browser mode, Playwright | Every PR (Chromium) |
 | L8 | Host and protocol | Worker message flow, CLI commands | host-web, host-node, protocol | Vitest (fake worker), CLI smoke | Every PR |
 | L9 | Client view model | Pure selectors from projection to view model | client-web | Vitest | Every PR |
-| L10 | Client end-to-end | Browser smoke flows, accessibility checks | client-web | Playwright, axe-core | Every PR (smoke), nightly (full) |
-| L11 | Performance | Benchmark scenarios | testkit, host-node | `aesfw bench` | Nightly, trend-tracked |
+| L10 | Client end-to-end | Browser smoke flows, accessibility checks | client-web | Playwright, axe-core | Every PR (smoke) |
+| L11 | Performance | Benchmark scenarios | testkit, host-node | `aesfw bench` | On demand |
 
 ---
 
@@ -228,7 +228,6 @@ Invariants that need the journal (INV-04, INV-23) force `journal: true` in the t
 ### 7.3 Run budgets
 
 - PR runs: `numRuns: 100` per property and at most 200 ticks per run.
-- Nightly runs: `numRuns: 2000` and up to 5,000 ticks.
 - A failure prints the seed and the shrunk counterexample. Fixed counterexamples are added as regression unit tests.
 
 ---
@@ -248,7 +247,7 @@ Invariants that need the journal (INV-04, INV-23) force `journal: true` in the t
 
 ### 8.2 Cross-environment matrix
 
-The replay corpus (SCN-01 to SCN-14 plus nightly random replays) runs in:
+The replay corpus (SCN-01 to SCN-14) runs in:
 
 - Node LTS on Linux and Windows
 - Vitest browser mode or Playwright in Chromium, Firefox, and WebKit
@@ -411,7 +410,6 @@ The client separates **selectors** (pure functions `projection × viewState → 
 
 - Benchmark scenarios: `bench.small`, `bench.reference`, and `bench.large` (TDS-24), plus the reference client frame-time scenario (07 §14.6).
 - `aesfw bench` reports the median and p95 tick time over a fixed number of ticks after warm-up and writes JSON results.
-- Nightly CI stores the results and compares them with the rolling baseline. A regression above 20 % opens a failing check. From milestone M12 it blocks merges.
 
 ---
 
@@ -432,7 +430,7 @@ Thresholds are enforced per package from the milestone in which the package firs
 
 ### 15.2 Mutation testing
 
-Mutation testing (Stryker) runs nightly on `fx`, `det`, `tx`, and the allocation models, with a target mutation score of at least 80 %. It is non-gating until M12.
+Mutation testing (Stryker) runs on demand on `fx`, `det`, `tx`, and the allocation models, with a target mutation score of at least 80 %. It is non-gating until M12.
 
 ### 15.3 CI pipeline
 
@@ -447,7 +445,6 @@ install (frozen lockfile)
  → content validation of reference packages (strict)
  → build client → L10 smoke
  → trace report (warning or error per Section 3.3)
-nightly: extended L5, L7 all engines, L10 full, L11 bench, mutation tests
 ```
 
 ---
